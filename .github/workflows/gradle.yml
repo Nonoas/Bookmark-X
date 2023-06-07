@@ -29,8 +29,8 @@ jobs:
         java-version: '11'
         distribution: 'temurin'
     - name: Set up Gradle
-        uses: gradle/setup-gradle@v1
-        with:
-          gradle-version: '7.4' # 指定您希望使用的 Gradle 版本
+      uses: gradle/setup-gradle@v1
+      with:
+        gradle-version: '7.4' # 指定您希望使用的 Gradle 版本
     - name: Build with Gradle
       run: gradle :buildPlugin
