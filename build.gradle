@@ -1,0 +1,40 @@
+plugins {
+    id 'org.jetbrains.intellij' version '1.13.3'
+    id 'java'
+}
+
+group 'indi.nonoas.worktool'
+version '1.0-SNAPSHOT'
+
+repositories {
+    maven { url 'https://maven.aliyun.com/repository/public/' }
+    maven { url 'https://maven.aliyun.com/repository/spring/' }
+    mavenLocal()
+    mavenCentral()
+}
+
+dependencies {
+    testImplementation 'org.junit.jupiter:junit-jupiter-api:5.7.0'
+    testRuntimeOnly 'org.junit.jupiter:junit-jupiter-engine:5.7.0'
+}
+
+// See https://github.com/JetBrains/gradle-intellij-plugin/
+intellij {
+    version = '2021.2.2'
+}
+
+tasks.named('initializeIntelliJPlugin') {
+    enabled = false
+}
+
+tasks.named('patchPluginXml') {
+    enabled = false
+}
+
+tasks.named('verifyPluginConfiguration') {
+    enabled = false
+}
+
+test {
+    useJUnitPlatform()
+}
