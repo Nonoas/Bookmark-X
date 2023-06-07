@@ -16,8 +16,6 @@ import javax.swing.event.TreeModelListener;
 import javax.swing.tree.DefaultTreeModel;
 import javax.swing.tree.TreeNode;
 import java.awt.*;
-import java.awt.event.MouseAdapter;
-import java.awt.event.MouseEvent;
 import java.util.concurrent.ExecutionException;
 
 /**
@@ -119,7 +117,6 @@ public class BookmarksManagePanel extends JPanel {
             MyPersistent persistent = MyPersistent.getInstance(project);
             BookmarkPO rootPO = persistent.getState();
             BookmarkTreeNode root = PersistenceUtil.generateTreeNode(rootPO, project);
-            System.out.println("doInBackground获取" + root);
             return new DefaultTreeModel(root);
         }
 
@@ -168,6 +165,8 @@ public class BookmarksManagePanel extends JPanel {
                 if (selectedNode != null && selectedNode.isBookmark()) {
                     BookmarkNodeModel bookmark = (BookmarkNodeModel) selectedNode.getUserObject();
                     jepDesc.setText(bookmark.getDesc());
+                } else {
+                    jepDesc.setText("");
                 }
             });
 
