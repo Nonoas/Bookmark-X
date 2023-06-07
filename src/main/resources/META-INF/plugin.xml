@@ -1,7 +1,7 @@
 <idea-plugin>
     <id>indi.nonoas.worktool.WorkTool-IDEA</id>
-    <name>WorkTool</name>
-    <vendor email="nonoas@sina.cn" url="https://www.nonoas.top">XBH</vendor>
+    <name>Bookmark-X</name>
+    <vendor email="nonoaswy@163.com" url="https://www.nonoas.top">XBH</vendor>
 
     <idea-version since-build="210.0" until-build="213.*"/>
 
@@ -22,11 +22,11 @@
     <depends>com.intellij.modules.platform</depends>
 
     <extensions defaultExtensionNs="com.intellij">
-        <toolWindow id="WorkTool" anchor="left"
+        <toolWindow id="Bookmark-X" anchor="left"
                     icon="/icons/logo.svg"
-                    factoryClass="indi.worktool.RootWindowFactory" secondary="false"/>
+                    factoryClass="indi.bookmarkx.RootWindowFactory" secondary="false"/>
 
-        <projectService serviceImplementation="indi.worktool.MyPersistent"/>
+        <projectService serviceImplementation="indi.bookmarkx.MyPersistent"/>
     </extensions>
 
 
@@ -35,24 +35,24 @@
 
         <group id="org.intellij.sdk.action.GroupedActions" text="_Super Bookmark" popup="true">
             <add-to-group group-id="GoToMenu" anchor="after"
-                          relative-to-action="indi.worktool.action.BookmarkCreateAction"/>
+                          relative-to-action="indi.bookmarkx.action.BookmarkCreateAction"/>
 
-            <action id="indi.worktool.action.BookmarkCreateAction" class="indi.worktool.action.BookmarkCreateAction"
+            <action id="indi.bookmarkx.action.BookmarkCreateAction" class="indi.bookmarkx.action.BookmarkCreateAction"
                     text="Add With Line">
                 <keyboard-shortcut first-keystroke="shift alt d" keymap="$default"/>
             </action>
-            <action id="indi.worktool.action.NextBookmarkAction" class="indi.worktool.action.NextBookmarkAction"
+            <action id="indi.bookmarkx.action.NextBookmarkAction" class="indi.bookmarkx.action.NextBookmarkAction"
                     text="Next">
                 <keyboard-shortcut first-keystroke="shift alt RIGHT" keymap="$default"/>
             </action>
-            <action id="indi.worktool.action.PrevBookmarkAction" class="indi.worktool.action.PrevBookmarkAction"
+            <action id="indi.bookmarkx.action.PrevBookmarkAction" class="indi.bookmarkx.action.PrevBookmarkAction"
                     text="Prev">
                 <keyboard-shortcut first-keystroke="shift alt LEFT" keymap="$default"/>
             </action>
 
             <!-- 帮助菜单，跳转到插件官网 -->
-            <action id="indi.worktool.action.ToHelpWebPageAction"
-                    class="indi.worktool.action.ToHelpWebPageAction"
+            <action id="indi.bookmarkx.action.ToHelpWebPageAction"
+                    class="indi.bookmarkx.action.ToHelpWebPageAction"
                     text="_Help"
                     icon="AllIcons.Actions.Help">
             </action>

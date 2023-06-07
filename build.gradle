@@ -23,11 +23,12 @@ intellij {
     version = '2021.2.2'
 }
 
-tasks.named('initializeIntelliJPlugin') {
-    enabled = false
+patchPluginXml {
+    sinceBuild='210.0'
+    untilBuild="213.*"
 }
 
-tasks.named('patchPluginXml') {
+tasks.named('initializeIntelliJPlugin') {
     enabled = false
 }
 
