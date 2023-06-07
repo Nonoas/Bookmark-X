@@ -9,6 +9,7 @@ import com.intellij.util.ui.JBUI;
 import indi.bookmarkx.common.I18N;
 import indi.bookmarkx.model.BookmarkNodeModel;
 import indi.bookmarkx.model.GroupNodeModel;
+import org.apache.commons.lang3.Validate;
 import org.jsoup.internal.StringUtil;
 
 import javax.swing.*;
@@ -390,7 +391,7 @@ public class BookmarkTree extends JTree {
 
         public void pre() {
             BookmarkTreeNode group = ensureActivatedGroup();
-            if (0 == group.getChildCount()) {
+            if (0 == group.getBookmarkChildCount()) {
                 return;
             }
 
@@ -401,7 +402,7 @@ public class BookmarkTree extends JTree {
 
         public void next() {
             BookmarkTreeNode group = ensureActivatedGroup();
-            if (0 == group.getChildCount()) {
+            if (0 == group.getBookmarkChildCount()) {
                 return;
             }
 
@@ -455,14 +456,11 @@ public class BookmarkTree extends JTree {
             TreeNode[] path = activatedBookmark.getPath();
             int row = tree.getRowForPath(new TreePath(path));
 
-            return row < 0 ? null : activatedGroup;
+            return row < 0 ? null : activatedBookmark;
         }
 
-
         private void navigateTo(int index) {
-            if (-1 == index) {
-                return;
-            }
+            Validate.isTrue(index >= 0, "index must be greater than 0");
 
             BookmarkTreeNode nextNode = (BookmarkTreeNode) activatedGroup.getChildAt(index);
             activeBookmark(nextNode);
@@ -472,11 +470,9 @@ public class BookmarkTree extends JTree {
         }
 
         private int preTreeNodeIndex(BookmarkTreeNode activeGroup, BookmarkTreeNode activatedBookmark) {
-            if (0 == activeGroup.getBookmarkChildCount()) {
-                return -1;
-            }
+            Validate.isTrue(activeGroup.getBookmarkChildCount() > 0, "activeGroup has no child");
             if (null == activatedBookmark) {
-                return 0;
+                return activeGroup.firstChildIndex();
             }
             int currIndex = activeGroup.getIndex(activatedBookmark);
             int groupSize = activeGroup.getChildCount();
@@ -490,12 +486,11 @@ public class BookmarkTree extends JTree {
         }
 
         private int nextTreeNodeIndex(BookmarkTreeNode activeGroup, BookmarkTreeNode activatedBookmark) {
-            if (0 == activeGroup.getBookmarkChildCount()) {
-                return -1;
-            }
+            Validate.isTrue(activeGroup.getBookmarkChildCount() > 0, "activeGroup has no child");
             if (null == activatedBookmark) {
-                return 0;
+                return activeGroup.firstChildIndex();
             }
+
             int currIndex = activeGroup.getIndex(activatedBookmark);
             BookmarkTreeNode node;
             do {

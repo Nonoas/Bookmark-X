@@ -3,7 +3,7 @@ plugins {
     id 'java'
 }
 
-group 'indi.nonoas.worktool'
+group 'indi.bookmarkx'
 version '1.0-SNAPSHOT'
 
 repositories {

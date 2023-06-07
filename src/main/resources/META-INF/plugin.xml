@@ -33,7 +33,7 @@
     <!--插件动作-->
     <actions>
 
-        <group id="org.intellij.sdk.action.GroupedActions" text="_Super Bookmark" popup="true">
+        <group id="org.intellij.sdk.action.GroupedActions" text="_Bookmark-X" popup="true">
             <add-to-group group-id="GoToMenu" anchor="after"
                           relative-to-action="indi.bookmarkx.action.BookmarkCreateAction"/>
 
