@@ -9,6 +9,7 @@ import com.intellij.openapi.fileEditor.OpenFileDescriptor;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vfs.VirtualFile;
 import indi.bookmarkx.dialog.BookmarkCreatorDialog;
+import indi.bookmarkx.model.BookmarkConverter;
 import indi.bookmarkx.model.BookmarkNodeModel;
 import indi.bookmarkx.model.po.BookmarkPO;
 import org.jetbrains.annotations.NotNull;
@@ -40,7 +41,7 @@ public final class BookmarksManager {
      * @param editor  编辑器
      * @param file    文件
      */
-    public void createBookRemarkPopup(Project project, Editor editor, VirtualFile file) {
+    public void createBookRemark(Project project, Editor editor, VirtualFile file) {
         CaretModel caretModel = editor.getCaretModel();
 
         // 获取行号
@@ -70,12 +71,25 @@ public final class BookmarksManager {
                 });
     }
 
+    public static void editBookRemark(BookmarkNodeModel model) {
+        Project project = model.getOpenFileDescriptor().getProject();
+        BookmarksManager instance = BookmarksManager.getInstance(project);
+
+        new BookmarkCreatorDialog(project)
+                .defaultName(model.getName())
+                .defaultDesc(model.getDesc())
+                .showAndCallback((name, desc) -> {
+                    model.setName(name);
+                    model.setDesc(desc);
+                    instance.persistentSave();
+                });
+    }
+
     /**
      * 持久化保存
-     *
-     * @param po 标签树根节点
      */
-    public void persistentSave(BookmarkPO po) {
+    public void persistentSave() {
+        BookmarkPO po = PersistenceUtil.getPersistenceObject(toolWindowRootPanel.tree());
         MyPersistent persistent = MyPersistent.getInstance(project);
         persistent.setState(po);
         Application application = ApplicationManager.getApplication();

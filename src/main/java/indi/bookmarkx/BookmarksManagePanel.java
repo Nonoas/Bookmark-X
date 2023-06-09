@@ -26,7 +26,7 @@ import java.util.concurrent.ExecutionException;
  */
 public class BookmarksManagePanel extends JPanel {
 
-    private final BookmarkTree tree = new BookmarkTree();
+    private final BookmarkTree tree;
 
     private final Project project;
 
@@ -40,6 +40,8 @@ public class BookmarksManagePanel extends JPanel {
     private BookmarksManagePanel(Project project) {
 
         this.project = project;
+
+        tree = new BookmarkTree(project);
 
         setLayout(new BorderLayout());
 
@@ -154,9 +156,8 @@ public class BookmarksManagePanel extends JPanel {
                 }
 
                 private void persistenceSave() {
-                    BookmarkPO po = PersistenceUtil.getPersistenceObject(tree);
                     BookmarksManager manager = BookmarksManager.getInstance(project);
-                    manager.persistentSave(po);
+                    manager.persistentSave();
                 }
             });
 

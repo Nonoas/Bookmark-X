@@ -1,11 +1,15 @@
 package indi.bookmarkx.tree;
 
 import com.intellij.icons.AllIcons;
+import com.intellij.openapi.project.Project;
 import com.intellij.openapi.ui.InputValidatorEx;
+import com.intellij.openapi.ui.JBMenuItem;
+import com.intellij.openapi.ui.JBPopupMenu;
 import com.intellij.openapi.ui.Messages;
 import com.intellij.openapi.util.IconLoader;
 import com.intellij.ui.JBColor;
 import com.intellij.util.ui.JBUI;
+import indi.bookmarkx.BookmarksManager;
 import indi.bookmarkx.common.I18N;
 import indi.bookmarkx.model.BookmarkNodeModel;
 import indi.bookmarkx.model.GroupNodeModel;
@@ -41,15 +45,20 @@ public class BookmarkTree extends JTree {
 
     private DefaultTreeModel model;
 
-    public BookmarkTree() {
+    private Project project;
+
+    public BookmarkTree(Project project) {
         super();
-        setBorder(JBUI.Borders.empty());
-        setBackground(JBColor.WHITE);
+        this.project = project;
 
         BookmarkTreeNode root = new BookmarkTreeNode(new GroupNodeModel("ROOT"));
         model = new DefaultTreeModel(root);
         setModel(model);
 
+        getSelectionModel().setSelectionMode(TreeSelectionModel.CONTIGUOUS_TREE_SELECTION);
+
+        setBorder(JBUI.Borders.empty());
+        setBackground(JBColor.WHITE);
         setRootVisible(false);
         setShowsRootHandles(true);
 
@@ -203,12 +212,26 @@ public class BookmarkTree extends JTree {
      * 初始化右键菜单
      */
     private void initContextMenu() {
-        JPopupMenu popupMenu = new JPopupMenu();
-        JMenuItem imDel = new JMenuItem(I18N.get("bookmark.delete"));
-        JMenuItem imAddGroup = new JMenuItem(I18N.get("addGroup"));
+        JBPopupMenu popupMenu = new JBPopupMenu();
+        JBMenuItem imEdit = new JBMenuItem(I18N.get("bookmark.edit"));
+        JBMenuItem imDel = new JBMenuItem(I18N.get("bookmark.delete"));
+        JBMenuItem imAddGroup = new JBMenuItem(I18N.get("addGroup"));
         // TODO 需要添加可以将某个，目录拉出全局显示标签的按钮
+        popupMenu.add(imEdit);
         popupMenu.add(imDel);
         popupMenu.add(imAddGroup);
+
+        imEdit.addActionListener(e -> {
+            TreePath path = getSelectionPath();
+            if (null == path) {
+                return;
+            }
+            BookmarkTreeNode selectedNode = (BookmarkTreeNode) path.getLastPathComponent();
+            if (selectedNode.isBookmark()) {
+                BookmarkNodeModel nodeModel = (BookmarkNodeModel) selectedNode.getUserObject();
+                BookmarksManager.editBookRemark(nodeModel);
+            }
+        });
 
         imDel.addActionListener(e -> {
             // 获取选定的节点

@@ -1,5 +1,6 @@
 package indi.bookmarkx.tree;
 
+import com.intellij.mock.MockProject;
 import indi.bookmarkx.model.BookmarkNodeModel;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
@@ -14,7 +15,7 @@ class BookmarkTreeTest {
 
     @Test
     void addNodeTest() {
-        BookmarkTree tree = new BookmarkTree();
+        BookmarkTree tree = new BookmarkTree(null);
 
         BookmarkNodeModel model = new BookmarkNodeModel();
         model.setUuid("uuid");

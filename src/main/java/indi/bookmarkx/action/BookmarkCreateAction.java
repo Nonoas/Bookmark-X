@@ -16,8 +16,8 @@ public class BookmarkCreateAction extends AnAction {
         VirtualFile file = e.getData(CommonDataKeys.VIRTUAL_FILE);
         if (project == null || editor == null || file == null)
             return;
-        
+
         BookmarksManager.getInstance(project)
-                .createBookRemarkPopup(project, editor, file);
+                .createBookRemark(project, editor, file);
     }
 }
