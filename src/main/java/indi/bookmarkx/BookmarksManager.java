@@ -71,29 +71,11 @@ public final class BookmarksManager {
                 });
     }
 
-    public static void editBookRemark(BookmarkNodeModel model) {
-        Project project = model.getOpenFileDescriptor().getProject();
-        BookmarksManager instance = BookmarksManager.getInstance(project);
-
-        new BookmarkCreatorDialog(project)
-                .defaultName(model.getName())
-                .defaultDesc(model.getDesc())
-                .showAndCallback((name, desc) -> {
-                    model.setName(name);
-                    model.setDesc(desc);
-                    instance.persistentSave();
-                });
-    }
-
     /**
      * 持久化保存
      */
     public void persistentSave() {
-        BookmarkPO po = PersistenceUtil.getPersistenceObject(toolWindowRootPanel.tree());
-        MyPersistent persistent = MyPersistent.getInstance(project);
-        persistent.setState(po);
-        Application application = ApplicationManager.getApplication();
-        application.saveSettings();
+        PersistenceUtil.persistentSave(project, toolWindowRootPanel.tree());
     }
 
     private void addToTree(BookmarkNodeModel bookmarkModel) {

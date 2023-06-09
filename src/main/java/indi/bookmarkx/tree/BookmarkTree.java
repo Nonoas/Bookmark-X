@@ -11,6 +11,7 @@ import com.intellij.ui.JBColor;
 import com.intellij.util.ui.JBUI;
 import indi.bookmarkx.BookmarksManager;
 import indi.bookmarkx.common.I18N;
+import indi.bookmarkx.dialog.BookmarkCreatorDialog;
 import indi.bookmarkx.model.BookmarkNodeModel;
 import indi.bookmarkx.model.GroupNodeModel;
 import org.apache.commons.lang3.Validate;
@@ -178,13 +179,14 @@ public class BookmarkTree extends JTree {
     private void initTreeListeners() {
         // 选中监听
         addTreeSelectionListener(event -> {
+            int selectionCount = getSelectionCount();
             BookmarkTreeNode selectedNode = (BookmarkTreeNode) getLastSelectedPathComponent();
-            if (null == selectedNode) {
+            if (selectionCount != 1 || null == selectedNode) {
                 return;
             }
+
             if (selectedNode.isGroup()) {
-                navigator.activatedGroup = selectedNode;
-                navigator.activatedBookmark = (BookmarkTreeNode) selectedNode.getChildAt(0);
+                navigator.activeGroup(selectedNode);
             } else {
                 navigator.activeBookmark(selectedNode);
             }
@@ -215,7 +217,7 @@ public class BookmarkTree extends JTree {
         JBPopupMenu popupMenu = new JBPopupMenu();
         JBMenuItem imEdit = new JBMenuItem(I18N.get("bookmark.edit"));
         JBMenuItem imDel = new JBMenuItem(I18N.get("bookmark.delete"));
-        JBMenuItem imAddGroup = new JBMenuItem(I18N.get("addGroup"));
+        JBMenuItem imAddGroup = new JBMenuItem(I18N.get("bookmark.addGroup"));
         // TODO 需要添加可以将某个，目录拉出全局显示标签的按钮
         popupMenu.add(imEdit);
         popupMenu.add(imDel);
@@ -229,7 +231,16 @@ public class BookmarkTree extends JTree {
             BookmarkTreeNode selectedNode = (BookmarkTreeNode) path.getLastPathComponent();
             if (selectedNode.isBookmark()) {
                 BookmarkNodeModel nodeModel = (BookmarkNodeModel) selectedNode.getUserObject();
-                BookmarksManager.editBookRemark(nodeModel);
+                Project project = nodeModel.getOpenFileDescriptor().getProject();
+
+                new BookmarkCreatorDialog(project)
+                        .defaultName(nodeModel.getName())
+                        .defaultDesc(nodeModel.getDesc())
+                        .showAndCallback((name, desc) -> {
+                            nodeModel.setName(name);
+                            nodeModel.setDesc(desc);
+                            BookmarkTree.this.model.nodeChanged(selectedNode);
+                        });
             }
         });
 
@@ -245,18 +256,16 @@ public class BookmarkTree extends JTree {
                 if (null == parent) {
                     continue;
                 }
-
-                // 从父节点中删除选定的节点
-                if (node.isBookmark()) {
-                    BookmarkNodeModel bookmark = (BookmarkNodeModel) node.getUserObject();
-                }
-                remove(node);
+                this.remove(node);
             }
         });
 
         imAddGroup.addActionListener(e -> {
             // 获取选定的节点
-            TreePath[] selectionPaths = BookmarkTree.this.getSelectionPaths();
+            BookmarkTreeNode selectedNode = (BookmarkTreeNode) BookmarkTree.this.getLastSelectedPathComponent();
+            if (null == selectedNode) {
+                return;
+            }
 
             @SuppressWarnings("all")
             InputValidatorEx validatorEx = inputString -> {
@@ -265,32 +274,29 @@ public class BookmarkTree extends JTree {
                 return null;
             };
 
-            if (null == selectionPaths) {
+            @SuppressWarnings("all")
+            String groupName = Messages.showInputDialog(
+                    I18N.get("groupNameInputMessage"),
+                    I18N.get("groupName"),
+                    null,
+                    null,
+                    validatorEx
+            );
+
+            if (StringUtil.isBlank(groupName)) {
                 return;
             }
-            for (TreePath path : selectionPaths) {
-                BookmarkTreeNode node = (BookmarkTreeNode) path.getLastPathComponent();
-                BookmarkTreeNode parent = (BookmarkTreeNode) node.getParent();
 
-                @SuppressWarnings("all")
-                String groupName = Messages.showInputDialog(
-                        I18N.get("groupNameInputMessage"),
-                        I18N.get("groupName"),
-                        null,
-                        null,
-                        validatorEx
-                );
-                if (StringUtil.isBlank(groupName)) {
-                    return;
-                }
-
-                BookmarkTreeNode groupNode = new BookmarkTreeNode(new GroupNodeModel(groupName));
-                if (parent != null) {
-                    groupNode.add(node);
-                    model.insertNodeInto(groupNode, parent, 0);
-                    model.nodeStructureChanged(parent);
-                }
+            BookmarkTreeNode parent;
+            if (selectedNode.isGroup()) {
+                parent = selectedNode;
+            } else {
+                parent = (BookmarkTreeNode) selectedNode.getParent();
             }
+
+            // 新的分组节点
+            BookmarkTreeNode groupNode = new BookmarkTreeNode(new GroupNodeModel(groupName));
+            model.insertNodeInto(groupNode, parent, 0);
         });
 
         // 右键点击事件
@@ -301,17 +307,15 @@ public class BookmarkTree extends JTree {
                     return;
                 }
                 int row = getClosestRowForLocation(e.getX(), e.getY());
-                setSelectionRow(row);
-
-                TreePath path = getSelectionPath();
-                if (null == path) {
+                if (row < 0) {
                     return;
                 }
-                BookmarkTreeNode selectedNode = (BookmarkTreeNode) path.getLastPathComponent();
+                if (!isRowSelected(row)) {
+                    setSelectionRow(row);
+                }
 
-                if (row >= 0 && row < getRowCount()) {
+                if (row < getRowCount()) {
                     popupMenu.show(BookmarkTree.this, e.getX() + 16, e.getY());
-                    imAddGroup.setEnabled(selectedNode.isBookmark());
                 }
             }
         });
@@ -432,6 +436,15 @@ public class BookmarkTree extends JTree {
             BookmarkTreeNode bookmark = ensureActivatedBookmark();
             int index = nextTreeNodeIndex(group, bookmark);
             navigateTo(index);
+        }
+
+        public void activeGroup(BookmarkTreeNode node) {
+            activatedGroup = node;
+            if (node.getChildCount() > 0) {
+                activatedBookmark = (BookmarkTreeNode) node.getChildAt(0);
+            } else {
+                activatedBookmark = null;
+            }
         }
 
         public void activeBookmark(BookmarkTreeNode node) {
