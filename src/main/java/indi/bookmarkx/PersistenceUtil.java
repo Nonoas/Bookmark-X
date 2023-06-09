@@ -46,7 +46,7 @@ public class PersistenceUtil {
 
     public static BookmarkTreeNode generateTreeNode(BookmarkPO po, Project project) {
         if (po.isBookmark()) {
-            BookmarkNodeModel model = (BookmarkNodeModel) BookmarkConverter.convertToModel(project, po);
+            AbstractTreeNodeModel model =  BookmarkConverter.convertToModel(project, po);
             return new BookmarkTreeNode(model);
         }
 

@@ -110,7 +110,7 @@ public class BookmarkPopup {
         fileLabel.addMouseListener(new MouseAdapter() {
             public void mouseClicked(MouseEvent e) {
                 super.mouseClicked(e);
-                BookmarksManager.select(BookmarkPopup.this);
+//                BookmarksManager.select(BookmarkPopup.this);
             }
         });
 

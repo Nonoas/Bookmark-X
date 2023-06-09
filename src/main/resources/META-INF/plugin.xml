@@ -1,5 +1,5 @@
 <idea-plugin>
-    <id>indi.nonoas.worktool.WorkTool-IDEA</id>
+    <id>indi.nonoas.bookmarkx</id>
     <name>Bookmark-X</name>
     <vendor email="nonoaswy@163.com" url="https://www.nonoas.top">XBH</vendor>
 
@@ -7,13 +7,15 @@
 
     <change-notes>
         <![CDATA[
-            2023-06-07：添加导航书签功能，<code>shift+alt+D</code> 添加书签，<code>shift+alt+ ←/→</code> 切换书签
+            2023-06-07: Add navigation bookmark function, <code>shift+alt+D</code> to add bookmark,
+            <code>shift+alt+←/→</code> to switch bookmarks
         ]]>
     </change-notes>
 
     <description>
         <![CDATA[
-            一款用于方便工作的个人插件，用于加快工作效率，减少重复工作，希望能为各位开发者带了便利
+            An extended bookmark that allows you to group and switch up and down,
+            making it easier to read code and avoid getting lost in multiple layers of nested code
         ]]>
     </description>
 
@@ -28,6 +30,14 @@
 
         <projectService serviceImplementation="indi.bookmarkx.MyPersistent"/>
     </extensions>
+
+    <applicationListeners>
+        <listener class="indi.bookmarkx.global.ProjectListener"
+                  topic="com.intellij.openapi.project.ProjectManagerListener"/>
+
+        <listener class="indi.bookmarkx.global.ToolWindowListener"
+                  topic="com.intellij.openapi.wm.ex.ToolWindowManagerListener"/>
+    </applicationListeners>
 
 
     <!--插件动作-->

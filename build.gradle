@@ -32,10 +32,6 @@ tasks.named('initializeIntelliJPlugin') {
     enabled = false
 }
 
-tasks.named('verifyPluginConfiguration') {
-    enabled = false
-}
-
 test {
     useJUnitPlatform()
 }

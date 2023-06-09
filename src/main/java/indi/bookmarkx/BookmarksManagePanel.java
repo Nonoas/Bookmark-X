@@ -26,9 +26,9 @@ import java.util.concurrent.ExecutionException;
  */
 public class BookmarksManagePanel extends JPanel {
 
-    private static volatile BookmarksManagePanel INSTANCE;
-
     private final BookmarkTree tree = new BookmarkTree();
+
+    private final Project project;
 
     /**
      * 标记 tree 是否已经从持久化文件加载完成
@@ -38,11 +38,12 @@ public class BookmarksManagePanel extends JPanel {
     private final JEditorPane jepDesc = new JEditorPane();
 
     private BookmarksManagePanel(Project project) {
+
+        this.project = project;
+
         setLayout(new BorderLayout());
 
         JBScrollPane scrollPane = new JBScrollPane(tree);
-
-        loadTree(project);
 
         jepDesc.setBorder(JBUI.Borders.customLineTop(UIUtil.getSeparatorShadow()));
         jepDesc.setEditable(false);
@@ -57,6 +58,12 @@ public class BookmarksManagePanel extends JPanel {
         // 设置背景色
         setBackground(JBColor.WHITE);
 
+        reInit(project);
+
+    }
+
+    public void reInit(Project project) {
+        loadTree(project);
     }
 
     private void loadTree(Project project) {
@@ -86,19 +93,14 @@ public class BookmarksManagePanel extends JPanel {
         return tree;
     }
 
-    public static BookmarksManagePanel getInstance(Project project) {
-        if (null == INSTANCE) {
-            synchronized (BookmarksManagePanel.class) {
-                if (null == INSTANCE) {
-                    INSTANCE = new BookmarksManagePanel(project);
-                }
-            }
-        }
-        return INSTANCE;
-    }
-
-    public static BookmarksManagePanel getInstance() {
-        return INSTANCE;
+    /**
+     * 创建一个属于项目 project 的标签管理面板
+     *
+     * @param project 项目
+     * @return 一个属于项目 project 的标签管理面板实例
+     */
+    public static BookmarksManagePanel create(Project project) {
+        return new BookmarksManagePanel(project);
     }
 
     public class TreeLoadWorker extends SwingWorker<DefaultTreeModel, Void> {
@@ -153,7 +155,8 @@ public class BookmarksManagePanel extends JPanel {
 
                 private void persistenceSave() {
                     BookmarkPO po = PersistenceUtil.getPersistenceObject(tree);
-                    BookmarksManager.persistentSave(po);
+                    BookmarksManager manager = BookmarksManager.getInstance(project);
+                    manager.persistentSave(po);
                 }
             });
 

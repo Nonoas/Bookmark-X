@@ -2,6 +2,7 @@ package indi.bookmarkx.dialog;
 
 import com.intellij.openapi.editor.event.DocumentEvent;
 import com.intellij.openapi.editor.event.DocumentListener;
+import com.intellij.openapi.project.Project;
 import com.intellij.openapi.ui.ComponentValidator;
 import com.intellij.openapi.ui.DialogWrapper;
 import com.intellij.openapi.ui.ValidationInfo;
@@ -26,10 +27,13 @@ public class BookmarkCreatorDialog extends DialogWrapper {
     private final EditorTextField tfDesc = new EditorTextField();
     private OnOKAction oKAction;
 
+    private Project project;
 
-    public BookmarkCreatorDialog() {
+
+    public BookmarkCreatorDialog(Project project) {
         super(true);
         setTitle("输入书签信息");
+        this.project = project;
         init();
     }
 
@@ -56,7 +60,7 @@ public class BookmarkCreatorDialog extends DialogWrapper {
         tfDesc.setOneLineMode(false);
         tfDesc.setBorder(JBUI.Borders.empty());
 
-        new ComponentValidator(BookmarksManager.project)
+        new ComponentValidator(project)
                 .withValidator(() -> {
                     if (tfName.getText().isBlank()) {
                         return new ValidationInfo("书签名称不能为空", tfName);
