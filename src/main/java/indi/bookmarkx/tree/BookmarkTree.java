@@ -77,79 +77,7 @@ public class BookmarkTree extends JTree {
     private void initDragHandler() {
         setDragEnabled(true);
         setDropMode(DropMode.ON_OR_INSERT);
-        setTransferHandler(new TransferHandler() {
-            @Override
-            public int getSourceActions(JComponent c) {
-                return MOVE;
-            }
-
-            @Override
-            protected Transferable createTransferable(JComponent c) {
-                BookmarkTree tree = (BookmarkTree) c;
-                int[] paths = tree.getSelectionRows();
-                if (paths != null && paths.length > 0) {
-                    return new NodesTransferable(paths);
-                }
-                return null;
-            }
-
-            @Override
-            protected void exportDone(JComponent source, Transferable data, int action) {
-                if (action != MOVE) {
-                    return;
-                }
-                BookmarkTree tree = (BookmarkTree) source;
-                TreePath[] paths = tree.getSelectionPaths();
-                if (paths != null && paths.length > 0) {
-                    DefaultTreeModel model = tree.getModel();
-                    for (TreePath path : paths) {
-                        BookmarkTreeNode node = (BookmarkTreeNode) path.getLastPathComponent();
-//                        model.removeNodeFromParent(node);
-                    }
-                }
-            }
-
-            @Override
-            public boolean canImport(TransferSupport support) {
-                JTree.DropLocation dl = (JTree.DropLocation) support.getDropLocation();
-                TreePath destPath = dl.getPath();
-                if (destPath == null) {
-                    return false;
-                }
-                BookmarkTreeNode targetNode = (BookmarkTreeNode) destPath.getLastPathComponent();
-                return targetNode != null && targetNode.isGroup();
-            }
-
-            @Override
-            public boolean importData(TransferSupport support) {
-                JTree.DropLocation dl = (JTree.DropLocation) support.getDropLocation();
-                BookmarkTree tree = (BookmarkTree) support.getComponent();
-                TreePath destPath = dl.getPath();
-                BookmarkTreeNode targetNode = (BookmarkTreeNode) destPath.getLastPathComponent();
-
-                try {
-                    Transferable transferable = support.getTransferable();
-                    int[] rows = (int[]) transferable.getTransferData(NodesTransferable.NODES_FLAVOR);
-                    DefaultTreeModel model = tree.getModel();
-
-                    List<BookmarkTreeNode> nodes = Arrays.stream(rows)
-                            .mapToObj(tree::getNodeForRow)
-                            .collect(Collectors.toList());
-
-                    for (BookmarkTreeNode node : nodes) {
-                        if (!targetNode.isNodeAncestor(node)) {
-                            model.removeNodeFromParent(node);
-                            model.insertNodeInto(node, targetNode, targetNode.getChildCount());
-                        }
-                    }
-                    return true;
-                } catch (Exception e) {
-                    e.printStackTrace();
-                }
-
-                return true;
-            }
-        });
+        setTransferHandler(new DragHandler());
     }
 
     private void initCellRenderer() {
@@ -545,6 +473,7 @@ public class BookmarkTree extends JTree {
 
     // 自定义传输对象
     static class NodesTransferable implements Transferable {
+
         public static final DataFlavor NODES_FLAVOR = new DataFlavor(int[].class, "Tree Rows");
 
         private final int[] rows;
@@ -570,6 +499,73 @@ public class BookmarkTree extends JTree {
             } else {
                 throw new UnsupportedFlavorException(flavor);
             }
+        }
+    }
+
+    static class DragHandler extends TransferHandler {
+
+        @Override
+        public int getSourceActions(JComponent c) {
+            return MOVE;
+        }
+
+        @Override
+        protected Transferable createTransferable(JComponent c) {
+            BookmarkTree tree = (BookmarkTree) c;
+            int[] paths = tree.getSelectionRows();
+            if (paths != null && paths.length > 0) {
+                return new NodesTransferable(paths);
+            }
+            return null;
+        }
+
+        @Override
+        protected void exportDone(JComponent source, Transferable data, int action) {
+            if (action != MOVE) {
+                return;
+            }
+            super.exportDone(source, data, action);
+        }
+
+        @Override
+        public boolean canImport(TransferSupport support) {
+            JTree.DropLocation dl = (JTree.DropLocation) support.getDropLocation();
+            TreePath destPath = dl.getPath();
+            if (destPath == null) {
+                return false;
+            }
+            BookmarkTreeNode targetNode = (BookmarkTreeNode) destPath.getLastPathComponent();
+            return targetNode != null && targetNode.isGroup();
+        }
+
+        @Override
+        public boolean importData(TransferSupport support) {
+            JTree.DropLocation dl = (JTree.DropLocation) support.getDropLocation();
+            BookmarkTree tree = (BookmarkTree) support.getComponent();
+            TreePath destPath = dl.getPath();
+            BookmarkTreeNode targetNode = (BookmarkTreeNode) destPath.getLastPathComponent();
+
+            try {
+                Transferable transferable = support.getTransferable();
+                int[] rows = (int[]) transferable.getTransferData(NodesTransferable.NODES_FLAVOR);
+                DefaultTreeModel model = tree.getModel();
+
+                List<BookmarkTreeNode> nodes = Arrays.stream(rows)
+                        .mapToObj(tree::getNodeForRow)
+                        .collect(Collectors.toList());
+
+                for (BookmarkTreeNode node : nodes) {
+                    if (!targetNode.isNodeAncestor(node)) {
+                        model.removeNodeFromParent(node);
+                        model.insertNodeInto(node, targetNode, targetNode.getChildCount());
+                    }
+                }
+                return true;
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+
+            return true;
         }
     }
 
