@@ -1,12 +1,9 @@
 package indi.bookmarkx;
 
-import com.intellij.openapi.application.Application;
-import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.project.Project;
-import indi.bookmarkx.model.GroupNodeModel;
 import indi.bookmarkx.model.AbstractTreeNodeModel;
 import indi.bookmarkx.model.BookmarkConverter;
-import indi.bookmarkx.model.BookmarkNodeModel;
+import indi.bookmarkx.model.GroupNodeModel;
 import indi.bookmarkx.model.po.BookmarkPO;
 import indi.bookmarkx.tree.BookmarkTree;
 import indi.bookmarkx.tree.BookmarkTreeNode;
@@ -28,8 +25,6 @@ public class PersistenceUtil {
         BookmarkPO po = getPersistenceObject(tree);
         MyPersistent persistent = MyPersistent.getInstance(project);
         persistent.setState(po);
-        Application application = ApplicationManager.getApplication();
-        application.saveSettings();
     }
 
     public static BookmarkPO getPersistenceObject(BookmarkTree tree) {

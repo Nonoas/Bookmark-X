@@ -156,8 +156,14 @@ public class BookmarksManagePanel extends JPanel {
                 }
 
                 private void persistenceSave() {
-                    BookmarksManager manager = BookmarksManager.getInstance(project);
-                    manager.persistentSave();
+                    new SwingWorker<Void, Void>() {
+                        @Override
+                        protected Void doInBackground() throws Exception {
+                            BookmarksManager manager = BookmarksManager.getInstance(project);
+                            manager.persistentSave();
+                            return null;
+                        }
+                    }.execute();
                 }
             });
 

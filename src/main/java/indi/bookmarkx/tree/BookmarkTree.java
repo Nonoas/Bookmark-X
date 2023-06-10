@@ -9,7 +9,6 @@ import com.intellij.openapi.ui.Messages;
 import com.intellij.openapi.util.IconLoader;
 import com.intellij.ui.JBColor;
 import com.intellij.util.ui.JBUI;
-import indi.bookmarkx.BookmarksManager;
 import indi.bookmarkx.common.I18N;
 import indi.bookmarkx.dialog.BookmarkCreatorDialog;
 import indi.bookmarkx.model.BookmarkNodeModel;
@@ -23,13 +22,13 @@ import java.awt.*;
 import java.awt.datatransfer.DataFlavor;
 import java.awt.datatransfer.Transferable;
 import java.awt.datatransfer.UnsupportedFlavorException;
-import java.awt.dnd.*;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
-import java.io.IOException;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 /**
  * @author Nonoas
@@ -66,7 +65,7 @@ public class BookmarkTree extends JTree {
         navigator.activatedGroup = root;
 
 //      TODO 后续需要支持拖拽
-//        initDragHandler();
+        initDragHandler();
 //        initSelectionModel();
         initCellRenderer();
         initTreeListeners();
@@ -76,84 +75,81 @@ public class BookmarkTree extends JTree {
     }
 
     private void initDragHandler() {
-
         setDragEnabled(true);
-        // 创建拖拽手势支持
-        DragSource dragSource = DragSource.getDefaultDragSource();
-        dragSource.createDefaultDragGestureRecognizer(this, DnDConstants.ACTION_MOVE, event -> {
-            // 获取拖拽的路径
-            TreePath path = getSelectionPath();
-            if (null == path) {
-                return;
+        setDropMode(DropMode.ON_OR_INSERT);
+        setTransferHandler(new TransferHandler() {
+            @Override
+            public int getSourceActions(JComponent c) {
+                return MOVE;
             }
 
-            // 获取拖拽的节点
-            BookmarkTreeNode draggedNode = (BookmarkTreeNode) path.getLastPathComponent();
-
-            // 创建传输对象
-            Transferable transferable = new Transferable() {
-
-                // 定义自定义的 DataFlavor
-                private final DataFlavor dataFlavor = new DataFlavor(BookmarkTreeNode.class, "BookmarkTreeNode");
-
-                @Override
-                public DataFlavor[] getTransferDataFlavors() {
-                    return new DataFlavor[]{dataFlavor};
-                }
-
-                @Override
-                public boolean isDataFlavorSupported(DataFlavor flavor) {
-                    return flavor.equals(dataFlavor);
-                }
-
-                @Override
-                public Object getTransferData(DataFlavor flavor) throws UnsupportedFlavorException, IOException {
-                    if (flavor.equals(dataFlavor)) {
-                        return draggedNode;
-                    }
-                    throw new UnsupportedFlavorException(flavor);
-                }
-            };
-
-            // 开始拖拽操作
-            event.startDrag(null, transferable);
-        });
-
-        // 创建拖放目标支持
-        DropTarget dropTarget = new DropTarget(this, new DropTargetAdapter() {
             @Override
-            public void drop(DropTargetDropEvent event) {
+            protected Transferable createTransferable(JComponent c) {
+                BookmarkTree tree = (BookmarkTree) c;
+                int[] paths = tree.getSelectionRows();
+                if (paths != null && paths.length > 0) {
+                    return new NodesTransferable(paths);
+                }
+                return null;
+            }
 
-                // 获取拖拽的节点
-                BookmarkTreeNode draggedNode;
-                BookmarkTreeNode oldNode;
-                try {
-                    oldNode = (BookmarkTreeNode) event.getTransferable().getTransferData(new DataFlavor(BookmarkTreeNode.class, "BookmarkTreeNode"));
-                    draggedNode = new BookmarkTreeNode((BookmarkNodeModel) oldNode.getUserObject());
-                } catch (UnsupportedFlavorException | IOException e) {
-                    e.printStackTrace();
+            @Override
+            protected void exportDone(JComponent source, Transferable data, int action) {
+                if (action != MOVE) {
                     return;
                 }
+                BookmarkTree tree = (BookmarkTree) source;
+                TreePath[] paths = tree.getSelectionPaths();
+                if (paths != null && paths.length > 0) {
+                    DefaultTreeModel model = tree.getModel();
+                    for (TreePath path : paths) {
+                        BookmarkTreeNode node = (BookmarkTreeNode) path.getLastPathComponent();
+//                        model.removeNodeFromParent(node);
+                    }
+                }
+            }
 
-                // 获取目标节点
-                // 获取拖放操作的目标路径
-                TreePath targetPath = getClosestPathForLocation(event.getLocation().x, event.getLocation().y);
-                BookmarkTreeNode targetNode = (BookmarkTreeNode) targetPath.getLastPathComponent();
+            @Override
+            public boolean canImport(TransferSupport support) {
+                JTree.DropLocation dl = (JTree.DropLocation) support.getDropLocation();
+                TreePath destPath = dl.getPath();
+                if (destPath == null) {
+                    return false;
+                }
+                BookmarkTreeNode targetNode = (BookmarkTreeNode) destPath.getLastPathComponent();
+                return targetNode != null && targetNode.isGroup();
+            }
 
-                // 如果目标节点是叶子节点，则将目标节点的父节点作为目标节点
-                if (targetNode.isBookmark()) {
-                    targetNode = (BookmarkTreeNode) targetNode.getParent();
+            @Override
+            public boolean importData(TransferSupport support) {
+                JTree.DropLocation dl = (JTree.DropLocation) support.getDropLocation();
+                BookmarkTree tree = (BookmarkTree) support.getComponent();
+                TreePath destPath = dl.getPath();
+                BookmarkTreeNode targetNode = (BookmarkTreeNode) destPath.getLastPathComponent();
+
+                try {
+                    Transferable transferable = support.getTransferable();
+                    int[] rows = (int[]) transferable.getTransferData(NodesTransferable.NODES_FLAVOR);
+                    DefaultTreeModel model = tree.getModel();
+
+                    List<BookmarkTreeNode> nodes = Arrays.stream(rows)
+                            .mapToObj(tree::getNodeForRow)
+                            .collect(Collectors.toList());
+
+                    for (BookmarkTreeNode node : nodes) {
+                        if (!targetNode.isNodeAncestor(node)) {
+                            model.removeNodeFromParent(node);
+                            model.insertNodeInto(node, targetNode, targetNode.getChildCount());
+                        }
+                    }
+                    return true;
+                } catch (Exception e) {
+                    e.printStackTrace();
                 }
 
-                // 在目标节点下添加拖拽节点
-                model.insertNodeInto(draggedNode, targetNode, targetNode.getChildCount());
-                model.removeNodeFromParent(oldNode);
-
-                // 展开目标节点以显示新的子节点
-                expandPath(targetPath);
+                return true;
             }
         });
-        setDropTarget(dropTarget);
     }
 
     private void initCellRenderer() {
@@ -402,6 +398,15 @@ public class BookmarkTree extends JTree {
         return this.navigator;
     }
 
+    public BookmarkTreeNode getNodeForRow(int row) {
+        TreePath path = getPathForRow(row);
+        if (path != null) {
+            return (BookmarkTreeNode) path.getLastPathComponent();
+        } else {
+            return null;
+        }
+    }
+
     /**
      * 标签树的导航器，与快捷键绑定，用于遍历当前选中的分组下的标签，当前分组的下级分组不会被遍历
      */
@@ -538,34 +543,33 @@ public class BookmarkTree extends JTree {
 
     }
 
-    // 自定义Transferable用于在拖拽操作中传输数据
-    static class TreeTransferable implements Transferable {
-        private final List<TreePath> paths;
+    // 自定义传输对象
+    static class NodesTransferable implements Transferable {
+        public static final DataFlavor NODES_FLAVOR = new DataFlavor(int[].class, "Tree Rows");
 
-        public TreeTransferable(List<TreePath> paths) {
-            this.paths = paths;
-        }
+        private final int[] rows;
 
-        public List<TreePath> getPaths() {
-            return paths;
+        public NodesTransferable(int[] rows) {
+            this.rows = rows;
         }
 
         @Override
         public DataFlavor[] getTransferDataFlavors() {
-            return new DataFlavor[]{DataFlavor.stringFlavor};
+            return new DataFlavor[]{NODES_FLAVOR};
         }
 
         @Override
         public boolean isDataFlavorSupported(DataFlavor flavor) {
-            return flavor.equals(DataFlavor.stringFlavor);
+            return flavor.equals(NODES_FLAVOR);
         }
 
         @Override
-        public Object getTransferData(DataFlavor flavor) {
+        public Object getTransferData(DataFlavor flavor) throws UnsupportedFlavorException {
             if (isDataFlavorSupported(flavor)) {
-                return paths;
+                return rows;
+            } else {
+                throw new UnsupportedFlavorException(flavor);
             }
-            return null;
         }
     }
 
