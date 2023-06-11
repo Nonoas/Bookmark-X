@@ -76,7 +76,7 @@ public class BookmarkTree extends JTree {
 
     private void initDragHandler() {
         setDragEnabled(true);
-        setDropMode(DropMode.ON_OR_INSERT);
+        setDropMode(DropMode.ON);
         setTransferHandler(new DragHandler());
     }
 
@@ -555,7 +555,8 @@ public class BookmarkTree extends JTree {
                         .collect(Collectors.toList());
 
                 for (BookmarkTreeNode node : nodes) {
-                    if (!targetNode.isNodeAncestor(node)) {
+                    // 目标节点不能是拖动节点的后代，拖动节点不能是目标节点的直接子代
+                    if (!targetNode.isNodeAncestor(node) && !targetNode.isNodeChild(node)) {
                         model.removeNodeFromParent(node);
                         model.insertNodeInto(node, targetNode, targetNode.getChildCount());
                     }

@@ -115,7 +115,7 @@ nonoaswy@163.com
 
 [license-shield]: https://img.shields.io/github/license/Nonoas/Bookmark-X.svg?style=flat-square
 
-[license-url]: https://www.mozilla.org/en-US/MPL/2.0/
+[license-url]: https://github.com/Nonoas/Bookmark-X/blob/master/LICENSE
 
 
 

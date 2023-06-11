@@ -1,6 +1,5 @@
 package indi.bookmarkx.tree;
 
-import com.intellij.mock.MockProject;
 import indi.bookmarkx.model.BookmarkNodeModel;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
