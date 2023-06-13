@@ -1,37 +1,30 @@
-# Bookmark-X
+<h1 align="center">
+  <a href="https://github.com/Nonoas/Bookmark-X">
+    <img src=".github/readme/img/logo.svg" alt="Logo" width="50" height="50">
+  </a>
+  Bookmark-X
+</h1>
 
-一个扩展书签，可以进行书签分组，以及通过分组内的书签切换来跳转代码，
-使代码更容易阅读，避免迷失在多层嵌套代码中
+<p align="center">
+  <a href="https://github.com/Nonoas/Bookmark-X"><strong>探索本项目的文档 »</strong></a>
+</p>
 
-<!-- PROJECT SHIELDS -->
+<p align="center">
+  <a href="https://github.com/Nonoas/Bookmark-X/issues">报告Bug</a>
+    ·
+    <a href="https://github.com/Nonoas/Bookmark-X/issues">提出新特性</a>
+</p>
+
+
+一个扩展书签，可以进行书签分组，以及通过分组内的书签切换来跳转代码， 使代码更容易阅读，避免迷失在多层嵌套代码中
+
 [![Contributors][contributors-shield]][contributors-url]
 [![Forks][forks-shield]][forks-url]
 [![Stargazers][stars-shield]][stars-url]
-[![MIT License][license-shield]][license-url]
-
-<!-- PROJECT LOGO -->
-<br />
-
-<p align="center">
-  <a href="https://github.com/Nonoas/Bookmark-X">
-    <img src="images/logo.png" alt="Logo" width="80" height="80">
-  </a>
-
-<h3 align="center">说明文档</h3>
-  <p align="center">
-    一个"完美的"README模板去快速开始你的项目！
-    <br />
-    <a href="https://github.com/Nonoas/Bookmark-X"><strong>探索本项目的文档 »</strong></a>
-    <br />
-    <br />
-    <a href="https://github.com/Nonoas/Bookmark-X/issues">报告Bug</a>
-    ·
-    <a href="https://github.com/Nonoas/Bookmark-X/issues">提出新特性</a>
-  </p>
-</p>
+[![MPL License][license-shield]][license-url]
 
 ## 目录
-
+- [使用说明](#使用说明)
 - [上手指南](#上手指南)
     - [开发前的配置要求](#开发前的配置要求)
     - [安装步骤](#安装步骤)
@@ -44,6 +37,11 @@
 - [作者](#作者)
 - [鸣谢](#鸣谢)
 
+### 使用说明
+
+关于插件的使用请查看 
+[https://www.nonoas.top/archives/bookmark-x](https://www.nonoas.top/archives/bookmark-x)
+
 ### 上手指南
 
 请从本仓库 clone 或者 fork
@@ -55,16 +53,14 @@
 
 ###### **安装步骤**
 
-1. Clone the repo
+使用 git 克隆仓库到本地
 
 ```sh
 git clone https://github.com/Nonoas/Bookmark-X.git
 ```
 
-
 ### 使用到的框架
-
-
+- [IntelliJ Platform Plugin SDK](https://plugins.jetbrains.com/docs/intellij/welcome.html)
 
 ### 贡献者
 
@@ -95,7 +91,6 @@ nonoaswy@163.com
 该项目签署了 MPL2.0 授权许可，详情请参阅 [LICENSE.txt](https://www.mozilla.org/en-US/MPL/2.0/)
 
 ### 鸣谢
-
 
 <!-- links -->
 
