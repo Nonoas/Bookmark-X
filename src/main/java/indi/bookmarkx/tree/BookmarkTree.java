@@ -22,6 +22,7 @@ import java.awt.*;
 import java.awt.datatransfer.DataFlavor;
 import java.awt.datatransfer.Transferable;
 import java.awt.datatransfer.UnsupportedFlavorException;
+import java.awt.event.ActionListener;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.util.Arrays;
@@ -49,29 +50,29 @@ public class BookmarkTree extends JTree {
 
     public BookmarkTree(Project project) {
         super();
+        initData(project);
+        initView();
+        initDragHandler();
+        initCellRenderer();
+        initTreeListeners();
+        initContextMenu();
+    }
+
+    private void initView() {
+        setBorder(JBUI.Borders.empty());
+        setBackground(JBColor.WHITE);
+        setShowsRootHandles(true);
+    }
+
+    private void initData(Project project) {
         this.project = project;
 
-        BookmarkTreeNode root = new BookmarkTreeNode(new GroupNodeModel("ROOT"));
+        BookmarkTreeNode root = new BookmarkTreeNode(new GroupNodeModel(project.getName()));
         model = new DefaultTreeModel(root);
         setModel(model);
 
         getSelectionModel().setSelectionMode(TreeSelectionModel.CONTIGUOUS_TREE_SELECTION);
-
-        setBorder(JBUI.Borders.empty());
-        setBackground(JBColor.WHITE);
-        setRootVisible(false);
-        setShowsRootHandles(true);
-
         navigator.activatedGroup = root;
-
-//      TODO 后续需要支持拖拽
-        initDragHandler();
-//        initSelectionModel();
-        initCellRenderer();
-        initTreeListeners();
-        initContextMenu();
-
-
     }
 
     private void initDragHandler() {
@@ -90,9 +91,14 @@ public class BookmarkTree extends JTree {
                 setBorderSelectionColor(null);
 
                 BookmarkTreeNode node = (BookmarkTreeNode) value;
-                Icon icon = node.isBookmark()
-                        ? IconLoader.getIcon("icons/bookmark.svg", BookmarkTree.class)
-                        : AllIcons.Nodes.Folder;
+                Icon icon = null;
+                if (0 == row) {
+                    icon = AllIcons.Nodes.Module;
+                } else if(row > 0) {
+                    icon = node.isBookmark()
+                            ? IconLoader.getIcon("icons/bookmark.svg", BookmarkTree.class)
+                            : AllIcons.Nodes.Folder;
+                }
                 setIcon(icon);
 
                 return this;
@@ -147,6 +153,10 @@ public class BookmarkTree extends JTree {
         popupMenu.add(imDel);
         popupMenu.add(imAddGroup);
 
+        JBPopupMenu popupMenuRoot = new JBPopupMenu();
+        JBMenuItem imAddGroupRoot = new JBMenuItem(I18N.get("bookmark.addGroup"));
+        popupMenuRoot.add(imAddGroupRoot);
+
         imEdit.addActionListener(e -> {
             TreePath path = getSelectionPath();
             if (null == path) {
@@ -184,7 +194,7 @@ public class BookmarkTree extends JTree {
             }
         });
 
-        imAddGroup.addActionListener(e -> {
+        ActionListener addGroupListener = e -> {
             // 获取选定的节点
             BookmarkTreeNode selectedNode = (BookmarkTreeNode) BookmarkTree.this.getLastSelectedPathComponent();
             if (null == selectedNode) {
@@ -221,7 +231,10 @@ public class BookmarkTree extends JTree {
             // 新的分组节点
             BookmarkTreeNode groupNode = new BookmarkTreeNode(new GroupNodeModel(groupName));
             model.insertNodeInto(groupNode, parent, 0);
-        });
+        };
+
+        imAddGroup.addActionListener(addGroupListener);
+        imAddGroupRoot.addActionListener(addGroupListener);
 
         // 右键点击事件
         addMouseListener(new MouseAdapter() {
@@ -238,7 +251,9 @@ public class BookmarkTree extends JTree {
                     setSelectionRow(row);
                 }
 
-                if (row < getRowCount()) {
+                if (0 == row) {
+                    popupMenuRoot.show(BookmarkTree.this, e.getX() + 16, e.getY());
+                } else if (row < getRowCount()) {
                     popupMenu.show(BookmarkTree.this, e.getX() + 16, e.getY());
                 }
             }
