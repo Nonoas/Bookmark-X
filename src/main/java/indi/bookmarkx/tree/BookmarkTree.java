@@ -25,10 +25,8 @@ import java.awt.datatransfer.UnsupportedFlavorException;
 import java.awt.event.ActionListener;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
-import java.util.Arrays;
-import java.util.HashMap;
+import java.util.*;
 import java.util.List;
-import java.util.Map;
 import java.util.stream.Collectors;
 
 /**
@@ -77,7 +75,7 @@ public class BookmarkTree extends JTree {
 
     private void initDragHandler() {
         setDragEnabled(true);
-        setDropMode(DropMode.ON);
+        setDropMode(DropMode.ON_OR_INSERT);
         setTransferHandler(new DragHandler());
     }
 
@@ -94,7 +92,7 @@ public class BookmarkTree extends JTree {
                 Icon icon = null;
                 if (0 == row) {
                     icon = AllIcons.Nodes.Module;
-                } else if(row > 0) {
+                } else if (row > 0) {
                     icon = node.isBookmark()
                             ? IconLoader.getIcon("icons/bookmark.svg", BookmarkTree.class)
                             : AllIcons.Nodes.Folder;
@@ -179,6 +177,10 @@ public class BookmarkTree extends JTree {
         });
 
         imDel.addActionListener(e -> {
+            int result = Messages.showOkCancelDialog(project, "是否删除选中的标签", "删除确认", "删除", "取消", Messages.getQuestionIcon());
+            if (result == Messages.CANCEL) {
+                return;
+            }
             // 获取选定的节点
             TreePath[] selectionPaths = BookmarkTree.this.getSelectionPaths();
             if (selectionPaths == null) {
@@ -569,19 +571,43 @@ public class BookmarkTree extends JTree {
                         .mapToObj(tree::getNodeForRow)
                         .collect(Collectors.toList());
 
-                for (BookmarkTreeNode node : nodes) {
-                    // 目标节点不能是拖动节点的后代，拖动节点不能是目标节点的直接子代
-                    if (!targetNode.isNodeAncestor(node) && !targetNode.isNodeChild(node)) {
-                        model.removeNodeFromParent(node);
-                        model.insertNodeInto(node, targetNode, targetNode.getChildCount());
+                int childIndex = dl.getChildIndex();
+
+                System.out.println(childIndex);
+                System.out.println(targetNode);
+
+                if (-1 == childIndex) {
+                    for (BookmarkTreeNode node : nodes) {
+                        // 目标节点不能是拖动节点的后代，拖动节点不能是目标节点的直接子代
+                        if (!targetNode.isNodeAncestor(node) && !targetNode.isNodeChild(node)) {
+                            model.removeNodeFromParent(node);
+                            model.insertNodeInto(node, targetNode, targetNode.getChildCount());
+                        }
+                    }
+                } else {
+                    Collections.reverse(nodes);
+                    for (BookmarkTreeNode node : nodes) {
+                        // 目标节点不能是拖动节点的后代，拖动节点不能是目标节点的直接子代
+                        if (!targetNode.isNodeAncestor(node)) {
+                            if (targetNode.isNodeChild(node)) {
+                                int index = targetNode.getIndex(node);
+                                if (childIndex > index) {
+                                    childIndex = childIndex - 1;
+                                }
+                            }
+                            model.removeNodeFromParent(node);
+                            model.insertNodeInto(node, targetNode, childIndex);
+                        }
                     }
                 }
+                tree.expandPath(destPath);
                 return true;
+
             } catch (Exception e) {
                 e.printStackTrace();
             }
 
-            return true;
+            return false;
         }
     }
 
