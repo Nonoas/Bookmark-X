@@ -4,7 +4,7 @@ plugins {
 }
 
 group 'indi.bookmarkx'
-version '1.0-SNAPSHOT'
+version '1.1.0'
 
 repositories {
     maven { url 'https://maven.aliyun.com/repository/public/' }
@@ -15,21 +15,30 @@ repositories {
 
 dependencies {
     testImplementation 'org.junit.jupiter:junit-jupiter-api:5.7.0'
+    // https://mvnrepository.com/artifact/org.mockito/mockito-all
+    testImplementation 'org.mockito:mockito-all:1.10.19'
     testRuntimeOnly 'org.junit.jupiter:junit-jupiter-engine:5.7.0'
 }
 
 // See https://github.com/JetBrains/gradle-intellij-plugin/
 intellij {
-    version = '2021.2.2'
+//    version = '2021.2.2'
+    version = '2023.1.3'
 }
 
 patchPluginXml {
-    sinceBuild='210.0'
-    untilBuild="213.*"
+    sinceBuild = '210.0'
+    untilBuild = "231.*"
+    changeNotes = "版本支持到 IDEA 2023 版本"
 }
 
 tasks.named('initializeIntelliJPlugin') {
     enabled = false
+}
+
+// 禁止过期方法的校验
+tasks.withType(JavaCompile) {
+    options.compilerArgs << '-Xlint:-deprecation'
 }
 
 test {

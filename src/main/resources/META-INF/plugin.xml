@@ -3,15 +3,6 @@
     <name>Bookmark-X</name>
     <vendor email="nonoaswy@163.com" url="https://www.nonoas.top">XBH</vendor>
 
-    <idea-version since-build="210.0" until-build="213.*"/>
-
-    <change-notes>
-        <![CDATA[
-            2023-06-07: Add navigation bookmark function, <code>shift+alt+D</code> to add bookmark,
-            <code>shift+alt+←/→</code> to switch bookmarks
-        ]]>
-    </change-notes>
-
     <description>
         <![CDATA[
             An extended bookmark that allows you to group and switch up and down,
