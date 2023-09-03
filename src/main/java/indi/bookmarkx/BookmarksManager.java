@@ -87,41 +87,6 @@ public final class BookmarksManager {
 
     private void afterCreateSubmit(BookmarkNodeModel bookmarkModel, Editor editor) {
         addToTree(bookmarkModel);
-        createLineMark(editor);
-    }
-
-    private void createLineMark(Editor editor) {
-        // 获取当前光标所在的行号
-        int lineNumber = editor.getCaretModel().getLogicalPosition().line;
-
-        // 获取标记模型
-        MarkupModel markupModel = editor.getMarkupModel();
-
-        // 创建行标记
-        RangeHighlighter lineMarker = markupModel.addLineHighlighter(lineNumber, 0, null);
-
-        // 设置标记的颜色和图标
-        lineMarker.setGutterIconRenderer(new LineMarkIRenderer());
-
-        // 设置标记的提示文本
-        lineMarker.setLineMarkerRenderer(new LineMarkerRenderer() {
-            @Override
-            public void paint(@NotNull Editor editor, @NotNull Graphics g, @NotNull Rectangle r) {
-
-            }
-
-        });
-
-        // 添加标记到编辑器中
-        lineMarker.setEditorFilter(MarkupEditorFilterFactory.createIsNotDiffFilter());
-
-        // 刷新编辑器以显示标记
-        editor.getScrollingModel().scrollToCaret(ScrollType.CENTER);
-
-        // 如果需要，你还可以保存标记对象以供后续操作
-        // project.getComponent(MyLineMarkerStorage.class).addLineMarker(lineMarker);
-
-        // 可以执行其他操作或处理标记对象
     }
 
     /**
