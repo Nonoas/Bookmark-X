@@ -4,7 +4,6 @@ import com.intellij.openapi.project.Project;
 import com.intellij.ui.JBColor;
 import com.intellij.ui.components.JBScrollPane;
 import com.intellij.util.ui.JBUI;
-import com.intellij.util.ui.UIUtil;
 import indi.bookmarkx.model.BookmarkNodeModel;
 import indi.bookmarkx.model.po.BookmarkPO;
 import indi.bookmarkx.tree.BookmarkTree;
@@ -33,7 +32,7 @@ public class BookmarksManagePanel extends JPanel {
     /**
      * 标记 tree 是否已经从持久化文件加载完成
      */
-    private boolean treeLoaded = false;
+    private volatile boolean treeLoaded = false;
 
     private final JEditorPane jepDesc = new JEditorPane();
 
@@ -47,7 +46,6 @@ public class BookmarksManagePanel extends JPanel {
 
         JBScrollPane scrollPane = new JBScrollPane(tree);
 
-        jepDesc.setBorder(JBUI.Borders.customLineTop(UIUtil.getSeparatorShadow()));
         jepDesc.setEditable(false);
         scrollPane.setBorder(JBUI.Borders.empty());
 

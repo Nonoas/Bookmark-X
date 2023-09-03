@@ -10,13 +10,18 @@ import org.jetbrains.annotations.NotNull;
 
 public class RootWindowFactory implements ToolWindowFactory {
 
+    /**
+     * plugin.xml 文件中的 key 名
+     */
+    public static final String TOOLWINDOW_KEY = "Bookmark-X";
+
     @Override
     public void createToolWindowContent(@NotNull Project project, ToolWindow toolWindow) {
         BookmarksManagePanel panel = BookmarksManagePanel.create(project);
 
         initManager(project, panel);
 
-        ContentFactory contentFactory = ContentFactory.SERVICE.getInstance();
+        ContentFactory contentFactory = ContentFactory.getInstance();
         Content regularRetention = contentFactory.createContent(panel, null, false);
 
         toolWindow.getContentManager().addContent(regularRetention);

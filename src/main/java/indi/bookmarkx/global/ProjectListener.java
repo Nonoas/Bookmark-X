@@ -7,11 +7,6 @@ import org.jetbrains.annotations.NotNull;
 public class ProjectListener implements ProjectManagerListener {
 
     @Override
-    public void projectOpened(@NotNull Project project) {
-
-    }
-
-    @Override
     public void projectClosing(@NotNull Project project) {
         // 处理项目关闭事件
 //        System.out.println("Project closing: " + project.getName());

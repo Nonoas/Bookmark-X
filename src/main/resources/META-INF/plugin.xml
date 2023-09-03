@@ -17,9 +17,13 @@
     <extensions defaultExtensionNs="com.intellij">
         <toolWindow id="Bookmark-X" anchor="left"
                     icon="/icons/logo.svg"
-                    factoryClass="indi.bookmarkx.RootWindowFactory" secondary="false"/>
+                    factoryClass="indi.bookmarkx.RootWindowFactory" secondary="true"/>
 
         <projectService serviceImplementation="indi.bookmarkx.MyPersistent"/>
+
+        <!-- 注册 LineMarkerProvider -->
+        <codeInsight.lineMarkerProvider implementationClass="indi.bookmarkx.action.MyLineMarkerProvider" />
+
     </extensions>
 
     <applicationListeners>
