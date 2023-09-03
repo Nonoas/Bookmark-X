@@ -10,10 +10,11 @@ name: Java CI with Gradle
 on:
   push:
     branches: [ "master" ]
-    path: src/*
+    paths: ["src/**"]
+
   pull_request:
     branches: [ "master" ]
-    path: src/*
+    paths: ["src/**"]
 
 permissions:
   contents: read
@@ -28,7 +29,7 @@ jobs:
     - name: Set up JDK 17
       uses: actions/setup-java@v3
       with:
-        java-version: '11'
+        java-version: '17'
         distribution: 'temurin'
 
     - name: Setup Gradle
