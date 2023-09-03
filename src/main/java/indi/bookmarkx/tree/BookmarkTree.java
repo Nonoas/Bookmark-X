@@ -123,7 +123,11 @@ public class BookmarkTree extends Tree {
             public void mouseClicked(MouseEvent e) {
                 // 双击事件
                 if (SwingUtilities.isLeftMouseButton(e) && e.getClickCount() == 2) {
-                    BookmarkTreeNode selectedNode = getEventSourceNode(e);
+                    TreePath path = BookmarkTree.this.getSelectionPath();
+                    if (Objects.isNull(path)) {
+                        return;
+                    }
+                    BookmarkTreeNode selectedNode = (BookmarkTreeNode) path.getLastPathComponent();
                     if (selectedNode != null && selectedNode.isBookmark()) {
                         BookmarkNodeModel bookmark = (BookmarkNodeModel) selectedNode.getUserObject();
                         bookmark.getOpenFileDescriptor().navigate(true);
