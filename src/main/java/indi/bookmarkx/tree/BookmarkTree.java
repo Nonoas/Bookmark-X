@@ -7,8 +7,7 @@ import com.intellij.openapi.ui.JBMenuItem;
 import com.intellij.openapi.ui.JBPopupMenu;
 import com.intellij.openapi.ui.Messages;
 import com.intellij.openapi.util.IconLoader;
-import com.intellij.ui.JBColor;
-import com.intellij.util.ui.JBUI;
+import com.intellij.ui.treeStructure.Tree;
 import indi.bookmarkx.common.I18N;
 import indi.bookmarkx.dialog.BookmarkCreatorDialog;
 import indi.bookmarkx.model.BookmarkNodeModel;
@@ -25,15 +24,15 @@ import java.awt.datatransfer.UnsupportedFlavorException;
 import java.awt.event.ActionListener;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
-import java.util.*;
 import java.util.List;
+import java.util.*;
 import java.util.stream.Collectors;
 
 /**
  * @author Nonoas
  * @date 2023/6/1
  */
-public class BookmarkTree extends JTree {
+public class BookmarkTree extends Tree {
 
     /**
      * BookmarkTreeNode 缓存，便于通过 UUID 直接取到节点引用
@@ -57,8 +56,6 @@ public class BookmarkTree extends JTree {
     }
 
     private void initView() {
-        setBorder(JBUI.Borders.empty());
-        setBackground(JBColor.WHITE);
         setShowsRootHandles(true);
     }
 

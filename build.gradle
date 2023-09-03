@@ -27,7 +27,7 @@ intellij {
 }
 
 patchPluginXml {
-    sinceBuild = '231.*'
+    sinceBuild = '231.0'
     changeNotes = "不再兼容 IDEA 2023 之前的版本"
 }
 
@@ -36,7 +36,7 @@ tasks.named('initializeIntelliJPlugin') {
 }
 
 // 禁止过期方法的校验
-tasks.withType(JavaCompile) {
+tasks.withType(JavaCompile).configureEach {
     options.compilerArgs << '-Xlint:-deprecation'
 }
 
