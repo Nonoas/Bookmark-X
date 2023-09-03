@@ -21,9 +21,6 @@
 
         <projectService serviceImplementation="indi.bookmarkx.MyPersistent"/>
 
-        <!-- 注册 LineMarkerProvider -->
-        <codeInsight.lineMarkerProvider implementationClass="indi.bookmarkx.action.MyLineMarkerProvider" />
-
     </extensions>
 
     <applicationListeners>
