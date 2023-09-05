@@ -7,6 +7,7 @@ import com.intellij.openapi.ui.JBMenuItem;
 import com.intellij.openapi.ui.JBPopupMenu;
 import com.intellij.openapi.ui.Messages;
 import com.intellij.openapi.util.IconLoader;
+import com.intellij.ui.TreeSpeedSearch;
 import com.intellij.ui.treeStructure.Tree;
 import indi.bookmarkx.common.I18N;
 import indi.bookmarkx.dialog.BookmarkCreatorDialog;
@@ -29,6 +30,8 @@ import java.util.*;
 import java.util.stream.Collectors;
 
 /**
+ * 书签树
+ *
  * @author Nonoas
  * @date 2023/6/1
  */
@@ -56,6 +59,9 @@ public class BookmarkTree extends Tree {
     }
 
     private void initView() {
+        TreeSpeedSearch treeSpeedSearch = new TreeSpeedSearch(this);
+        treeSpeedSearch.setCanExpand(true);
+
         setShowsRootHandles(true);
     }
 
@@ -79,7 +85,13 @@ public class BookmarkTree extends Tree {
     private void initCellRenderer() {
         setCellRenderer(new DefaultTreeCellRenderer() {
             @Override
-            public Component getTreeCellRendererComponent(JTree tree, Object value, boolean sel, boolean expanded, boolean isLeaf, int row, boolean hasFocus) {
+            public Component getTreeCellRendererComponent(JTree tree,
+                                                          Object value,
+                                                          boolean sel,
+                                                          boolean expanded,
+                                                          boolean isLeaf,
+                                                          int row,
+                                                          boolean hasFocus) {
                 super.getTreeCellRendererComponent(tree, value, sel, expanded, isLeaf, row, hasFocus);
                 // 如果节点被选中，则设置背景色为透明
                 setBackgroundSelectionColor(null);
@@ -123,7 +135,11 @@ public class BookmarkTree extends Tree {
             public void mouseClicked(MouseEvent e) {
                 // 双击事件
                 if (SwingUtilities.isLeftMouseButton(e) && e.getClickCount() == 2) {
-                    BookmarkTreeNode selectedNode = getEventSourceNode(e);
+                    TreePath path = BookmarkTree.this.getSelectionPath();
+                    if (Objects.isNull(path)) {
+                        return;
+                    }
+                    BookmarkTreeNode selectedNode = (BookmarkTreeNode) path.getLastPathComponent();
                     if (selectedNode != null && selectedNode.isBookmark()) {
                         BookmarkNodeModel bookmark = (BookmarkNodeModel) selectedNode.getUserObject();
                         bookmark.getOpenFileDescriptor().navigate(true);
