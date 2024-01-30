@@ -1,5 +1,6 @@
 package indi.bookmarkx.model.po;
 
+import javax.xml.bind.annotation.XmlRootElement;
 import java.util.List;
 
 /**
@@ -11,6 +12,7 @@ import java.util.List;
  * @author Nonoas
  * @date 2023/6/5
  */
+@XmlRootElement
 public class BookmarkPO {
 
     private String uuid;
@@ -33,7 +35,6 @@ public class BookmarkPO {
     private String virtualFilePath;
 
     private List<BookmarkPO> children;
-
 
 
     public List<BookmarkPO> getChildren() {

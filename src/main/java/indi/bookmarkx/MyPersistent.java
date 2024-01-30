@@ -5,7 +5,6 @@ import com.intellij.openapi.components.State;
 import com.intellij.openapi.components.Storage;
 import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.project.Project;
-import com.intellij.util.xmlb.annotations.Transient;
 import indi.bookmarkx.model.po.BookmarkPO;
 import org.jetbrains.annotations.NotNull;
 

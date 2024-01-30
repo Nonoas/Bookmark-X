@@ -8,6 +8,7 @@ import indi.bookmarkx.model.BookmarkNodeModel;
 import indi.bookmarkx.model.po.BookmarkPO;
 import indi.bookmarkx.tree.BookmarkTree;
 import indi.bookmarkx.tree.BookmarkTreeNode;
+import indi.bookmarkx.utils.PersistenceUtil;
 
 import javax.swing.*;
 import javax.swing.event.TreeModelEvent;
