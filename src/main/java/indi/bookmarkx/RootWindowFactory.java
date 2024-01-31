@@ -5,7 +5,11 @@ import com.intellij.openapi.wm.ToolWindow;
 import com.intellij.openapi.wm.ToolWindowFactory;
 import com.intellij.ui.content.Content;
 import com.intellij.ui.content.ContentFactory;
+import indi.bookmarkx.action.BookmarkExportAction;
+import indi.bookmarkx.action.BookmarkImportAction;
 import org.jetbrains.annotations.NotNull;
+
+import java.util.Arrays;
 
 
 public class RootWindowFactory implements ToolWindowFactory {
@@ -17,6 +21,9 @@ public class RootWindowFactory implements ToolWindowFactory {
 
     @Override
     public void createToolWindowContent(@NotNull Project project, ToolWindow toolWindow) {
+
+        initTitleAction(toolWindow);
+
         BookmarksManagePanel panel = BookmarksManagePanel.create(project);
 
         initManager(project, panel);
@@ -25,6 +32,14 @@ public class RootWindowFactory implements ToolWindowFactory {
         Content regularRetention = contentFactory.createContent(panel, null, false);
 
         toolWindow.getContentManager().addContent(regularRetention);
+    }
+
+    private void initTitleAction(ToolWindow toolWindow) {
+        BookmarkExportAction exportAction = new BookmarkExportAction();
+        BookmarkImportAction importAction = new BookmarkImportAction();
+
+        // 在 ToolWindow 的标题栏中添加自定义动作按钮
+        toolWindow.setTitleActions(Arrays.asList(importAction, exportAction));
     }
 
     /**

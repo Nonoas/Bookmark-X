@@ -93,9 +93,6 @@ public class BookmarkTree extends Tree {
                                                           int row,
                                                           boolean hasFocus) {
                 super.getTreeCellRendererComponent(tree, value, sel, expanded, isLeaf, row, hasFocus);
-                // 如果节点被选中，则设置背景色为透明
-                setBackgroundSelectionColor(null);
-                setBorderSelectionColor(null);
 
                 BookmarkTreeNode node = (BookmarkTreeNode) value;
                 Icon icon = null;

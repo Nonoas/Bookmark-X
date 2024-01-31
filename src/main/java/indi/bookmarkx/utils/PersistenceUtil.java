@@ -1,6 +1,8 @@
-package indi.bookmarkx;
+package indi.bookmarkx.utils;
 
+import com.google.gson.Gson;
 import com.intellij.openapi.project.Project;
+import indi.bookmarkx.MyPersistent;
 import indi.bookmarkx.model.AbstractTreeNodeModel;
 import indi.bookmarkx.model.BookmarkConverter;
 import indi.bookmarkx.model.GroupNodeModel;
@@ -54,7 +56,7 @@ public class PersistenceUtil {
 
     public static BookmarkTreeNode generateTreeNode(BookmarkPO po, Project project) {
         if (po.isBookmark()) {
-            AbstractTreeNodeModel model =  BookmarkConverter.convertToModel(project, po);
+            AbstractTreeNodeModel model = BookmarkConverter.convertToModel(project, po);
             return new BookmarkTreeNode(model);
         }
 
@@ -69,6 +71,18 @@ public class PersistenceUtil {
             node.add(generateTreeNode(child, project));
         }
         return node;
+    }
+
+    /**
+     * 可以为 null
+     */
+    public static <T> T deepCopy(T object, Class<T> clazz) {
+        if (null == object) {
+            return null;
+        }
+        Gson gson = new Gson();
+        String json = gson.toJson(object, clazz);
+        return gson.fromJson(json, clazz);
     }
 
 }
