@@ -4,7 +4,7 @@ plugins {
 }
 
 group 'indi.bookmarkx'
-version '1.1.1-SNAPSHOT'
+version '1.1.1'
 
 repositories {
     maven { url 'https://maven.aliyun.com/repository/public/' }
@@ -28,7 +28,11 @@ intellij {
 
 patchPluginXml {
     sinceBuild = '231.0'
-    changeNotes = "1.不再兼容 IDEA 2023 之前的版本\n2.添加书签导入导出功能"
+    changeNotes = """
+                  1.不再兼容 IDEA 2023 之前的版本<br>
+                  2.添加书签导入导出功能
+                  """
+
 }
 
 tasks.named('initializeIntelliJPlugin') {
