@@ -115,4 +115,11 @@ public final class BookmarksManager {
     public void setToolWindowRootPanel(@NotNull BookmarksManagePanel panel) {
         this.toolWindowRootPanel = panel;
     }
+
+    /**
+     * 重新加载标签树
+     */
+    public void reload() {
+        toolWindowRootPanel.reInit(project);
+    }
 }

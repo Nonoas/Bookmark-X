@@ -57,7 +57,7 @@ public final class BookmarkExportAction extends AnAction {
     public void saveToJsonFile(BookmarkPO state) {
         BookmarkPO copy = deepCopy(state, BookmarkPO.class);
         String projectDir = FileUtil.toSystemIndependentName(Objects.requireNonNull(project.getBasePath()));
-        String outputPath = projectDir + File.separator + "BookmarkX.json";
+        String outputPath = projectDir + File.separator + "Bookmark_X.json";
         Gson gson = new Gson();
         try (FileWriter fw = new FileWriter(outputPath)) {
             gson.toJson(copy, fw);
