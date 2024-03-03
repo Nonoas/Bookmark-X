@@ -107,7 +107,7 @@ public class BookmarkTree extends Tree {
                     icon = AllIcons.Nodes.Module;
                 } else if (row > 0) {
                     icon = node.isBookmark()
-                            ? IconLoader.getIcon("icons/bookmark.svg", BookmarkTree.class)
+                            ? IconLoader.findIcon("icons/bookmark.svg")
                             : AllIcons.Nodes.Folder;
                 }
                 setIcon(icon);
