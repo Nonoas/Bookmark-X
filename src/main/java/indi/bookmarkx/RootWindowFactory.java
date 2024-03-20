@@ -7,6 +7,7 @@ import com.intellij.ui.content.Content;
 import com.intellij.ui.content.ContentFactory;
 import indi.bookmarkx.action.BookmarkExportAction;
 import indi.bookmarkx.action.BookmarkImportAction;
+import indi.bookmarkx.common.data.BookmarkArrayListTable;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.Arrays;

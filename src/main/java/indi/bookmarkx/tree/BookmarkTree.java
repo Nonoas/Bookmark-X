@@ -10,6 +10,7 @@ import com.intellij.openapi.util.IconLoader;
 import com.intellij.ui.TreeSpeedSearch;
 import com.intellij.ui.treeStructure.Tree;
 import indi.bookmarkx.common.I18N;
+import indi.bookmarkx.common.data.BookmarkArrayListTable;
 import indi.bookmarkx.dialog.BookmarkCreatorDialog;
 import indi.bookmarkx.model.BookmarkNodeModel;
 import indi.bookmarkx.model.GroupNodeModel;
@@ -48,6 +49,8 @@ public class BookmarkTree extends Tree {
 
     private Project project;
 
+    private BookmarkArrayListTable bookmarkArrayListTable;
+
     public BookmarkTree(Project project) {
         super();
         initData(project);
@@ -67,6 +70,7 @@ public class BookmarkTree extends Tree {
 
     private void initData(Project project) {
         this.project = project;
+        bookmarkArrayListTable = BookmarkArrayListTable.getInstance(project);
 
         BookmarkTreeNode root = new BookmarkTreeNode(new GroupNodeModel(project.getName()));
         model = new DefaultTreeModel(root);
@@ -181,6 +185,7 @@ public class BookmarkTree extends Tree {
                         .showAndCallback((name, desc) -> {
                             nodeModel.setName(name);
                             nodeModel.setDesc(desc);
+                            bookmarkArrayListTable.insert(nodeModel);
                             BookmarkTree.this.model.nodeChanged(selectedNode);
                         });
             }
@@ -304,6 +309,10 @@ public class BookmarkTree extends Tree {
      */
     public void remove(BookmarkTreeNode node) {
         model.removeNodeFromParent(node);
+        Object userObject = node.getUserObject();
+        if (userObject instanceof BookmarkNodeModel) {
+            bookmarkArrayListTable.delete((BookmarkNodeModel) node.getUserObject());
+        }
         removeFromCache(node);
     }
 

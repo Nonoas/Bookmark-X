@@ -3,6 +3,7 @@ package indi.bookmarkx.model;
 import com.intellij.openapi.fileEditor.OpenFileDescriptor;
 
 import javax.swing.*;
+import java.util.Objects;
 
 /**
  * 书签数据模型
@@ -30,6 +31,19 @@ public class BookmarkNodeModel extends AbstractTreeNodeModel {
     private OpenFileDescriptor openFileDescriptor;
 
     public BookmarkNodeModel() {
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(uuid);
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        BookmarkNodeModel yourClass = (BookmarkNodeModel) o;
+        return uuid.equals(yourClass.uuid);
     }
 
 
