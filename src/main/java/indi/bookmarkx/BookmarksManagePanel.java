@@ -4,6 +4,7 @@ import com.intellij.openapi.project.Project;
 import com.intellij.ui.JBColor;
 import com.intellij.ui.components.JBScrollPane;
 import com.intellij.util.ui.JBUI;
+import indi.bookmarkx.common.data.BookmarkArrayListTable;
 import indi.bookmarkx.model.BookmarkNodeModel;
 import indi.bookmarkx.model.po.BookmarkPO;
 import indi.bookmarkx.tree.BookmarkTree;
@@ -30,6 +31,7 @@ public class BookmarksManagePanel extends JPanel {
 
     private final Project project;
 
+    private final BookmarkArrayListTable bookmarkArrayListTable;
     /**
      * 标记 tree 是否已经从持久化文件加载完成
      */
@@ -40,6 +42,8 @@ public class BookmarksManagePanel extends JPanel {
     private BookmarksManagePanel(Project project) {
 
         this.project = project;
+
+        bookmarkArrayListTable = BookmarkArrayListTable.getInstance(project);
 
         tree = new BookmarkTree(project);
 
@@ -178,7 +182,8 @@ public class BookmarksManagePanel extends JPanel {
                     jepDesc.setText("");
                 }
             });
-
+            BookmarkArrayListTable bookmarkArrayListTable = BookmarkArrayListTable.getInstance(project);
+            bookmarkArrayListTable.initData(tree);
             treeLoaded = true;
         }
     }
