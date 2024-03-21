@@ -74,6 +74,8 @@ git clone https://github.com/Nonoas/Bookmark-X.git
 4. Push to the Branch (`git push origin feature/AmazingFeature`)
 5. Open a Pull Request
 
+欢迎加入开发者交流QQ群：519310777
+
 ### 版本控制
 
 该项目使用 Git 进行版本管理。您可以在 repository 参看当前可用版本。
