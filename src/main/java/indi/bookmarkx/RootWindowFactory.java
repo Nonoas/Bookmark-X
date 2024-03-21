@@ -1,5 +1,7 @@
 package indi.bookmarkx;
 
+import com.intellij.lang.documentation.ide.impl.DocumentationManagementHelper;
+import com.intellij.lang.documentation.ide.impl.DocumentationManager;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.wm.ToolWindow;
 import com.intellij.openapi.wm.ToolWindowFactory;

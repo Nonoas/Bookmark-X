@@ -7,7 +7,7 @@ import com.intellij.openapi.fileEditor.OpenFileDescriptor;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vfs.VirtualFile;
 import indi.bookmarkx.common.data.BookmarkArrayListTable;
-import indi.bookmarkx.dialog.BookmarkCreatorDialog;
+import indi.bookmarkx.ui.dialog.BookmarkCreatorDialog;
 import indi.bookmarkx.model.BookmarkConverter;
 import indi.bookmarkx.model.BookmarkNodeModel;
 import indi.bookmarkx.painter.LineEndPainter;
@@ -16,7 +16,6 @@ import indi.bookmarkx.tree.BookmarkTreeNode;
 import indi.bookmarkx.utils.PersistenceUtil;
 import org.jetbrains.annotations.NotNull;
 
-import java.util.List;
 import java.util.Objects;
 import java.util.UUID;
 

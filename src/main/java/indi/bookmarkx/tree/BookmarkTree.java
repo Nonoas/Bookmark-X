@@ -11,9 +11,11 @@ import com.intellij.ui.TreeSpeedSearch;
 import com.intellij.ui.treeStructure.Tree;
 import indi.bookmarkx.common.I18N;
 import indi.bookmarkx.common.data.BookmarkArrayListTable;
-import indi.bookmarkx.dialog.BookmarkCreatorDialog;
+import indi.bookmarkx.ui.dialog.BookmarkCreatorDialog;
+import indi.bookmarkx.model.AbstractTreeNodeModel;
 import indi.bookmarkx.model.BookmarkNodeModel;
 import indi.bookmarkx.model.GroupNodeModel;
+import indi.bookmarkx.ui.pannel.ShowBookmarkTipPanel;
 import org.apache.commons.lang3.Validate;
 import org.jsoup.internal.StringUtil;
 
@@ -26,6 +28,7 @@ import java.awt.datatransfer.UnsupportedFlavorException;
 import java.awt.event.ActionListener;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
+import java.awt.event.MouseMotionAdapter;
 import java.util.List;
 import java.util.*;
 import java.util.stream.Collectors;
@@ -129,6 +132,54 @@ public class BookmarkTree extends Tree {
                 navigator.activeBookmark(selectedNode);
             }
         });
+
+        addMouseMotionListener(new MouseMotionAdapter() {
+            @Override
+            public void mouseMoved(MouseEvent e) {
+                // Get the selected node
+                TreePath path = getPathForLocation(e.getX(), e.getY());
+                if (path != null) {
+                    // Show tooltip for the node
+                    showToolTip(getToolTipText(e), e);
+                } else {
+                    if (this.lastPopup != null) {
+                        lastPopup.hide();
+                    }
+                }
+            }
+
+            private AbstractTreeNodeModel getToolTipText(MouseEvent e) {
+                TreePath path = getPathForLocation(e.getX(), e.getY());
+                if (path != null) {
+                    BookmarkTreeNode selectedNode = (BookmarkTreeNode) path.getLastPathComponent();
+                    if (selectedNode != null) {
+                        return (AbstractTreeNodeModel) selectedNode.getUserObject();
+                    }
+                }
+                return null;
+            }
+
+            private Popup lastPopup;
+            private AbstractTreeNodeModel lastAbstractTreeNodeModel;
+            private void showToolTip(AbstractTreeNodeModel abstractTreeNodeModel, MouseEvent e) {
+                if (abstractTreeNodeModel == null) {
+                    return;
+                }
+                if (lastAbstractTreeNodeModel == abstractTreeNodeModel) {
+                    return;
+                }
+                Point adjustedLocation = new Point(e.getLocationOnScreen().x + 10, e.getLocationOnScreen().y + 20); // Adjust position
+                PopupFactory popupFactory = PopupFactory.getSharedInstance();
+                if (this.lastPopup != null) {
+                    lastPopup.hide();
+                }
+                lastAbstractTreeNodeModel = abstractTreeNodeModel;
+                lastPopup = popupFactory.getPopup(e.getComponent(), new ShowBookmarkTipPanel(abstractTreeNodeModel), adjustedLocation.x, adjustedLocation.y);
+                lastPopup.show();
+            }
+
+        });
+
 
         // 鼠标点击事件
         addMouseListener(new MouseAdapter() {
