@@ -1,7 +1,5 @@
 package indi.bookmarkx;
 
-import com.intellij.lang.documentation.ide.impl.DocumentationManagementHelper;
-import com.intellij.lang.documentation.ide.impl.DocumentationManager;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.wm.ToolWindow;
 import com.intellij.openapi.wm.ToolWindowFactory;
@@ -9,7 +7,6 @@ import com.intellij.ui.content.Content;
 import com.intellij.ui.content.ContentFactory;
 import indi.bookmarkx.action.BookmarkExportAction;
 import indi.bookmarkx.action.BookmarkImportAction;
-import indi.bookmarkx.common.data.BookmarkArrayListTable;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.Arrays;

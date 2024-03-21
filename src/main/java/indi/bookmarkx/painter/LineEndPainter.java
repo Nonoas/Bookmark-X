@@ -31,12 +31,14 @@ public class LineEndPainter extends EditorLinePainter {
 
     private BookmarkArrayListTable bookmarkArrayListTable;
 
+    private Project project;
+
     @Override
     public Collection<LineExtensionInfo> getLineExtensions(Project project,  VirtualFile virtualFile, int i) {
-        if (bookmarkArrayListTable == null) {
+        if (this.project != project || bookmarkArrayListTable == null) {
+            this.project = project;
             bookmarkArrayListTable = BookmarkArrayListTable.getInstance(project);
         }
-
         List<LineExtensionInfo> result = new ArrayList<>();
         try {
             List<BookmarkNodeModel> onlyIndex = bookmarkArrayListTable.getOnlyIndex(virtualFile.getPath());
