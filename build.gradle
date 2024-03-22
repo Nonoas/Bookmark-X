@@ -29,7 +29,7 @@ intellij {
 patchPluginXml {
     sinceBuild = '210.0'
     untilBuild = "233.*"
-    changeNotes = "版本支持到 IDEA 2023 版本"
+    changeNotes = "版本支持到 IDEA 2023.3.* 版本"
 }
 
 tasks.named('initializeIntelliJPlugin') {
