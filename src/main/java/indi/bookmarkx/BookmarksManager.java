@@ -6,9 +6,13 @@ import com.intellij.openapi.editor.Editor;
 import com.intellij.openapi.fileEditor.OpenFileDescriptor;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vfs.VirtualFile;
-import indi.bookmarkx.dialog.BookmarkCreatorDialog;
+import indi.bookmarkx.common.data.BookmarkArrayListTable;
+import indi.bookmarkx.ui.dialog.BookmarkCreatorDialog;
 import indi.bookmarkx.model.BookmarkConverter;
 import indi.bookmarkx.model.BookmarkNodeModel;
+import indi.bookmarkx.painter.LineEndPainter;
+import indi.bookmarkx.tree.BookmarkTree;
+import indi.bookmarkx.tree.BookmarkTreeNode;
 import indi.bookmarkx.utils.PersistenceUtil;
 import org.jetbrains.annotations.NotNull;
 
@@ -25,8 +29,11 @@ public final class BookmarksManager {
 
     private BookmarksManagePanel toolWindowRootPanel;
 
+    private BookmarkArrayListTable bookmarkArrayListTable;
+
     public BookmarksManager(Project project) {
         this.project = project;
+        bookmarkArrayListTable = BookmarkArrayListTable.getInstance(project);
     }
 
     public static BookmarksManager getInstance(Project project) {
@@ -46,26 +53,48 @@ public final class BookmarksManager {
         // 获取行号
         int line = caretModel.getLogicalPosition().line;
         int column = caretModel.getLogicalPosition().column;
-        // 获取选中文本
-        String selectedText = caretModel.getCurrentCaret().getSelectedText();
-        selectedText = selectedText == null ? "" : (" " + selectedText + " ");
 
-        String uuid = UUID.randomUUID().toString();
-
+        BookmarkNodeModel bookmarkNodeModel = LineEndPainter.findLine(BookmarkArrayListTable.getInstance(project).getOnlyIndex(file.getPath()), line);
+        String defaultName = file.getName();
+        String defaultDesc = null;
+        boolean add = true;
+        if (bookmarkNodeModel == null) {
+            add = true;
+            // 获取选中文本
+            String selectedText = caretModel.getCurrentCaret().getSelectedText();
+            defaultDesc = selectedText == null ? "" : (" " + selectedText + " ");
+            String uuid = UUID.randomUUID().toString();
+            bookmarkNodeModel = new BookmarkNodeModel();
+            bookmarkNodeModel.setUuid(uuid);
+            bookmarkNodeModel.setLine(line);
+            bookmarkNodeModel.setColumn(column);
+            bookmarkNodeModel.setIcon(file.getFileType().getIcon());
+            bookmarkNodeModel.setIcon(file.getFileType().getIcon());
+            bookmarkNodeModel.setOpenFileDescriptor(new OpenFileDescriptor(project, file, line, column));
+        }else {
+            add = false;
+            defaultName = bookmarkNodeModel.getName();
+            defaultDesc = bookmarkNodeModel.getDesc();
+        }
+        final BookmarkNodeModel finalBookmarkNodeModel = bookmarkNodeModel;
+        final boolean addFlag = add;
         new BookmarkCreatorDialog(project)
-                .defaultName(file.getName())
-                .defaultDesc(selectedText)
+                .defaultName(defaultName)
+                .defaultDesc(defaultDesc)
                 .showAndCallback((name, desc) -> {
-                    BookmarkNodeModel bookmarkModel = new BookmarkNodeModel();
-                    bookmarkModel.setUuid(uuid);
-                    bookmarkModel.setLine(line);
-                    bookmarkModel.setColumn(column);
-                    bookmarkModel.setIcon(file.getFileType().getIcon());
-                    bookmarkModel.setName(name);
-                    bookmarkModel.setIcon(file.getFileType().getIcon());
-                    bookmarkModel.setOpenFileDescriptor(new OpenFileDescriptor(project, file, line, column));
-                    bookmarkModel.setDesc(desc);
-                    submitCreateBookRemark(bookmarkModel, editor);
+                    finalBookmarkNodeModel.setName(name);
+                    finalBookmarkNodeModel.setDesc(desc);
+                    bookmarkArrayListTable.insert(finalBookmarkNodeModel);
+                    if (addFlag) {
+                        submitCreateBookRemark(finalBookmarkNodeModel, editor);
+                    }else {
+                        if (!Objects.isNull(toolWindowRootPanel)) {
+                            BookmarkTree tree = toolWindowRootPanel.tree();
+                            BookmarkTreeNode nodeByModel = tree.getNodeByModel(finalBookmarkNodeModel);
+                            tree.getModel().nodeChanged(nodeByModel);
+                        }
+                    }
+
                 });
     }
 
