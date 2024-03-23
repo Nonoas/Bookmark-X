@@ -88,6 +88,16 @@ nonoaswy@163.com
 *您也可以在贡献者名单中参看所有参与该项目的开发者：*
 
 <!-- readme: collaborators,contributors -start -->
+<table>
+<tr>
+    <td align="center">
+        <a href="https://github.com/Nonoas">
+            <img src="https://avatars.githubusercontent.com/u/54799528?v=4" width="100;" alt="Nonoas"/>
+            <br />
+            <sub><b>Nonoas</b></sub>
+        </a>
+    </td></tr>
+</table>
 <!-- readme: collaborators,contributors -end -->
 
 
