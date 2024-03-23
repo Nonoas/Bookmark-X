@@ -60,9 +60,18 @@ git clone https://github.com/Nonoas/Bookmark-X.git
 ### 使用到的框架
 - [IntelliJ Platform Plugin SDK](https://plugins.jetbrains.com/docs/intellij/welcome.html)
 
+### 版本控制
+
+该项目使用 Git 进行版本管理。您可以在 repository 参看当前可用版本。
+
+### 作者
+
+nonoaswy@163.com
+
 ### 贡献者
 
-请阅读 **CONTRIBUTING.md** 查阅为该项目做出贡献的开发者。
+请阅读 **CONTRIBUTING.md** 查阅为该项目做出贡献的开发者
+
 
 #### 如何参与开源项目
 
@@ -76,15 +85,12 @@ git clone https://github.com/Nonoas/Bookmark-X.git
 
 欢迎加入开发者交流QQ群：519310777
 
-### 版本控制
+*您也可以在贡献者名单中参看所有参与该项目的开发者：*
 
-该项目使用 Git 进行版本管理。您可以在 repository 参看当前可用版本。
+<!-- readme: collaborators,contributors -start -->
+<!-- readme: collaborators,contributors -end -->
 
-### 作者
 
-nonoaswy@163.com
-
-*您也可以在贡献者名单中参看所有参与该项目的开发者。*
 
 ### 版权说明
 
