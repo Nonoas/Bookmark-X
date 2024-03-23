@@ -9,12 +9,12 @@ import com.intellij.openapi.actionSystem.AnAction;
 import com.intellij.openapi.actionSystem.AnActionEvent;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.util.io.FileUtil;
+import com.intellij.openapi.util.text.StringUtil;
 import com.intellij.openapi.wm.ToolWindowId;
 import indi.bookmarkx.MyPersistent;
 import indi.bookmarkx.common.I18N;
 import indi.bookmarkx.model.po.BookmarkPO;
 import org.apache.commons.collections.CollectionUtils;
-import org.apache.commons.lang.StringUtils;
 import org.jetbrains.annotations.NotNull;
 
 import java.io.File;
@@ -87,7 +87,7 @@ public final class BookmarkExportAction extends AnAction {
 
     private void stateTranslate(BookmarkPO po, String dir) {
         String virtualFilePath = po.getVirtualFilePath();
-        if (StringUtils.isNotEmpty(virtualFilePath)) {
+        if (StringUtil.isNotEmpty(virtualFilePath)) {
             po.setVirtualFilePath(virtualFilePath.replace(dir, "$PROJECT_DIR$"));
         }
         if (CollectionUtils.isNotEmpty(po.getChildren())) {

@@ -1,7 +1,10 @@
 package indi.bookmarkx.model.po;
 
 import javax.xml.bind.annotation.XmlRootElement;
+import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.stream.Collectors;
 
 /**
  * 书签持久化对象<br/>
@@ -34,10 +37,13 @@ public class BookmarkPO {
      */
     private String virtualFilePath;
 
-    private List<BookmarkPO> children;
+    private List<BookmarkPO> children = new ArrayList<>();
 
 
     public List<BookmarkPO> getChildren() {
+        List<BookmarkPO> list = children.stream().distinct().collect(Collectors.toList());
+        children.clear();
+        children.addAll(list);
         return children;
     }
 
