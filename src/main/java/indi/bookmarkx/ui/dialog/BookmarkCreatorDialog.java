@@ -1,4 +1,4 @@
-package indi.bookmarkx.dialog;
+package indi.bookmarkx.ui.dialog;
 
 import com.intellij.openapi.editor.event.DocumentEvent;
 import com.intellij.openapi.editor.event.DocumentListener;
@@ -10,7 +10,6 @@ import com.intellij.ui.EditorTextField;
 import com.intellij.ui.components.JBScrollPane;
 import com.intellij.util.ui.JBDimension;
 import com.intellij.util.ui.JBUI;
-import indi.bookmarkx.BookmarksManager;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
