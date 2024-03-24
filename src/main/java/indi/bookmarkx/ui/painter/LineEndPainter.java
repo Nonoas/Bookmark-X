@@ -1,4 +1,4 @@
-package indi.bookmarkx.painter;
+package indi.bookmarkx.ui.painter;
 
 import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.editor.EditorLinePainter;
@@ -10,7 +10,6 @@ import com.intellij.ui.JBColor;
 import indi.bookmarkx.MyPersistent;
 import indi.bookmarkx.common.data.BookmarkArrayListTable;
 import indi.bookmarkx.model.BookmarkNodeModel;
-import indi.bookmarkx.model.po.BookmarkPO;
 
 import java.awt.*;
 import java.util.ArrayList;
@@ -27,8 +26,6 @@ public class LineEndPainter extends EditorLinePainter {
 
     private static final Logger LOG = Logger.getInstance(MyPersistent.class);
 
-    private BookmarkNodeModel bookmarkNodeModel;
-
     private BookmarkArrayListTable bookmarkArrayListTable;
 
     private Project project;
@@ -42,14 +39,15 @@ public class LineEndPainter extends EditorLinePainter {
         List<LineExtensionInfo> result = new ArrayList<>();
         try {
             List<BookmarkNodeModel> onlyIndex = bookmarkArrayListTable.getOnlyIndex(virtualFile.getPath());
-            bookmarkNodeModel = LineEndPainter.findLine(onlyIndex, i);
+            BookmarkNodeModel bookmarkNodeModel = LineEndPainter.findLine(onlyIndex, i);
             if (bookmarkNodeModel == null) {
                 return null;
             }
-            result.add(new LineExtensionInfo(String.format("// %s", bookmarkNodeModel.getName()), new TextAttributes(null, null, JBColor.GRAY, null, Font.PLAIN)));
+            result.add(new LineExtensionInfo(String.format(" // %s", bookmarkNodeModel.getName()),
+                    new TextAttributes(null, null, JBColor.GRAY, null, Font.PLAIN)));
             return result;
         } catch (Exception e) {
-            LOG.error("渲染行尾注释失败 path:"+virtualFile.getPath(), e);
+            LOG.error("渲染行尾注释失败 path:" + virtualFile.getPath(), e);
         }
         return null;
     }
@@ -58,7 +56,9 @@ public class LineEndPainter extends EditorLinePainter {
         if (list == null || list.isEmpty()){
             return null;
         }
-        Optional<BookmarkNodeModel> bookmarkNodeModel1 = list.stream().filter(bookmarkNodeModel -> bookmarkNodeModel.getOpenFileDescriptor().getLine() == i).findFirst();
+        Optional<BookmarkNodeModel> bookmarkNodeModel1 = list.stream()
+                .filter(bookmarkNodeModel -> bookmarkNodeModel.getOpenFileDescriptor().getLine() == i)
+                .findFirst();
         return bookmarkNodeModel1.orElse(null);
     }
 

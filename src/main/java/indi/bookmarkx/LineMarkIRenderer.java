@@ -2,7 +2,7 @@ package indi.bookmarkx;
 
 import com.intellij.openapi.editor.markup.GutterIconRenderer;
 import com.intellij.openapi.util.IconLoader;
-import indi.bookmarkx.tree.BookmarkTree;
+import indi.bookmarkx.ui.tree.BookmarkTree;
 import org.jetbrains.annotations.NotNull;
 
 import javax.swing.*;

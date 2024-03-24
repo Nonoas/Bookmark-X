@@ -22,7 +22,7 @@
 
         <projectService serviceImplementation="indi.bookmarkx.MyPersistent"/>
 
-        <editor.linePainter implementation="indi.bookmarkx.painter.LineEndPainter"/>
+        <editor.linePainter implementation="indi.bookmarkx.ui.painter.LineEndPainter"/>
 
         <editorFactoryDocumentListener implementation="indi.bookmarkx.global.BookmarkDocumentListener"/>
 
