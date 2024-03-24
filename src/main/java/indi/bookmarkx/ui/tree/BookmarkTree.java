@@ -1,4 +1,4 @@
-package indi.bookmarkx.tree;
+package indi.bookmarkx.ui.tree;
 
 import com.intellij.icons.AllIcons;
 import com.intellij.openapi.project.Project;
@@ -6,8 +6,11 @@ import com.intellij.openapi.ui.InputValidatorEx;
 import com.intellij.openapi.ui.JBMenuItem;
 import com.intellij.openapi.ui.JBPopupMenu;
 import com.intellij.openapi.ui.Messages;
+import com.intellij.openapi.ui.popup.JBPopup;
+import com.intellij.openapi.ui.popup.JBPopupFactory;
 import com.intellij.openapi.util.IconLoader;
 import com.intellij.ui.TreeSpeedSearch;
+import com.intellij.ui.awt.RelativePoint;
 import com.intellij.ui.treeStructure.Tree;
 import indi.bookmarkx.common.I18N;
 import indi.bookmarkx.common.data.BookmarkArrayListTable;
@@ -15,7 +18,7 @@ import indi.bookmarkx.ui.dialog.BookmarkCreatorDialog;
 import indi.bookmarkx.model.AbstractTreeNodeModel;
 import indi.bookmarkx.model.BookmarkNodeModel;
 import indi.bookmarkx.model.GroupNodeModel;
-import indi.bookmarkx.ui.pannel.ShowBookmarkTipPanel;
+import indi.bookmarkx.ui.pannel.BookmarkTipPanel;
 import org.apache.commons.lang3.Validate;
 import org.jsoup.internal.StringUtil;
 
@@ -107,7 +110,7 @@ public class BookmarkTree extends Tree {
                     icon = AllIcons.Nodes.Module;
                 } else if (row > 0) {
                     icon = node.isBookmark()
-                            ? IconLoader.getIcon("icons/bookmark.svg", BookmarkTree.class)
+                            ? IconLoader.findIcon("icons/bookmark.svg")
                             : AllIcons.Nodes.Folder;
                 }
                 setIcon(icon);
@@ -143,7 +146,7 @@ public class BookmarkTree extends Tree {
                     showToolTip(getToolTipText(e), e);
                 } else {
                     if (this.lastPopup != null) {
-                        lastPopup.hide();
+                        lastPopup.cancel();
                     }
                 }
             }
@@ -159,8 +162,9 @@ public class BookmarkTree extends Tree {
                 return null;
             }
 
-            private Popup lastPopup;
+            private JBPopup lastPopup;
             private AbstractTreeNodeModel lastAbstractTreeNodeModel;
+
             private void showToolTip(AbstractTreeNodeModel abstractTreeNodeModel, MouseEvent e) {
                 if (abstractTreeNodeModel == null) {
                     return;
@@ -168,14 +172,20 @@ public class BookmarkTree extends Tree {
                 if (lastAbstractTreeNodeModel == abstractTreeNodeModel) {
                     return;
                 }
-                Point adjustedLocation = new Point(e.getLocationOnScreen().x + 10, e.getLocationOnScreen().y + 20); // Adjust position
-                PopupFactory popupFactory = PopupFactory.getSharedInstance();
                 if (this.lastPopup != null) {
-                    lastPopup.hide();
+                    lastPopup.cancel();
                 }
                 lastAbstractTreeNodeModel = abstractTreeNodeModel;
-                lastPopup = popupFactory.getPopup(e.getComponent(), new ShowBookmarkTipPanel(abstractTreeNodeModel), adjustedLocation.x, adjustedLocation.y);
-                lastPopup.show();
+
+                JBPopupFactory popupFactory = JBPopupFactory.getInstance();
+                lastPopup = popupFactory.createComponentPopupBuilder(new BookmarkTipPanel(lastAbstractTreeNodeModel), null)
+                        .setFocusable(true)
+                        .setResizable(true)
+                        .setRequestFocus(true)
+                        .createPopup();
+
+                Point adjustedLocation = new Point(e.getLocationOnScreen().x + 5, e.getLocationOnScreen().y + 10); // Adjust position
+                lastPopup.show(RelativePoint.fromScreen(adjustedLocation));
             }
 
         });

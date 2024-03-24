@@ -1,4 +1,4 @@
-package indi.bookmarkx.tree;
+package indi.bookmarkx.ui.tree;
 
 import indi.bookmarkx.model.AbstractTreeNodeModel;
 
