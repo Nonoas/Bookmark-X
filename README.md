@@ -96,13 +96,6 @@ nonoaswy@163.com
             <br />
             <sub><b>Nonoas</b></sub>
         </a>
-    </td>
-    <td align="center">
-        <a href="https://github.com/codeleep">
-            <img src="https://avatars.githubusercontent.com/u/56161468?v=4" width="100;" alt="codeleep"/>
-            <br />
-            <sub><b>Codeleep</b></sub>
-        </a>
     </td></tr>
 </table>
 <!-- readme: collaborators,contributors -end -->
