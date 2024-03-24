@@ -29,7 +29,9 @@ intellij {
 patchPluginXml {
     sinceBuild = '210.0'
     untilBuild = "233.*"
-    changeNotes = "版本支持到 IDEA 2023.3.* 版本"
+    changeNotes = "1. 版本支持到 IDEA 2023.3.*<br>" +
+            "2. 支持行尾显示书签标题<br>" +
+            "3. 书签描述改用鼠标悬停方式显示"
 }
 
 tasks.named('initializeIntelliJPlugin') {

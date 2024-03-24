@@ -1,14 +1,16 @@
-package indi.bookmarkx;
+package indi.bookmarkx.ui.pannel;
 
 import com.intellij.openapi.project.Project;
 import com.intellij.ui.JBColor;
 import com.intellij.ui.components.JBScrollPane;
 import com.intellij.util.ui.JBUI;
+import indi.bookmarkx.BookmarksManager;
+import indi.bookmarkx.MyPersistent;
 import indi.bookmarkx.common.data.BookmarkArrayListTable;
 import indi.bookmarkx.model.BookmarkNodeModel;
 import indi.bookmarkx.model.po.BookmarkPO;
-import indi.bookmarkx.tree.BookmarkTree;
-import indi.bookmarkx.tree.BookmarkTreeNode;
+import indi.bookmarkx.ui.tree.BookmarkTree;
+import indi.bookmarkx.ui.tree.BookmarkTreeNode;
 import indi.bookmarkx.utils.PersistenceUtil;
 
 import javax.swing.*;
@@ -37,8 +39,6 @@ public class BookmarksManagePanel extends JPanel {
      */
     private volatile boolean treeLoaded = false;
 
-    private final JEditorPane jepDesc = new JEditorPane();
-
     private BookmarksManagePanel(Project project) {
 
         this.project = project;
@@ -51,11 +51,9 @@ public class BookmarksManagePanel extends JPanel {
 
         JBScrollPane scrollPane = new JBScrollPane(tree);
 
-        jepDesc.setEditable(false);
         scrollPane.setBorder(JBUI.Borders.empty());
 
         add(scrollPane, BorderLayout.CENTER);
-        add(jepDesc, BorderLayout.SOUTH);
 
         // 设置边框样式
         setBorder(JBUI.Borders.empty(2));
@@ -173,15 +171,6 @@ public class BookmarksManagePanel extends JPanel {
             tree.setModel(treeModel);
             treeModel.nodeStructureChanged((TreeNode) treeModel.getRoot());
 
-            tree.addTreeSelectionListener(event -> {
-                BookmarkTreeNode selectedNode = (BookmarkTreeNode) tree.getLastSelectedPathComponent();
-                if (selectedNode != null && selectedNode.isBookmark()) {
-                    BookmarkNodeModel bookmark = (BookmarkNodeModel) selectedNode.getUserObject();
-                    jepDesc.setText(bookmark.getDesc());
-                } else {
-                    jepDesc.setText("");
-                }
-            });
             BookmarkArrayListTable bookmarkArrayListTable = BookmarkArrayListTable.getInstance(project);
             bookmarkArrayListTable.initData(tree);
             treeLoaded = true;

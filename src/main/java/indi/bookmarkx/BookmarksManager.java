@@ -10,9 +10,10 @@ import indi.bookmarkx.common.data.BookmarkArrayListTable;
 import indi.bookmarkx.ui.dialog.BookmarkCreatorDialog;
 import indi.bookmarkx.model.BookmarkConverter;
 import indi.bookmarkx.model.BookmarkNodeModel;
-import indi.bookmarkx.painter.LineEndPainter;
-import indi.bookmarkx.tree.BookmarkTree;
-import indi.bookmarkx.tree.BookmarkTreeNode;
+import indi.bookmarkx.ui.painter.LineEndPainter;
+import indi.bookmarkx.ui.tree.BookmarkTree;
+import indi.bookmarkx.ui.tree.BookmarkTreeNode;
+import indi.bookmarkx.ui.pannel.BookmarksManagePanel;
 import indi.bookmarkx.utils.PersistenceUtil;
 import org.jetbrains.annotations.NotNull;
 
