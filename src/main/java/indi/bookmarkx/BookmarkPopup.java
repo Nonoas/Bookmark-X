@@ -11,7 +11,7 @@ import com.intellij.ui.WindowMoveListener;
 import com.intellij.util.ui.JBUI;
 import indi.bookmarkx.common.BaseColors;
 import indi.bookmarkx.model.BookmarkNodeModel;
-import indi.bookmarkx.tree.BookmarkTreeNode;
+import indi.bookmarkx.ui.tree.BookmarkTreeNode;
 
 import javax.swing.*;
 import javax.swing.plaf.LayerUI;

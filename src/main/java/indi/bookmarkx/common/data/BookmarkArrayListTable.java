@@ -3,13 +3,10 @@ package indi.bookmarkx.common.data;
 import com.intellij.openapi.components.Service;
 import com.intellij.openapi.project.Project;
 import indi.bookmarkx.model.AbstractTreeNodeModel;
-import indi.bookmarkx.model.BookmarkConverter;
 import indi.bookmarkx.model.BookmarkNodeModel;
-import indi.bookmarkx.model.po.BookmarkPO;
-import indi.bookmarkx.tree.BookmarkTree;
-import indi.bookmarkx.tree.BookmarkTreeNode;
+import indi.bookmarkx.ui.tree.BookmarkTree;
+import indi.bookmarkx.ui.tree.BookmarkTreeNode;
 
-import javax.swing.tree.TreeNode;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Function;

@@ -7,6 +7,7 @@ import com.intellij.ui.content.Content;
 import com.intellij.ui.content.ContentFactory;
 import indi.bookmarkx.action.BookmarkExportAction;
 import indi.bookmarkx.action.BookmarkImportAction;
+import indi.bookmarkx.ui.pannel.BookmarksManagePanel;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.Arrays;
@@ -28,7 +29,7 @@ public class RootWindowFactory implements ToolWindowFactory {
 
         initManager(project, panel);
 
-        ContentFactory contentFactory = ContentFactory.getInstance();
+        ContentFactory contentFactory = ContentFactory.SERVICE.getInstance();
         Content regularRetention = contentFactory.createContent(panel, null, false);
 
         toolWindow.getContentManager().addContent(regularRetention);

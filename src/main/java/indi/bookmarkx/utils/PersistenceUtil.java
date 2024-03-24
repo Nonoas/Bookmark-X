@@ -7,8 +7,8 @@ import indi.bookmarkx.model.AbstractTreeNodeModel;
 import indi.bookmarkx.model.BookmarkConverter;
 import indi.bookmarkx.model.GroupNodeModel;
 import indi.bookmarkx.model.po.BookmarkPO;
-import indi.bookmarkx.tree.BookmarkTree;
-import indi.bookmarkx.tree.BookmarkTreeNode;
+import indi.bookmarkx.ui.tree.BookmarkTree;
+import indi.bookmarkx.ui.tree.BookmarkTreeNode;
 import org.apache.commons.collections.CollectionUtils;
 
 import java.util.ArrayList;
