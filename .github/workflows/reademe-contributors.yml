@@ -3,7 +3,6 @@ on:
   push:
     branches:
       - master
-      - 210
 
 # action 名称
 name: Auto add contributor
