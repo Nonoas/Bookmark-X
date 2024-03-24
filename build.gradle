@@ -35,6 +35,7 @@ patchPluginXml {
 
 }
 
+
 tasks.named('initializeIntelliJPlugin') {
     enabled = false
 }
