@@ -6,16 +6,35 @@ package indi.bookmarkx.model;
  */
 public abstract class AbstractTreeNodeModel {
 
+    private String desc;
+
+    private String name;
+
     public abstract boolean isBookmark();
 
     public boolean isGroup() {
         return !isBookmark();
     }
 
-    public abstract String getName();
+    public void setName(String name) {
+        this.name = name;
+    }
+
+    public String getName() {
+        return name;
+    }
+
+    public String getDesc() {
+        return desc;
+    }
+
+    public void setDesc(String desc) {
+        this.desc = desc;
+    }
 
     @Override
     public String toString() {
         return getName();
     }
+
 }

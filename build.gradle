@@ -7,9 +7,9 @@ group 'indi.bookmarkx'
 version '1.2.0'
 
 repositories {
+    mavenLocal()
     maven { url 'https://maven.aliyun.com/repository/public/' }
     maven { url 'https://maven.aliyun.com/repository/spring/' }
-    mavenLocal()
     mavenCentral()
 }
 

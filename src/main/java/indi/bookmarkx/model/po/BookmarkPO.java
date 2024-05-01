@@ -39,6 +39,15 @@ public class BookmarkPO {
 
     private List<BookmarkPO> children = new ArrayList<>();
 
+    public BookmarkPO() {
+
+    }
+
+    public BookmarkPO(String name, String desc) {
+        this.name = name;
+        this.desc = desc;
+    }
+
 
     public List<BookmarkPO> getChildren() {
         List<BookmarkPO> list = children.stream().distinct().collect(Collectors.toList());
