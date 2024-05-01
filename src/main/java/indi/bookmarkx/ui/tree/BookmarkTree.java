@@ -1,6 +1,5 @@
 package indi.bookmarkx.ui.tree;
 
-import com.intellij.icons.AllIcons;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.ui.InputValidatorEx;
 import com.intellij.openapi.ui.JBMenuItem;
@@ -8,23 +7,30 @@ import com.intellij.openapi.ui.JBPopupMenu;
 import com.intellij.openapi.ui.Messages;
 import com.intellij.openapi.ui.popup.JBPopup;
 import com.intellij.openapi.ui.popup.JBPopupFactory;
-import com.intellij.openapi.util.IconLoader;
 import com.intellij.ui.TreeSpeedSearch;
 import com.intellij.ui.awt.RelativePoint;
 import com.intellij.ui.treeStructure.Tree;
 import indi.bookmarkx.common.I18N;
 import indi.bookmarkx.common.data.BookmarkArrayListTable;
-import indi.bookmarkx.ui.dialog.BookmarkCreatorDialog;
 import indi.bookmarkx.model.AbstractTreeNodeModel;
 import indi.bookmarkx.model.BookmarkNodeModel;
 import indi.bookmarkx.model.GroupNodeModel;
+import indi.bookmarkx.ui.dialog.BookmarkCreatorDialog;
 import indi.bookmarkx.ui.pannel.BookmarkTipPanel;
 import org.apache.commons.lang3.Validate;
 import org.jsoup.internal.StringUtil;
 
-import javax.swing.*;
-import javax.swing.tree.*;
-import java.awt.*;
+import javax.swing.DropMode;
+import javax.swing.JComponent;
+import javax.swing.JTree;
+import javax.swing.SwingUtilities;
+import javax.swing.TransferHandler;
+import javax.swing.tree.DefaultTreeModel;
+import javax.swing.tree.TreeModel;
+import javax.swing.tree.TreeNode;
+import javax.swing.tree.TreePath;
+import javax.swing.tree.TreeSelectionModel;
+import java.awt.Point;
 import java.awt.datatransfer.DataFlavor;
 import java.awt.datatransfer.Transferable;
 import java.awt.datatransfer.UnsupportedFlavorException;
@@ -32,8 +38,12 @@ import java.awt.event.ActionListener;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseMotionAdapter;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
-import java.util.*;
+import java.util.Map;
+import java.util.Objects;
 import java.util.stream.Collectors;
 
 /**
@@ -93,31 +103,7 @@ public class BookmarkTree extends Tree {
     }
 
     private void initCellRenderer() {
-        setCellRenderer(new DefaultTreeCellRenderer() {
-            @Override
-            public Component getTreeCellRendererComponent(JTree tree,
-                                                          Object value,
-                                                          boolean sel,
-                                                          boolean expanded,
-                                                          boolean isLeaf,
-                                                          int row,
-                                                          boolean hasFocus) {
-                super.getTreeCellRendererComponent(tree, value, sel, expanded, isLeaf, row, hasFocus);
-
-                BookmarkTreeNode node = (BookmarkTreeNode) value;
-                Icon icon = null;
-                if (0 == row) {
-                    icon = AllIcons.Nodes.Module;
-                } else if (row > 0) {
-                    icon = node.isBookmark()
-                            ? IconLoader.findIcon("icons/bookmark.svg")
-                            : AllIcons.Nodes.Folder;
-                }
-                setIcon(icon);
-
-                return this;
-            }
-        });
+        setCellRenderer(new BmkTreeCellRenderer());
     }
 
     private void initTreeListeners() {
