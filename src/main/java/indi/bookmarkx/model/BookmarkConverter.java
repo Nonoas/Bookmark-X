@@ -35,6 +35,7 @@ public class BookmarkConverter {
 
             BookmarkPO po = new BookmarkPO();
             po.setName(nodeModel.getName());
+            po.setDesc(nodeModel.getDesc());
             po.setBookmark(false);
 
             return po;
@@ -64,6 +65,7 @@ public class BookmarkConverter {
         } else {
             GroupNodeModel model = new GroupNodeModel();
             model.setName(po.getName());
+            model.setDesc(po.getDesc());
             return model;
         }
     }

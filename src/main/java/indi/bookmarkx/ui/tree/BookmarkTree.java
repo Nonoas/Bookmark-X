@@ -236,20 +236,19 @@ public class BookmarkTree extends Tree {
                 return;
             }
             BookmarkTreeNode selectedNode = (BookmarkTreeNode) path.getLastPathComponent();
-            if (selectedNode.isBookmark()) {
-                BookmarkNodeModel nodeModel = (BookmarkNodeModel) selectedNode.getUserObject();
-                Project project = nodeModel.getOpenFileDescriptor().getProject();
+            AbstractTreeNodeModel nodeModel = (AbstractTreeNodeModel) selectedNode.getUserObject();
 
-                new BookmarkCreatorDialog(project)
-                        .defaultName(nodeModel.getName())
-                        .defaultDesc(nodeModel.getDesc())
-                        .showAndCallback((name, desc) -> {
-                            nodeModel.setName(name);
-                            nodeModel.setDesc(desc);
-                            bookmarkArrayListTable.insert(nodeModel);
-                            BookmarkTree.this.model.nodeChanged(selectedNode);
-                        });
-            }
+            new BookmarkCreatorDialog(project)
+                    .defaultName(nodeModel.getName())
+                    .defaultDesc(nodeModel.getDesc())
+                    .showAndCallback((name, desc) -> {
+                        nodeModel.setName(name);
+                        nodeModel.setDesc(desc);
+                        if (selectedNode.isBookmark()) {
+                            bookmarkArrayListTable.insert((BookmarkNodeModel) nodeModel);
+                        }
+                        BookmarkTree.this.model.nodeChanged(selectedNode);
+                    });
         });
 
         imDel.addActionListener(e -> {
