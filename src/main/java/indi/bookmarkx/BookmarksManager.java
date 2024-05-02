@@ -6,6 +6,7 @@ import com.intellij.openapi.editor.Editor;
 import com.intellij.openapi.fileEditor.OpenFileDescriptor;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vfs.VirtualFile;
+import indi.bookmarkx.common.I18N;
 import indi.bookmarkx.common.data.BookmarkArrayListTable;
 import indi.bookmarkx.ui.dialog.BookmarkCreatorDialog;
 import indi.bookmarkx.model.BookmarkConverter;
@@ -79,7 +80,7 @@ public final class BookmarksManager {
         }
         final BookmarkNodeModel finalBookmarkNodeModel = bookmarkNodeModel;
         final boolean addFlag = add;
-        new BookmarkCreatorDialog(project)
+        new BookmarkCreatorDialog(project, I18N.get("bookmark.create.title"))
                 .defaultName(defaultName)
                 .defaultDesc(defaultDesc)
                 .showAndCallback((name, desc) -> {
@@ -88,7 +89,7 @@ public final class BookmarksManager {
                     bookmarkArrayListTable.insert(finalBookmarkNodeModel);
                     if (addFlag) {
                         submitCreateBookRemark(finalBookmarkNodeModel, editor);
-                    }else {
+                    } else {
                         if (!Objects.isNull(toolWindowRootPanel)) {
                             BookmarkTree tree = toolWindowRootPanel.tree();
                             BookmarkTreeNode nodeByModel = tree.getNodeByModel(finalBookmarkNodeModel);

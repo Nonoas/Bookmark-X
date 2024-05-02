@@ -11,7 +11,6 @@ import javax.swing.JTree;
 import javax.swing.tree.DefaultTreeCellRenderer;
 import java.awt.Color;
 import java.awt.Component;
-import java.awt.Graphics;
 
 /**
  * 标签树节点渲染
@@ -24,7 +23,7 @@ import java.awt.Graphics;
 public class BmkTreeCellRenderer extends DefaultTreeCellRenderer {
 
     public BmkTreeCellRenderer() {
-//        ReflectionUtil.setField(DefaultTreeCellRenderer.class, this, Boolean.TYPE, "fillBackground", false);
+       // ReflectionUtil.setField(DefaultTreeCellRenderer.class, this, Boolean.TYPE, "fillBackground", false);
     }
 
     @Override
@@ -68,10 +67,5 @@ public class BmkTreeCellRenderer extends DefaultTreeCellRenderer {
     @Override
     public Color getBorderSelectionColor() {
         return BaseColors.TRANSPARENT;
-    }
-
-    @Override
-    public void paint(Graphics g) {
-        super.paint(g);
     }
 }

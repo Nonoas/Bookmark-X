@@ -224,7 +224,7 @@ public class BookmarkTree extends Tree {
             BookmarkTreeNode selectedNode = (BookmarkTreeNode) path.getLastPathComponent();
             AbstractTreeNodeModel nodeModel = (AbstractTreeNodeModel) selectedNode.getUserObject();
 
-            new BookmarkCreatorDialog(project)
+            new BookmarkCreatorDialog(project, I18N.get("bookmark.create.title"))
                     .defaultName(nodeModel.getName())
                     .defaultDesc(nodeModel.getDesc())
                     .showAndCallback((name, desc) -> {
@@ -264,26 +264,6 @@ public class BookmarkTree extends Tree {
                 return;
             }
 
-            @SuppressWarnings("all")
-            InputValidatorEx validatorEx = inputString -> {
-                if (StringUtil.isBlank(inputString))
-                    return I18N.get("groupNameNonNullMessage");
-                return null;
-            };
-
-            @SuppressWarnings("all")
-            String groupName = Messages.showInputDialog(
-                    I18N.get("groupNameInputMessage"),
-                    I18N.get("groupName"),
-                    null,
-                    null,
-                    validatorEx
-            );
-
-            if (StringUtil.isBlank(groupName)) {
-                return;
-            }
-
             BookmarkTreeNode parent;
             if (selectedNode.isGroup()) {
                 parent = selectedNode;
@@ -291,9 +271,19 @@ public class BookmarkTree extends Tree {
                 parent = (BookmarkTreeNode) selectedNode.getParent();
             }
 
-            // 新的分组节点
-            BookmarkTreeNode groupNode = new BookmarkTreeNode(new GroupNodeModel(groupName));
-            model.insertNodeInto(groupNode, parent, 0);
+            final GroupNodeModel groupNodeModel = new GroupNodeModel();
+
+            new BookmarkCreatorDialog(project, I18N.get("group.create.title"))
+                    .showAndCallback((name, desc) -> {
+                        groupNodeModel.setName(name);
+                        groupNodeModel.setDesc(desc);
+
+                        // 新的分组节点
+                        BookmarkTreeNode groupNode = new BookmarkTreeNode(groupNodeModel);
+                        model.insertNodeInto(groupNode, parent, 0);
+
+                        BookmarkTree.this.model.nodeChanged(selectedNode);
+                    });
         };
 
         imAddGroup.addActionListener(addGroupListener);
