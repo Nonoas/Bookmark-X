@@ -5,15 +5,15 @@ import com.intellij.ui.components.JBScrollPane;
 import com.intellij.util.ui.HtmlPanel;
 import com.intellij.util.ui.JBUI;
 import indi.bookmarkx.model.AbstractTreeNodeModel;
-import indi.bookmarkx.model.BookmarkNodeModel;
 import indi.bookmarkx.utils.HtmlUtil;
 import org.apache.commons.lang.StringUtils;
 import org.jetbrains.annotations.Nls;
 import org.jetbrains.annotations.NotNull;
 
-import javax.swing.*;
+import javax.swing.JScrollPane;
 import javax.swing.border.Border;
-import java.awt.*;
+import java.awt.BorderLayout;
+import java.awt.Dimension;
 
 /**
  * 用于展示标签树节点的描述信息
@@ -42,15 +42,12 @@ public class BookmarkTipPanel extends JBPanel<BookmarkTipPanel> {
         private final String TITLE_TAG = "h3";
         private final String DESC_TAG = "";
 
-        public TipHtmlPanel(@NotNull AbstractTreeNodeModel abstractTreeNodeModel) {
+        public TipHtmlPanel(@NotNull AbstractTreeNodeModel nodeModel) {
             StringBuilder sb = new StringBuilder();
-            String name = HtmlUtil.wrapText(TITLE_TAG, abstractTreeNodeModel.getName());
+            String name = HtmlUtil.wrapText(TITLE_TAG, nodeModel.getName());
             sb.append(name);
-            if (abstractTreeNodeModel.isBookmark()) {
-                BookmarkNodeModel model = (BookmarkNodeModel) abstractTreeNodeModel;
-                String desc = StringUtils.isNotBlank(model.getDesc()) ? model.getDesc() : "no description";
-                sb.append(desc);
-            }
+            String desc = StringUtils.isNotBlank(nodeModel.getDesc()) ? nodeModel.getDesc() : "no description";
+            sb.append(desc);
             setBody(sb.toString());
             Border borderWithPadding = JBUI.Borders.empty(0, 10, 10, 10);
             setBorder(borderWithPadding);
