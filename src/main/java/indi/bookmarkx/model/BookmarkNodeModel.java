@@ -2,7 +2,7 @@ package indi.bookmarkx.model;
 
 import com.intellij.openapi.fileEditor.OpenFileDescriptor;
 
-import javax.swing.*;
+import javax.swing.Icon;
 import java.util.Objects;
 
 /**
@@ -18,10 +18,6 @@ public class BookmarkNodeModel extends AbstractTreeNodeModel {
     private int index;
     private int line;
     private int column;
-
-
-    private String name;
-    private String desc;
 
     private Icon icon;
 
@@ -44,24 +40,6 @@ public class BookmarkNodeModel extends AbstractTreeNodeModel {
         if (o == null || getClass() != o.getClass()) return false;
         BookmarkNodeModel yourClass = (BookmarkNodeModel) o;
         return uuid.equals(yourClass.uuid);
-    }
-
-
-    @Override
-    public String getName() {
-        return name;
-    }
-
-    public void setName(String name) {
-        this.name = name;
-    }
-
-    public String getDesc() {
-        return desc;
-    }
-
-    public void setDesc(String desc) {
-        this.desc = desc;
     }
 
     public OpenFileDescriptor getOpenFileDescriptor() {

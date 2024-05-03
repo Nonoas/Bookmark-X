@@ -14,5 +14,7 @@ public class BaseColors {
 
     public static final Color PURPLE = new Color(128, 0, 255, 60);
 
+    public static final Color TRANSPARENT = new Color(0, 0, 0, 0);
+
 
 }

@@ -28,17 +28,15 @@ public class BookmarkCreatorDialog extends DialogWrapper {
 
     private Project project;
 
-
-    public BookmarkCreatorDialog(Project project) {
+    public BookmarkCreatorDialog(Project project, String title) {
         super(true);
-        setTitle("输入书签信息");
-        this.project = project;
-        init();
+        initSelf(project, title);
     }
 
-    @Override
-    protected void init() {
-        super.init();
+    private void initSelf(Project project, String title) {
+        setTitle(title);
+        this.project = project;
+        init();
     }
 
     public BookmarkCreatorDialog defaultName(String name) {
@@ -51,11 +49,19 @@ public class BookmarkCreatorDialog extends DialogWrapper {
         return this;
     }
 
+    public BookmarkCreatorDialog namePrompt(String name) {
+        this.tfName.setPlaceholder(name);
+        return this;
+    }
+
+    public BookmarkCreatorDialog descPrompt(String name) {
+        this.tfDesc.setPlaceholder(name);
+        return this;
+    }
+
     @Override
     protected JComponent createCenterPanel() {
 
-        tfName.setPlaceholder("输入展示在标签上的文本");
-        tfDesc.setPlaceholder("输入对标签的详细描述");
         tfDesc.setOneLineMode(false);
         tfDesc.setBorder(JBUI.Borders.empty());
 
@@ -85,7 +91,7 @@ public class BookmarkCreatorDialog extends DialogWrapper {
         constraints.insets = JBUI.insets(5);
 
         // 第一行第一列
-        JLabel lbName = new JLabel("标签");
+        JLabel lbName = new JLabel("名称");
         constraints.gridx = 0;
         constraints.gridy = 0;
         constraints.weightx = 0;
