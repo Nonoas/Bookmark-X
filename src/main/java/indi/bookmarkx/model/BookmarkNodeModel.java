@@ -1,6 +1,10 @@
 package indi.bookmarkx.model;
 
+import com.intellij.openapi.editor.Document;
+import com.intellij.openapi.editor.RangeMarker;
 import com.intellij.openapi.fileEditor.OpenFileDescriptor;
+import com.intellij.openapi.project.Project;
+import com.intellij.openapi.vfs.VirtualFile;
 
 import javax.swing.Icon;
 import java.util.Objects;
@@ -62,8 +66,13 @@ public class BookmarkNodeModel extends AbstractTreeNodeModel {
         return line;
     }
 
-    public void setLine(int line) {
-        this.line = line;
+    /**
+     * 设置当前值时，会同步更新 {@link BookmarkNodeModel#openFileDescriptor}
+     *
+     * @param newLine 新值
+     */
+    public void setLine(int newLine) {
+        this.line = newLine;
     }
 
     public int getColumn() {

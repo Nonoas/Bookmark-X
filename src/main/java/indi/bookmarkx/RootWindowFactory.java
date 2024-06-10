@@ -29,7 +29,7 @@ public class RootWindowFactory implements ToolWindowFactory {
 
         initManager(project, panel);
 
-        ContentFactory contentFactory = ContentFactory.SERVICE.getInstance();
+        ContentFactory contentFactory = ContentFactory.getInstance();
         Content regularRetention = contentFactory.createContent(panel, null, false);
 
         toolWindow.getContentManager().addContent(regularRetention);

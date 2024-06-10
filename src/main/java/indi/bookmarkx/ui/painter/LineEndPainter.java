@@ -57,7 +57,7 @@ public class LineEndPainter extends EditorLinePainter {
             return null;
         }
         Optional<BookmarkNodeModel> bookmarkNodeModel1 = list.stream()
-                .filter(bookmarkNodeModel -> bookmarkNodeModel.getOpenFileDescriptor().getLine() == i)
+                .filter(bookmarkNodeModel -> bookmarkNodeModel.getLine() == i)
                 .findFirst();
         return bookmarkNodeModel1.orElse(null);
     }
