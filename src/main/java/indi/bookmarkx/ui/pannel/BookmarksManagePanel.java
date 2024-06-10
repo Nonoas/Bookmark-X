@@ -1,5 +1,10 @@
 package indi.bookmarkx.ui.pannel;
 
+import com.intellij.openapi.application.ApplicationManager;
+import com.intellij.openapi.diagnostic.Logger;
+import com.intellij.openapi.progress.ProgressIndicator;
+import com.intellij.openapi.progress.ProgressManager;
+import com.intellij.openapi.progress.Task;
 import com.intellij.openapi.project.Project;
 import com.intellij.ui.JBColor;
 import com.intellij.ui.components.JBScrollPane;
@@ -12,14 +17,14 @@ import indi.bookmarkx.model.po.BookmarkPO;
 import indi.bookmarkx.ui.tree.BookmarkTree;
 import indi.bookmarkx.ui.tree.BookmarkTreeNode;
 import indi.bookmarkx.utils.PersistenceUtil;
+import org.jetbrains.annotations.NotNull;
 
-import javax.swing.*;
+import javax.swing.JPanel;
 import javax.swing.event.TreeModelEvent;
 import javax.swing.event.TreeModelListener;
 import javax.swing.tree.DefaultTreeModel;
 import javax.swing.tree.TreeNode;
-import java.awt.*;
-import java.util.concurrent.ExecutionException;
+import java.awt.BorderLayout;
 
 /**
  * 标签目录面板
@@ -29,21 +34,16 @@ import java.util.concurrent.ExecutionException;
  */
 public class BookmarksManagePanel extends JPanel {
 
+    private static final Logger LOG = Logger.getInstance(BookmarksManagePanel.class);
+
     private final BookmarkTree tree;
 
-    private final Project project;
-
-    private final BookmarkArrayListTable bookmarkArrayListTable;
     /**
      * 标记 tree 是否已经从持久化文件加载完成
      */
     private volatile boolean treeLoaded = false;
 
     private BookmarksManagePanel(Project project) {
-
-        this.project = project;
-
-        bookmarkArrayListTable = BookmarkArrayListTable.getInstance(project);
 
         tree = new BookmarkTree(project);
 
@@ -70,7 +70,7 @@ public class BookmarksManagePanel extends JPanel {
     }
 
     private void loadTree(Project project) {
-        new TreeLoadWorker(project, tree).execute();
+        ProgressManager.getInstance().run(new TreeLoadTask(project, tree));
     }
 
     public void prev() {
@@ -106,35 +106,37 @@ public class BookmarksManagePanel extends JPanel {
         return new BookmarksManagePanel(project);
     }
 
-    public class TreeLoadWorker extends SwingWorker<DefaultTreeModel, Void> {
+    class TreeLoadTask extends Task.Backgroundable {
 
         private final Project project;
-
         private final BookmarkTree tree;
+        private DefaultTreeModel treeModel;
 
-        TreeLoadWorker(Project project, BookmarkTree tree) {
-            this.tree = tree;
+        public TreeLoadTask(Project project, BookmarkTree tree) {
+            super(project, "Loading Tree Data");
             this.project = project;
+            this.tree = tree;
         }
 
         @Override
-        protected DefaultTreeModel doInBackground() throws Exception {
-            MyPersistent persistent = MyPersistent.getInstance(project);
-            BookmarkPO rootPO = persistent.getState();
-            BookmarkTreeNode root = PersistenceUtil.generateTreeNode(rootPO, project);
-            return new DefaultTreeModel(root);
-        }
-
-        @Override
-        protected void done() {
-            DefaultTreeModel treeModel;
+        public void run(@NotNull ProgressIndicator indicator) {
             try {
-                treeModel = get();
-            } catch (InterruptedException | ExecutionException e) {
-                e.printStackTrace();
+                MyPersistent persistent = MyPersistent.getInstance(project);
+                BookmarkPO rootPO = persistent.getState();
+                BookmarkTreeNode root = PersistenceUtil.generateTreeNode(rootPO, project);
+                treeModel = new DefaultTreeModel(root);
+            } catch (Exception e) {
+                // 错误处理
+                LOG.error("初始化标签树失败", e);
+            }
+            LOG.info("初始化标签树成功");
+        }
+
+        @Override
+        public void onSuccess() {
+            if (treeModel == null) {
                 return;
             }
-
             treeModel.addTreeModelListener(new TreeModelListener() {
                 @Override
                 public void treeNodesChanged(TreeModelEvent e) {
@@ -157,23 +159,21 @@ public class BookmarksManagePanel extends JPanel {
                 }
 
                 private void persistenceSave() {
-                    new SwingWorker<Void, Void>() {
-                        @Override
-                        protected Void doInBackground() throws Exception {
-                            BookmarksManager manager = BookmarksManager.getInstance(project);
-                            manager.persistentSave();
-                            return null;
-                        }
-                    }.execute();
+                    ApplicationManager.getApplication().executeOnPooledThread(() -> {
+                        BookmarksManager manager = BookmarksManager.getInstance(project);
+                        manager.persistentSave();
+                    });
                 }
             });
 
-            tree.setModel(treeModel);
-            treeModel.nodeStructureChanged((TreeNode) treeModel.getRoot());
+            ApplicationManager.getApplication().invokeLater(() -> {
+                tree.setModel(treeModel);
+                treeModel.nodeStructureChanged((TreeNode) treeModel.getRoot());
 
-            BookmarkArrayListTable bookmarkArrayListTable = BookmarkArrayListTable.getInstance(project);
-            bookmarkArrayListTable.initData(tree);
-            treeLoaded = true;
+                BookmarkArrayListTable bookmarkArrayListTable = BookmarkArrayListTable.getInstance(project);
+                bookmarkArrayListTable.initData(tree);
+                treeLoaded = true;
+            });
         }
     }
 
