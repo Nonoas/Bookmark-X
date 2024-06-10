@@ -4,7 +4,7 @@ plugins {
 }
 
 group 'indi.bookmarkx'
-version '1.2.1'
+version '1.2.2'
 
 repositories {
     mavenLocal()
@@ -29,9 +29,7 @@ intellij {
 patchPluginXml {
     sinceBuild = '210.0'
     untilBuild = "233.*"
-    changeNotes = "1. 分组支持添加描述<br>" +
-            "2. 分组支持重命名<br>" +
-            "3. 优化树节点样式显示<br>"
+    changeNotes = "1. 修复文本变动时，标签导航定位偏差问题<br>"
 }
 
 tasks.named('initializeIntelliJPlugin') {
