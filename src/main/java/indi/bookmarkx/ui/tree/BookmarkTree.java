@@ -1,5 +1,9 @@
 package indi.bookmarkx.ui.tree;
 
+import com.intellij.openapi.editor.Document;
+import com.intellij.openapi.editor.RangeMarker;
+import com.intellij.openapi.fileEditor.FileDocumentManager;
+import com.intellij.openapi.fileEditor.OpenFileDescriptor;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.ui.InputValidatorEx;
 import com.intellij.openapi.ui.JBMenuItem;
@@ -7,6 +11,7 @@ import com.intellij.openapi.ui.JBPopupMenu;
 import com.intellij.openapi.ui.Messages;
 import com.intellij.openapi.ui.popup.JBPopup;
 import com.intellij.openapi.ui.popup.JBPopupFactory;
+import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.ui.TreeSpeedSearch;
 import com.intellij.ui.awt.RelativePoint;
 import com.intellij.ui.treeStructure.Tree;
@@ -190,7 +195,9 @@ public class BookmarkTree extends Tree {
                     BookmarkTreeNode selectedNode = (BookmarkTreeNode) path.getLastPathComponent();
                     if (selectedNode != null && selectedNode.isBookmark()) {
                         BookmarkNodeModel bookmark = (BookmarkNodeModel) selectedNode.getUserObject();
-                        bookmark.getOpenFileDescriptor().navigate(true);
+
+                        OpenFileDescriptor fileDescriptor = bookmark.getOpenFileDescriptor();
+                        fileDescriptor.navigate(true);
                     }
                 }
 

@@ -58,10 +58,9 @@ public final class BookmarksManager {
 
         BookmarkNodeModel bookmarkNodeModel = LineEndPainter.findLine(BookmarkArrayListTable.getInstance(project).getOnlyIndex(file.getPath()), line);
         String defaultName = file.getName();
-        String defaultDesc = null;
+        String defaultDesc;
         boolean add = true;
         if (bookmarkNodeModel == null) {
-            add = true;
             // 获取选中文本
             String selectedText = caretModel.getCurrentCaret().getSelectedText();
             defaultDesc = selectedText == null ? "" : (" " + selectedText + " ");
