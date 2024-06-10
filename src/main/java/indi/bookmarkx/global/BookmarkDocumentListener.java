@@ -66,11 +66,10 @@ public class BookmarkDocumentListener implements DocumentListener {
             // 计算行变化
             int offset = event.getOffset();
             // 变化所在行
-            int startLineNumber = 0;
-            int endLineNumber = 0;
+            int startLineNumber;
+            int endLineNumber;
             boolean isAdd = true;
             if (newLineCount > oldLineCount) {
-                isAdd = true;
                 startLineNumber = document.getLineNumber(offset) + 1;
                 endLineNumber = startLineNumber + newLineCount - oldLineCount;
             }else {
@@ -105,17 +104,15 @@ public class BookmarkDocumentListener implements DocumentListener {
                     continue;
                 }
                 node.setLine(positionLine + rowGap);
-                node.setOpenFileDescriptor(new OpenFileDescriptor(project, virtualFile, positionLine + rowGap, 0));
             }else {
                 if (positionLine <= changeLine) {
                     continue;
                 }
-                if (positionLine < lineRange.end && positionLine > lineRange.start) {
+                if (positionLine < lineRange.end) {
                     removeList.add(node);
                     continue;
                 }
                 node.setLine(positionLine - rowGap);
-                node.setOpenFileDescriptor(new OpenFileDescriptor(project, virtualFile, positionLine - rowGap, 0));
             }
             removeList.forEach(bookmarkArrayListTable::delete);
             bookmarksManager.persistentSave();
