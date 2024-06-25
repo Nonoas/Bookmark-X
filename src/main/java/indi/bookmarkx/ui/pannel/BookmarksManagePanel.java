@@ -113,7 +113,7 @@ public class BookmarksManagePanel extends JPanel {
         private DefaultTreeModel treeModel;
 
         public TreeLoadTask(Project project, BookmarkTree tree) {
-            super(project, "Loading Tree Data");
+            super(project, "Loading tree data");
             this.project = project;
             this.tree = tree;
         }

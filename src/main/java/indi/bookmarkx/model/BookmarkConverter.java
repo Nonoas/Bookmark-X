@@ -1,5 +1,6 @@
 package indi.bookmarkx.model;
 
+import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.fileEditor.OpenFileDescriptor;
 import com.intellij.openapi.fileTypes.FileType;
 import com.intellij.openapi.project.Project;
@@ -13,9 +14,11 @@ import indi.bookmarkx.model.po.BookmarkPO;
  */
 public class BookmarkConverter {
 
+    private static final Logger log = Logger.getInstance(BookmarkConverter.class);
+
     public static BookmarkPO convertToPO(AbstractTreeNodeModel model) {
 
-        if (model instanceof BookmarkNodeModel) {
+        if (model instanceof BookmarkNodeModel && model.isBookmark()) {
             BookmarkNodeModel nodeModel = (BookmarkNodeModel) model;
 
             BookmarkPO po = new BookmarkPO();
@@ -27,8 +30,13 @@ public class BookmarkConverter {
             po.setDesc(nodeModel.getDesc());
             po.setBookmark(true);
 
-            VirtualFile file = nodeModel.getOpenFileDescriptor().getFile();
-            po.setVirtualFilePath(file.getPath());
+            OpenFileDescriptor fileDescriptor = nodeModel.getOpenFileDescriptor();
+            if (null != fileDescriptor) {
+                VirtualFile file = fileDescriptor.getFile();
+                po.setVirtualFilePath(file.getPath());
+            } else {
+                log.warn(String.format("%s指向的位置已不存在", nodeModel.getName()));
+            }
             return po;
         } else {
             GroupNodeModel nodeModel = (GroupNodeModel) model;
