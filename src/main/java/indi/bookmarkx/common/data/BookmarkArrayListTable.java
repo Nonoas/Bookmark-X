@@ -61,6 +61,7 @@ public final class BookmarkArrayListTable extends ArrayListTable<BookmarkNodeMod
         }
         toList(bookmarkTreeNode, list);
         return list;
+
     }
 
     private static void toList(BookmarkTreeNode node, List<BookmarkNodeModel> list) {

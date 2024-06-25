@@ -1,5 +1,6 @@
 package indi.bookmarkx;
 
+import com.intellij.openapi.project.DumbAware;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.wm.ToolWindow;
 import com.intellij.openapi.wm.ToolWindowFactory;
@@ -13,7 +14,7 @@ import org.jetbrains.annotations.NotNull;
 import java.util.Arrays;
 
 
-public class RootWindowFactory implements ToolWindowFactory {
+public class RootWindowFactory implements ToolWindowFactory, DumbAware {
 
     /**
      * plugin.xml 文件中的 key 名

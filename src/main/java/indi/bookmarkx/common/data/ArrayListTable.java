@@ -29,7 +29,7 @@ public class ArrayListTable<T> implements DataPool{
         SimpleColumnIndex<Set<T>> index = new SimpleColumnIndex<>();
         dataList.forEach(data -> {
             try {
-                saveHunt(data, function, (SimpleColumnIndex<Set<T>>) index);
+                saveHunt(data, function, index);
             }catch (Exception ignored) {
 
             }
