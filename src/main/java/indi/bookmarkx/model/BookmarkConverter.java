@@ -62,6 +62,9 @@ public class BookmarkConverter {
             model.setName(po.getName());
             model.setDesc(po.getDesc());
 
+            if (po.getVirtualFilePath() == null) {
+                return model;
+            }
             VirtualFile virtualFile = LocalFileSystem.getInstance().findFileByPath(po.getVirtualFilePath());
             if (null == virtualFile) {
                 return model;
