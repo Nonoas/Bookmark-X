@@ -5,6 +5,7 @@ import com.intellij.icons.AllIcons;
 import com.intellij.openapi.util.IconLoader;
 import com.intellij.util.ui.UIUtil;
 import indi.bookmarkx.common.BaseColors;
+import indi.bookmarkx.model.BookmarkNodeModel;
 
 import javax.swing.Icon;
 import javax.swing.JTree;
@@ -48,6 +49,12 @@ public class BmkTreeCellRenderer extends DefaultTreeCellRenderer {
             icon = node.isBookmark()
                     ? IconLoader.findIcon("icons/bookmark.svg")
                     : AllIcons.Nodes.Folder;
+            if (node.isBookmark()) {
+                BookmarkNodeModel model =  (BookmarkNodeModel) node.getUserObject();
+                if (null == model.getOpenFileDescriptor()) {
+                    icon = IconLoader.findIcon("icons/dissmiss.svg");
+                }
+            }
         }
         setIcon(icon);
         return this;
