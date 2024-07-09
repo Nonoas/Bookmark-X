@@ -4,7 +4,7 @@ plugins {
 }
 
 group 'indi.bookmarkx'
-version '1.2.2'
+version '1.2.3'
 
 repositories {
     mavenLocal()
@@ -29,7 +29,7 @@ intellij {
 patchPluginXml {
     sinceBuild = '210.0'
     untilBuild = "233.*"
-    changeNotes = "1. 修复文本变动时，标签导航定位偏差问题<br>"
+    changeNotes = "1. 修复已知的 BUG<br> 2. 添加书签导航目标消失后的图标变化"
 }
 
 tasks.named('initializeIntelliJPlugin') {
