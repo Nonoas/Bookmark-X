@@ -6,7 +6,7 @@ import com.intellij.util.ui.HtmlPanel;
 import com.intellij.util.ui.JBUI;
 import indi.bookmarkx.model.AbstractTreeNodeModel;
 import indi.bookmarkx.utils.HtmlUtil;
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.Nls;
 import org.jetbrains.annotations.NotNull;
 
