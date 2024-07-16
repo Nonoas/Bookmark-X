@@ -4,6 +4,7 @@ plugins {
 }
 
 group 'indi.bookmarkx'
+
 version '2.0.1'
 
 repositories {
@@ -22,13 +23,13 @@ dependencies {
 
 // See https://github.com/JetBrains/gradle-intellij-plugin/
 intellij {
-//    version = '2021.2.2'
-    version = '2023.3.1'
+    version = '2021.2.2'
 }
 
 patchPluginXml {
-    sinceBuild = '231.0'
-    changeNotes = "1. 修复文本变动时，标签导航定位偏差问题<br>"
+    sinceBuild = '210.0'
+    untilBuild = "233.*"
+    changeNotes = "1. 修复已知的 BUG<br> 2. 添加书签导航目标消失后的图标变化"
 }
 
 tasks.named('initializeIntelliJPlugin') {

@@ -191,6 +191,9 @@ public class BookmarkTree extends Tree {
                         BookmarkNodeModel bookmark = (BookmarkNodeModel) selectedNode.getUserObject();
 
                         OpenFileDescriptor fileDescriptor = bookmark.getOpenFileDescriptor();
+                        if (null == fileDescriptor) {
+                            return;
+                        }
                         fileDescriptor.navigate(true);
                     }
                 }
