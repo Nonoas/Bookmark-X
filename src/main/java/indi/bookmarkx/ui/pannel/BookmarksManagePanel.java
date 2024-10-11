@@ -10,7 +10,7 @@ import com.intellij.ui.JBColor;
 import com.intellij.ui.components.JBScrollPane;
 import com.intellij.util.ui.JBUI;
 import indi.bookmarkx.BookmarksManager;
-import indi.bookmarkx.MyPersistent;
+import indi.bookmarkx.persistence.MyPersistent;
 import indi.bookmarkx.common.data.BookmarkArrayListTable;
 import indi.bookmarkx.model.BookmarkNodeModel;
 import indi.bookmarkx.model.po.BookmarkPO;

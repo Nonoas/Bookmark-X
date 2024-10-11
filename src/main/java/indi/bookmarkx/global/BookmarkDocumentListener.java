@@ -12,7 +12,7 @@ import com.intellij.openapi.fileEditor.OpenFileDescriptor;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vfs.VirtualFile;
 import indi.bookmarkx.BookmarksManager;
-import indi.bookmarkx.MyPersistent;
+import indi.bookmarkx.persistence.MyPersistent;
 import indi.bookmarkx.common.data.BookmarkArrayListTable;
 import indi.bookmarkx.model.BookmarkNodeModel;
 import org.apache.commons.collections.CollectionUtils;

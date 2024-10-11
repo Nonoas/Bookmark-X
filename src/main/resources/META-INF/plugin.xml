@@ -20,11 +20,13 @@
                     icon="/icons/logo.svg"
                     factoryClass="indi.bookmarkx.RootWindowFactory" secondary="true"/>
 
-        <projectService serviceImplementation="indi.bookmarkx.MyPersistent"/>
+        <projectService serviceImplementation="indi.bookmarkx.persistence.MyPersistent"/>
 
         <editor.linePainter implementation="indi.bookmarkx.ui.painter.LineEndPainter"/>
 
         <editorFactoryDocumentListener implementation="indi.bookmarkx.global.BookmarkDocumentListener"/>
+
+        <applicationConfigurable instance="indi.bookmarkx.MySettingsConfigurable" />
 
     </extensions>
 

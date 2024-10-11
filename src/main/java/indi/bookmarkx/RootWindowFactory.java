@@ -16,11 +16,6 @@ import java.util.Arrays;
 
 public class RootWindowFactory implements ToolWindowFactory, DumbAware {
 
-    /**
-     * plugin.xml 文件中的 key 名
-     */
-    public static final String TOOLWINDOW_KEY = "Bookmark-X";
-
     @Override
     public void createToolWindowContent(@NotNull Project project, ToolWindow toolWindow) {
 

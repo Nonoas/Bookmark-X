@@ -2,7 +2,7 @@ package indi.bookmarkx.utils;
 
 import com.google.gson.Gson;
 import com.intellij.openapi.project.Project;
-import indi.bookmarkx.MyPersistent;
+import indi.bookmarkx.persistence.MyPersistent;
 import indi.bookmarkx.model.AbstractTreeNodeModel;
 import indi.bookmarkx.model.BookmarkConverter;
 import indi.bookmarkx.model.GroupNodeModel;
