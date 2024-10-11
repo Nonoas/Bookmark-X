@@ -3,6 +3,8 @@
     <name>Bookmark-X</name>
     <vendor email="nonoaswy@163.com" url="https://www.nonoas.top">XBH</vendor>
 
+    <resource-bundle>i18n.i18n</resource-bundle>
+
     <description>
         <![CDATA[
             An extended bookmark that allows you to group and switch up and down,

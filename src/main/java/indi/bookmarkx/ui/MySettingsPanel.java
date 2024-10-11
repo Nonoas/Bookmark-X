@@ -1,21 +1,27 @@
 package indi.bookmarkx.ui;
 
-/**
- * TODO 类描述
- *
- * @author huangshengsheng
- * @date 2024/10/11 14:49
- */
-
+import com.intellij.openapi.ui.ComboBox;
 import com.intellij.ui.components.JBCheckBox;
 import com.intellij.ui.components.JBPanel;
-import com.intellij.openapi.ui.ComboBox;
+import indi.bookmarkx.common.I18N;
+import indi.bookmarkx.common.I18NEnum;
 
-import javax.swing.*;
-import java.awt.*;
+import javax.swing.Box;
+import javax.swing.JLabel;
+import javax.swing.JPanel;
+import java.awt.FlowLayout;
+import java.awt.GridBagConstraints;
+import java.awt.GridBagLayout;
 
+/**
+ * 插件设置面板
+ *
+ * @author Nonoas
+ * @date 2024/10/11 14:49
+ */
 public class MySettingsPanel extends JBPanel<MySettingsPanel> {
-    private final ComboBox<String> languageComboBox;
+
+    private final ComboBox<I18NEnum> languageComboBox;
 
     public MySettingsPanel() {
         // 设置面板布局
@@ -26,8 +32,9 @@ public class MySettingsPanel extends JBPanel<MySettingsPanel> {
         gbc.weightx = 1;
 
         // 添加国际化语言选择
-        languageComboBox = new ComboBox<>(new String[]{"中文", "English"});
-        JLabel selectLanguageLabel = new JLabel("插件语言:");
+        languageComboBox = new ComboBox<>(I18NEnum.values());
+
+        JLabel selectLanguageLabel = new JLabel(I18N.get("setting.language"));
         JPanel languagePanel = new JPanel(new FlowLayout(FlowLayout.LEFT));
         languagePanel.add(selectLanguageLabel);
         languagePanel.add(languageComboBox);
@@ -46,7 +53,13 @@ public class MySettingsPanel extends JBPanel<MySettingsPanel> {
         add(Box.createVerticalStrut(10), gbc);
     }
 
-    public String getLanguage() {
-        return languageComboBox.getSelectedItem().toString();
+    public I18NEnum getLanguage() {
+        I18NEnum selectedItem = (I18NEnum) languageComboBox.getSelectedItem();
+        if (null == selectedItem) {
+            selectedItem = I18NEnum.CHINESE;
+        }
+        return selectedItem;
     }
+
+
 }

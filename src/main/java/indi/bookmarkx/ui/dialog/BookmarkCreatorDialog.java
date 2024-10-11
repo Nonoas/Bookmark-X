@@ -10,6 +10,7 @@ import com.intellij.ui.EditorTextField;
 import com.intellij.ui.components.JBScrollPane;
 import com.intellij.util.ui.JBDimension;
 import com.intellij.util.ui.JBUI;
+import indi.bookmarkx.common.I18N;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -68,7 +69,7 @@ public class BookmarkCreatorDialog extends DialogWrapper {
         new ComponentValidator(project)
                 .withValidator(() -> {
                     if (tfName.getText().isBlank()) {
-                        return new ValidationInfo("书签名称不能为空", tfName);
+                        return new ValidationInfo(I18N.get("bookmarkNameNonNullMessage"), tfName);
                     }
                     return null;
                 })
@@ -91,7 +92,7 @@ public class BookmarkCreatorDialog extends DialogWrapper {
         constraints.insets = JBUI.insets(5);
 
         // 第一行第一列
-        JLabel lbName = new JLabel("名称");
+        JLabel lbName = new JLabel(I18N.get("bookmark.dialog.name"));
         constraints.gridx = 0;
         constraints.gridy = 0;
         constraints.weightx = 0;
@@ -106,7 +107,7 @@ public class BookmarkCreatorDialog extends DialogWrapper {
         panel.add(tfName, constraints);
 
         // 第二行第一列
-        JLabel lbDesc = new JLabel("描述");
+        JLabel lbDesc = new JLabel(I18N.get("bookmark.dialog.desc"));
         constraints.gridx = 0;
         constraints.gridy = 1;
         constraints.weightx = 0;

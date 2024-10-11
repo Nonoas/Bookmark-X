@@ -1,22 +1,25 @@
 package indi.bookmarkx;
 
-/**
- * TODO 类描述
- *
- * @author huangshengsheng
- * @date 2024/10/11 14:48
- */
+
 import com.intellij.openapi.options.Configurable;
-import indi.bookmarkx.persistence.MySettingsPersistence;
+import indi.bookmarkx.common.I18NEnum;
+import indi.bookmarkx.persistence.MySettings;
 import indi.bookmarkx.ui.MySettingsPanel;
 import org.jetbrains.annotations.Nls;
 import org.jetbrains.annotations.Nullable;
 
-import javax.swing.*;
+import javax.swing.JComponent;
 
 import static indi.bookmarkx.common.Constants.PLUGIN_NAME;
 
+/**
+ * 配置类
+ *
+ * @author Nonoas
+ * @date 2024/10/11 14:48
+ */
 public class MySettingsConfigurable implements Configurable {
+
     private MySettingsPanel settingsComponent;
 
     @Nls(capitalization = Nls.Capitalization.Title)
@@ -33,20 +36,20 @@ public class MySettingsConfigurable implements Configurable {
 
     @Override
     public boolean isModified() {
-        MySettingsPersistence settings = MySettingsPersistence.getInstance();
-        return !settingsComponent.getLanguage().equals(settings.someValue);
+        MySettings settings = MySettings.getInstance();
+        return !settingsComponent.getLanguage().name().equals(settings.getState().language);
     }
 
     @Override
     public void apply() {
-        MySettingsPersistence settings = MySettingsPersistence.getInstance();
-        settings.someValue = settingsComponent.getLanguage();
+        MySettings settings = MySettings.getInstance();
+        I18NEnum language = settingsComponent.getLanguage();
+        settings.getState().language = language.name();
     }
 
     @Override
     public void reset() {
-        MySettingsPersistence settings = MySettingsPersistence.getInstance();
-        //settingsComponent.setTextFieldText(settings.someValue);
+        MySettings settings = MySettings.getInstance();
     }
 
     @Override

@@ -3,7 +3,7 @@ package indi.bookmarkx.common;
 /**
  * 全局常量类
  *
- * @author huangshengsheng
+ * @author Nonoas
  * @date 2024/10/11 16:17
  */
 public interface Constants {
