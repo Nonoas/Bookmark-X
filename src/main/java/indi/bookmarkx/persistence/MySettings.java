@@ -5,6 +5,8 @@ import com.intellij.openapi.components.PersistentStateComponent;
 import com.intellij.openapi.components.Service;
 import com.intellij.openapi.components.State;
 import com.intellij.openapi.components.Storage;
+import indi.bookmarkx.common.I18NEnum;
+import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 
 /**
@@ -24,6 +26,9 @@ public final class MySettings implements PersistentStateComponent<MySettings.Sta
 
     @Override
     public @NotNull State getState() {
+        if (StringUtils.isBlank(state.language)) {
+            state.language = I18NEnum.getDefault().name();
+        }
         return state;
     }
 
@@ -34,6 +39,11 @@ public final class MySettings implements PersistentStateComponent<MySettings.Sta
 
     public static MySettings getInstance() {
         return ApplicationManager.getApplication().getService(MySettings.class);
+    }
+
+    //public I18NEnum
+    public I18NEnum getLanguage() {
+        return I18NEnum.valueOf(this.state.language);
     }
 
     public static class State {

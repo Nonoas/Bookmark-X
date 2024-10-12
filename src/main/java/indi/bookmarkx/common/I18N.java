@@ -28,14 +28,6 @@ public class I18N extends AbstractBundle {
     private static void init() {
         MySettings settings = MySettings.getInstance();
         String language = settings.getState().language;
-        if (StringUtils.isBlank(language)) {
-            if (isSupportLocale()) {
-                BUNDLE = ResourceBundle.getBundle(BUNDLE_NAME);
-                return;
-            }
-            BUNDLE = ResourceBundle.getBundle(BUNDLE_NAME, Locale.ENGLISH);
-            return;
-        }
         I18NEnum i18NEnum = I18NEnum.valueOf(language);
         BUNDLE = ResourceBundle.getBundle(BUNDLE_NAME, i18NEnum.getLocale());
     }

@@ -61,5 +61,7 @@ public class MySettingsPanel extends JBPanel<MySettingsPanel> {
         return selectedItem;
     }
 
-
+    public void setLanguage(I18NEnum i18NEnum) {
+        languageComboBox.setItem(i18NEnum);
+    }
 }

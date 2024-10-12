@@ -8,7 +8,7 @@ import java.util.Locale;
  * @since
  */
 public enum I18NEnum {
-    CHINESE("中文", Locale.CHINA),
+    CHINESE("简体中文", Locale.CHINA),
     ENGLISH("English", Locale.ENGLISH),
     FRENCH("En français", Locale.FRENCH),
     ;
@@ -19,6 +19,15 @@ public enum I18NEnum {
     I18NEnum(String label, Locale locale) {
         this.label = label;
         this.locale = locale;
+    }
+
+    public static I18NEnum getDefault() {
+        for (I18NEnum value : values()) {
+            if (value.locale.equals(Locale.getDefault())) {
+                return value;
+            }
+        }
+        return ENGLISH;
     }
 
     public String getLabel() {
