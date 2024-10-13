@@ -2,9 +2,12 @@ package indi.bookmarkx.ui;
 
 import com.intellij.openapi.ui.ComboBox;
 import com.intellij.ui.components.JBCheckBox;
+import com.intellij.ui.components.JBLabel;
 import com.intellij.ui.components.JBPanel;
+import com.intellij.ui.components.JBTextField;
 import indi.bookmarkx.common.I18N;
 import indi.bookmarkx.common.I18NEnum;
+import indi.bookmarkx.persistence.MySettings;
 
 import javax.swing.Box;
 import javax.swing.JLabel;
@@ -12,6 +15,7 @@ import javax.swing.JPanel;
 import java.awt.FlowLayout;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
+import java.awt.event.ItemEvent;
 
 /**
  * 插件设置面板
@@ -22,8 +26,11 @@ import java.awt.GridBagLayout;
 public class MySettingsPanel extends JBPanel<MySettingsPanel> {
 
     private final ComboBox<I18NEnum> languageComboBox;
+    private final JBCheckBox showTipCheckBox = new JBCheckBox("鼠标悬停显示标签描述", true);
+    private final JBTextField jtfDelay = new JBTextField();
 
     public MySettingsPanel() {
+        MySettings settings = MySettings.getInstance();
         // 设置面板布局
         setLayout(new GridBagLayout());
         GridBagConstraints gbc = new GridBagConstraints();
@@ -44,10 +51,29 @@ public class MySettingsPanel extends JBPanel<MySettingsPanel> {
 
         // 添加是否显示提示的选项
         JPanel showTipPanel = new JPanel(new FlowLayout(FlowLayout.LEFT));
-        JBCheckBox showTipCheckBox = new JBCheckBox("标签悬浮框", true);
+
+
         showTipPanel.add(showTipCheckBox);
+
+        showTipCheckBox.addItemListener(e -> {
+            // 当复选框的状态发生变化时，这个方法会被调用
+            jtfDelay.setEnabled(e.getStateChange() == ItemEvent.SELECTED);
+        });
+        if (settings.getTipDelay() >= 0) {
+            jtfDelay.setText(String.valueOf(settings.getTipDelay()));
+        } else {
+            showTipCheckBox.setSelected(false);
+        }
+
         gbc.gridy++;
         add(showTipPanel, gbc);
+
+        gbc.gridx = 1;
+        JPanel delayPanel = new JPanel(new FlowLayout(FlowLayout.LEFT));
+        delayPanel.add(new JBLabel("描述弹框延迟："));
+        delayPanel.add(jtfDelay);
+        delayPanel.add(new JBLabel("ms"));
+        add(delayPanel, gbc);
 
         gbc.weighty = 1;
         add(Box.createVerticalStrut(10), gbc);
@@ -64,4 +90,14 @@ public class MySettingsPanel extends JBPanel<MySettingsPanel> {
     public void setLanguage(I18NEnum i18NEnum) {
         languageComboBox.setItem(i18NEnum);
     }
+
+    public int getTipDelay() {
+        if (!showTipCheckBox.isSelected()) {
+            return -1;
+        } else {
+            String delay = jtfDelay.getText();
+            return Integer.parseInt(delay);
+        }
+    }
+
 }

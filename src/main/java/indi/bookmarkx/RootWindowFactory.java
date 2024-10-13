@@ -46,7 +46,7 @@ public class RootWindowFactory implements ToolWindowFactory, DumbAware {
      * @param panel   当前ToolWindow面板
      */
     private void initManager(Project project, BookmarksManagePanel panel) {
-        BookmarksManager manager = project.getService(BookmarksManager.class);
+        BookmarksManager manager = BookmarksManager.getInstance(project);
         manager.setToolWindowRootPanel(panel);
     }
 

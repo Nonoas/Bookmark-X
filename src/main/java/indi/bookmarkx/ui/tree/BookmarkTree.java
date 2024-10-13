@@ -15,6 +15,7 @@ import indi.bookmarkx.common.data.BookmarkArrayListTable;
 import indi.bookmarkx.model.AbstractTreeNodeModel;
 import indi.bookmarkx.model.BookmarkNodeModel;
 import indi.bookmarkx.model.GroupNodeModel;
+import indi.bookmarkx.persistence.MySettings;
 import indi.bookmarkx.ui.dialog.BookmarkCreatorDialog;
 import indi.bookmarkx.ui.pannel.BookmarkTipPanel;
 import org.apache.commons.lang3.Validate;
@@ -23,6 +24,7 @@ import javax.swing.DropMode;
 import javax.swing.JComponent;
 import javax.swing.JTree;
 import javax.swing.SwingUtilities;
+import javax.swing.Timer;
 import javax.swing.TransferHandler;
 import javax.swing.tree.DefaultTreeModel;
 import javax.swing.tree.TreeModel;
@@ -122,19 +124,43 @@ public class BookmarkTree extends Tree {
         });
 
         addMouseMotionListener(new MouseMotionAdapter() {
+
+            private Timer timer;
+            private TreePath selectedPath;
+
             @Override
             public void mouseMoved(MouseEvent e) {
                 // Get the selected node
                 TreePath path = getPathForLocation(e.getX(), e.getY());
-                if (path != null) {
-                    // Show tooltip for the node
-                    showToolTip(getToolTipText(e), e);
-                } else {
-                    if (this.lastPopup != null) {
-                        lastPopup.cancel();
+                if (path != null ) {
+                    if (Objects.equals(path, selectedPath)) {
+                        return;
                     }
+                    removeTimer();
+                    selectedPath = path;
+
+                    MySettings instance = MySettings.getInstance();
+                    timer = new Timer(instance.getTipDelay(), te -> showToolTip(getToolTipText(e), e));
+                    timer.setRepeats(false);
+                    timer.restart();
+                } else {
+                    selectedPath = null;
+                    lastAbstractTreeNodeModel = null;
+                    removeTimer();
                 }
             }
+
+            private void removeTimer() {
+                if (timer != null) {
+                    timer.stop();
+                    timer = null;
+                }
+
+                if (this.lastPopup != null) {
+                    lastPopup.cancel();
+                }
+            }
+
 
             private AbstractTreeNodeModel getToolTipText(MouseEvent e) {
                 TreePath path = getPathForLocation(e.getX(), e.getY());
@@ -169,7 +195,8 @@ public class BookmarkTree extends Tree {
                         .setRequestFocus(true)
                         .createPopup();
 
-                Point adjustedLocation = new Point(e.getLocationOnScreen().x + 5, e.getLocationOnScreen().y + 10); // Adjust position
+                Point adjustedLocation = new Point(e.getLocationOnScreen().x + 10, e.getLocationOnScreen().y + 10); // Adjust position
+                System.out.println("触发监听" + lastAbstractTreeNodeModel.getName());
                 lastPopup.show(RelativePoint.fromScreen(adjustedLocation));
             }
 

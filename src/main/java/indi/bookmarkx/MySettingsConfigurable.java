@@ -41,14 +41,17 @@ public class MySettingsConfigurable implements Configurable {
     @Override
     public boolean isModified() {
         MySettings settings = MySettings.getInstance();
-        return !settingsComponent.getLanguage().equals(settings.getLanguage());
+        return !settingsComponent.getLanguage().equals(settings.getLanguage())
+                || settingsComponent.getTipDelay() != settings.getTipDelay();
     }
 
     @Override
     public void apply() {
         MySettings settings = MySettings.getInstance();
         I18NEnum language = settingsComponent.getLanguage();
+
         settings.getState().language = language.name();
+        settings.setTipDelay(settingsComponent.getTipDelay());
         showRestartDialog();
     }
 

@@ -9,6 +9,8 @@ import indi.bookmarkx.common.I18NEnum;
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 
+import javax.xml.bind.annotation.XmlRootElement;
+
 /**
  * 插件持久化服务
  *
@@ -46,8 +48,18 @@ public final class MySettings implements PersistentStateComponent<MySettings.Sta
         return I18NEnum.valueOf(this.state.language);
     }
 
+    public int getTipDelay() {
+        return state.tipDelay;
+    }
+
+    public void setTipDelay(final int tipDelay) {
+        state.tipDelay = tipDelay;
+    }
+
+    @XmlRootElement
     public static class State {
         public String language;
+        public int tipDelay;
     }
 
 }
