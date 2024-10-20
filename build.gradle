@@ -29,7 +29,7 @@ intellij {
 patchPluginXml {
     sinceBuild = '210.0'
     untilBuild = "242.*"
-    changeNotes = "1. 支持切换插件语言"
+    changeNotes = "1. 支持切换插件语言<br> 2. 支持配置是否弹窗显示描述，以及弹窗前置延迟"
 }
 
 tasks.named('initializeIntelliJPlugin') {
@@ -47,5 +47,6 @@ test {
 
 runIde {
 //    jvmArgs = ['-Duser.language=en', '-Duser.country=US']
+//    国际化测试
     jvmArgs = ['-Duser.language=ja', '-Duser.country=JP']
 }
