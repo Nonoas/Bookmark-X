@@ -1,6 +1,7 @@
 package indi.bookmarkx.common.data;
 
 import com.intellij.openapi.components.Service;
+import com.intellij.openapi.fileEditor.OpenFileDescriptor;
 import com.intellij.openapi.project.Project;
 import indi.bookmarkx.model.AbstractTreeNodeModel;
 import indi.bookmarkx.model.BookmarkNodeModel;
@@ -43,7 +44,13 @@ public final class BookmarkArrayListTable extends ArrayListTable<BookmarkNodeMod
     }
 
     private static Function<BookmarkNodeModel, Object> lineColumnIndex() {
-        return bookmarkPO -> bookmarkPO.getOpenFileDescriptor().getFile().getPath();
+        return bookmarkPO -> {
+            OpenFileDescriptor descriptor = bookmarkPO.getOpenFileDescriptor();
+            if (null == descriptor) {
+                return null;
+            }
+            return descriptor.getFile().getPath();
+        };
     }
 
     private static Function<BookmarkNodeModel, Object> uuIdColumnIndex() {

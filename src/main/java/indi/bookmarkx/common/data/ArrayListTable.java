@@ -48,9 +48,7 @@ public class ArrayListTable<T> implements DataPool{
     }
 
     public void insert(T data){
-        columnIndices.forEach((function, index) -> {
-            saveHunt(data, function, (SimpleColumnIndex<Set<T>>) index);
-        });
+        columnIndices.forEach((function, index) -> saveHunt(data, function, index));
         this.dataList.add(data);
     }
 

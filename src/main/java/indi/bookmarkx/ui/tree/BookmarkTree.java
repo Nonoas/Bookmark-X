@@ -123,85 +123,7 @@ public class BookmarkTree extends Tree {
             }
         });
 
-        addMouseMotionListener(new MouseMotionAdapter() {
-
-            private Timer timer;
-            private TreePath selectedPath;
-
-            @Override
-            public void mouseMoved(MouseEvent e) {
-                // Get the selected node
-                TreePath path = getPathForLocation(e.getX(), e.getY());
-                if (path != null ) {
-                    if (Objects.equals(path, selectedPath)) {
-                        return;
-                    }
-                    removeTimer();
-                    selectedPath = path;
-
-                    MySettings instance = MySettings.getInstance();
-                    timer = new Timer(instance.getTipDelay(), te -> showToolTip(getToolTipText(e), e));
-                    timer.setRepeats(false);
-                    timer.restart();
-                } else {
-                    selectedPath = null;
-                    lastAbstractTreeNodeModel = null;
-                    removeTimer();
-                }
-            }
-
-            private void removeTimer() {
-                if (timer != null) {
-                    timer.stop();
-                    timer = null;
-                }
-
-                if (this.lastPopup != null) {
-                    lastPopup.cancel();
-                }
-            }
-
-
-            private AbstractTreeNodeModel getToolTipText(MouseEvent e) {
-                TreePath path = getPathForLocation(e.getX(), e.getY());
-                if (path != null) {
-                    BookmarkTreeNode selectedNode = (BookmarkTreeNode) path.getLastPathComponent();
-                    if (selectedNode != null) {
-                        return (AbstractTreeNodeModel) selectedNode.getUserObject();
-                    }
-                }
-                return null;
-            }
-
-            private JBPopup lastPopup;
-            private AbstractTreeNodeModel lastAbstractTreeNodeModel;
-
-            private void showToolTip(AbstractTreeNodeModel abstractTreeNodeModel, MouseEvent e) {
-                if (abstractTreeNodeModel == null) {
-                    return;
-                }
-                if (lastAbstractTreeNodeModel == abstractTreeNodeModel) {
-                    return;
-                }
-                if (this.lastPopup != null) {
-                    lastPopup.cancel();
-                }
-                lastAbstractTreeNodeModel = abstractTreeNodeModel;
-
-                JBPopupFactory popupFactory = JBPopupFactory.getInstance();
-                lastPopup = popupFactory.createComponentPopupBuilder(new BookmarkTipPanel(lastAbstractTreeNodeModel), null)
-                        .setFocusable(true)
-                        .setResizable(true)
-                        .setRequestFocus(true)
-                        .createPopup();
-
-                Point adjustedLocation = new Point(e.getLocationOnScreen().x + 10, e.getLocationOnScreen().y + 10); // Adjust position
-                System.out.println("触发监听" + lastAbstractTreeNodeModel.getName());
-                lastPopup.show(RelativePoint.fromScreen(adjustedLocation));
-            }
-
-        });
-
+        addMouseMotionListener(new TreeMouseMotionAdapter(this));
 
         // 鼠标点击事件
         addMouseListener(new MouseAdapter() {
@@ -269,7 +191,13 @@ public class BookmarkTree extends Tree {
         });
 
         imDel.addActionListener(e -> {
-            int result = Messages.showOkCancelDialog(project, "是否删除选中的标签", "删除确认", "删除", "取消", Messages.getQuestionIcon());
+            int result = Messages.showOkCancelDialog(project,
+                    I18N.get("bookmark.delete.msg"),
+                    I18N.get("bookmark.delete.ok"),
+                    I18N.get("delete"),
+                    I18N.get("cancel"),
+                    Messages.getQuestionIcon());
+
             if (result == Messages.CANCEL) {
                 return;
             }
@@ -605,6 +533,9 @@ public class BookmarkTree extends Tree {
         }
     }
 
+    /**
+     * 节点拖拽处理器
+     */
     static class DragHandler extends TransferHandler {
 
         @Override
@@ -659,9 +590,6 @@ public class BookmarkTree extends Tree {
 
                 int childIndex = dl.getChildIndex();
 
-                System.out.println(childIndex);
-                System.out.println(targetNode);
-
                 if (-1 == childIndex) {
                     for (BookmarkTreeNode node : nodes) {
                         // 目标节点不能是拖动节点的后代，拖动节点不能是目标节点的直接子代
@@ -695,6 +623,95 @@ public class BookmarkTree extends Tree {
 
             return false;
         }
+    }
+
+    /**
+     * 鼠标选父监听
+     */
+    static class TreeMouseMotionAdapter extends MouseMotionAdapter {
+        private Timer timer;
+        private TreePath selectedPath;
+        private final JTree tree;
+        private JBPopup lastPopup;
+        private AbstractTreeNodeModel lastAbstractTreeNodeModel;
+
+        public TreeMouseMotionAdapter(JTree tree) {
+            this.tree = tree;
+        }
+
+        @Override
+        public void mouseMoved(MouseEvent e) {
+            MySettings instance = MySettings.getInstance();
+            int tipDelay = instance.getTipDelay();
+            if (tipDelay < 0) {
+                return;
+            }
+
+            // Get the selected node
+            TreePath path = tree.getPathForLocation(e.getX(), e.getY());
+            if (path != null) {
+                if (Objects.equals(path, selectedPath)) {
+                    return;
+                }
+                removeTimer();
+                selectedPath = path;
+
+                timer = new Timer(tipDelay, te -> showToolTip(getToolTipText(e), e));
+                timer.setRepeats(false);
+                timer.restart();
+            } else {
+                selectedPath = null;
+                lastAbstractTreeNodeModel = null;
+                removeTimer();
+            }
+        }
+
+        private void removeTimer() {
+            if (timer != null) {
+                timer.stop();
+                timer = null;
+            }
+
+            if (this.lastPopup != null) {
+                lastPopup.cancel();
+            }
+        }
+
+
+        private AbstractTreeNodeModel getToolTipText(MouseEvent e) {
+            TreePath path = tree.getPathForLocation(e.getX(), e.getY());
+            if (path != null) {
+                BookmarkTreeNode selectedNode = (BookmarkTreeNode) path.getLastPathComponent();
+                if (selectedNode != null) {
+                    return (AbstractTreeNodeModel) selectedNode.getUserObject();
+                }
+            }
+            return null;
+        }
+
+        private void showToolTip(AbstractTreeNodeModel abstractTreeNodeModel, MouseEvent e) {
+            if (abstractTreeNodeModel == null) {
+                return;
+            }
+            if (lastAbstractTreeNodeModel == abstractTreeNodeModel) {
+                return;
+            }
+            if (this.lastPopup != null) {
+                lastPopup.cancel();
+            }
+            lastAbstractTreeNodeModel = abstractTreeNodeModel;
+
+            JBPopupFactory popupFactory = JBPopupFactory.getInstance();
+            lastPopup = popupFactory.createComponentPopupBuilder(new BookmarkTipPanel(lastAbstractTreeNodeModel), null)
+                    .setFocusable(true)
+                    .setResizable(true)
+                    .setRequestFocus(true)
+                    .createPopup();
+
+            Point adjustedLocation = new Point(e.getLocationOnScreen().x + 10, e.getLocationOnScreen().y + 10); // Adjust position
+            lastPopup.show(RelativePoint.fromScreen(adjustedLocation));
+        }
+
     }
 
 }

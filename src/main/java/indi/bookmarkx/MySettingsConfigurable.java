@@ -6,13 +6,12 @@ import com.intellij.openapi.application.ex.ApplicationEx;
 import com.intellij.openapi.options.Configurable;
 import com.intellij.openapi.ui.Messages;
 import indi.bookmarkx.common.I18N;
-import indi.bookmarkx.common.I18NEnum;
 import indi.bookmarkx.persistence.MySettings;
 import indi.bookmarkx.ui.MySettingsPanel;
 import org.jetbrains.annotations.Nls;
 import org.jetbrains.annotations.Nullable;
 
-import javax.swing.*;
+import javax.swing.JComponent;
 
 import static indi.bookmarkx.common.Constants.PLUGIN_NAME;
 
@@ -41,18 +40,24 @@ public class MySettingsConfigurable implements Configurable {
     @Override
     public boolean isModified() {
         MySettings settings = MySettings.getInstance();
-        return !settingsComponent.getLanguage().equals(settings.getLanguage())
-                || settingsComponent.getTipDelay() != settings.getTipDelay();
+        return isLanguageChanged() || settingsComponent.getTipDelay() != settings.getTipDelay();
+    }
+
+    private boolean isLanguageChanged() {
+        MySettings settings = MySettings.getInstance();
+        return !settingsComponent.getLanguage().equals(settings.getLanguage());
     }
 
     @Override
     public void apply() {
+        boolean languageChanged = isLanguageChanged();
         MySettings settings = MySettings.getInstance();
-        I18NEnum language = settingsComponent.getLanguage();
-
-        settings.getState().language = language.name();
+        settings.setLanguage(settingsComponent.getLanguage());
         settings.setTipDelay(settingsComponent.getTipDelay());
-        showRestartDialog();
+
+        if (languageChanged) {
+            showRestartDialog();
+        }
     }
 
     @Override

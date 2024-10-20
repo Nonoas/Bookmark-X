@@ -48,6 +48,10 @@ public final class MySettings implements PersistentStateComponent<MySettings.Sta
         return I18NEnum.valueOf(this.state.language);
     }
 
+    public void setLanguage(I18NEnum lang) {
+        this.state.language = lang.name();
+    }
+
     public int getTipDelay() {
         return state.tipDelay;
     }

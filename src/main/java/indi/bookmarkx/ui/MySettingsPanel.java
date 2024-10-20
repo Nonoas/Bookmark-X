@@ -8,6 +8,7 @@ import com.intellij.ui.components.JBTextField;
 import indi.bookmarkx.common.I18N;
 import indi.bookmarkx.common.I18NEnum;
 import indi.bookmarkx.persistence.MySettings;
+import org.apache.commons.lang.StringUtils;
 
 import javax.swing.Box;
 import javax.swing.JLabel;
@@ -26,7 +27,7 @@ import java.awt.event.ItemEvent;
 public class MySettingsPanel extends JBPanel<MySettingsPanel> {
 
     private final ComboBox<I18NEnum> languageComboBox;
-    private final JBCheckBox showTipCheckBox = new JBCheckBox("鼠标悬停显示标签描述", true);
+    private final JBCheckBox showTipCheckBox = new JBCheckBox(I18N.get("setting.tipToggle"), true);
     private final JBTextField jtfDelay = new JBTextField();
 
     public MySettingsPanel() {
@@ -70,7 +71,7 @@ public class MySettingsPanel extends JBPanel<MySettingsPanel> {
 
         gbc.gridx = 1;
         JPanel delayPanel = new JPanel(new FlowLayout(FlowLayout.LEFT));
-        delayPanel.add(new JBLabel("描述弹框延迟："));
+        delayPanel.add(new JBLabel(I18N.get("setting.tipDelay")));
         delayPanel.add(jtfDelay);
         delayPanel.add(new JBLabel("ms"));
         add(delayPanel, gbc);
@@ -94,10 +95,12 @@ public class MySettingsPanel extends JBPanel<MySettingsPanel> {
     public int getTipDelay() {
         if (!showTipCheckBox.isSelected()) {
             return -1;
-        } else {
-            String delay = jtfDelay.getText();
-            return Integer.parseInt(delay);
         }
+        String delay = jtfDelay.getText();
+        if (StringUtils.isBlank(delay)) {
+            return 0;
+        }
+        return Integer.parseInt(delay);
     }
 
 }
