@@ -8,7 +8,6 @@ import com.intellij.ui.content.Content;
 import com.intellij.ui.content.ContentFactory;
 import indi.bookmarkx.action.BookmarkExportAction;
 import indi.bookmarkx.action.BookmarkImportAction;
-import indi.bookmarkx.ui.pannel.BookmarksManagePanel;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.Arrays;
@@ -17,16 +16,11 @@ import java.util.Arrays;
 public class RootWindowFactory implements ToolWindowFactory, DumbAware {
 
     @Override
-    public void createToolWindowContent(@NotNull Project project, ToolWindow toolWindow) {
-
+    public void createToolWindowContent(@NotNull Project project, @NotNull ToolWindow toolWindow) {
         initTitleAction(toolWindow);
-
-        BookmarksManagePanel panel = BookmarksManagePanel.create(project);
-
-        initManager(project, panel);
-
+        BookmarksManager manager = BookmarksManager.getInstance(project);
         ContentFactory contentFactory = ContentFactory.SERVICE.getInstance();
-        Content regularRetention = contentFactory.createContent(panel, null, false);
+        Content regularRetention = contentFactory.createContent(manager.getToolWindowRootPanel(), null, false);
 
         toolWindow.getContentManager().addContent(regularRetention);
     }
@@ -37,17 +31,6 @@ public class RootWindowFactory implements ToolWindowFactory, DumbAware {
 
         // 在 ToolWindow 的标题栏中添加自定义动作按钮
         toolWindow.setTitleActions(Arrays.asList(importAction, exportAction));
-    }
-
-    /**
-     * 初始化项目级别的书签管理器
-     *
-     * @param project 当前项目
-     * @param panel   当前ToolWindow面板
-     */
-    private void initManager(Project project, BookmarksManagePanel panel) {
-        BookmarksManager manager = BookmarksManager.getInstance(project);
-        manager.setToolWindowRootPanel(panel);
     }
 
 }

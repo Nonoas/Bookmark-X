@@ -12,14 +12,14 @@ import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vfs.VirtualFile;
 import indi.bookmarkx.common.I18N;
 import indi.bookmarkx.common.data.BookmarkArrayListTable;
+import indi.bookmarkx.model.BookmarkConverter;
+import indi.bookmarkx.model.BookmarkNodeModel;
 import indi.bookmarkx.model.po.BookmarkPO;
 import indi.bookmarkx.persistence.MyPersistent;
 import indi.bookmarkx.ui.dialog.BookmarkCreatorDialog;
-import indi.bookmarkx.model.BookmarkConverter;
-import indi.bookmarkx.model.BookmarkNodeModel;
 import indi.bookmarkx.ui.painter.LineEndPainter;
-import indi.bookmarkx.ui.tree.BookmarkTreeNode;
 import indi.bookmarkx.ui.pannel.BookmarksManagePanel;
+import indi.bookmarkx.ui.tree.BookmarkTreeNode;
 import indi.bookmarkx.utils.PersistenceUtil;
 import org.jetbrains.annotations.NotNull;
 
@@ -33,7 +33,7 @@ import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
- * 项目级别的管理器：用于管理所有「书签UI」的变化
+ * 项目级别的管理器：用于管理所有「书签UI」的变化，命令模式，是一切用户操作的入口，管理所有数据及 UI 的引用
  */
 @Service(Service.Level.PROJECT)
 public final class BookmarksManager {
@@ -42,7 +42,7 @@ public final class BookmarksManager {
 
     public Project project;
 
-    private BookmarksManagePanel toolWindowRootPanel;
+    private final BookmarksManagePanel toolWindowRootPanel;
 
     private final BookmarkArrayListTable bookmarkArrayListTable;
 
@@ -53,12 +53,9 @@ public final class BookmarksManager {
 
     public BookmarksManager(Project project) {
         this.project = project;
+        this.toolWindowRootPanel = BookmarksManagePanel.create(project);
         bookmarkArrayListTable = BookmarkArrayListTable.getInstance(project);
-        initData();
-    }
-
-    private void initData() {
-        ProgressManager.getInstance().run(new TreeLoadTask(project, this));
+        reload();
     }
 
     public static BookmarksManager getInstance(Project project) {
@@ -95,7 +92,7 @@ public final class BookmarksManager {
             bookmarkNodeModel.setIcon(file.getFileType().getIcon());
             bookmarkNodeModel.setIcon(file.getFileType().getIcon());
             bookmarkNodeModel.setOpenFileDescriptor(new OpenFileDescriptor(project, file, line, column));
-        }else {
+        } else {
             add = false;
             defaultName = bookmarkNodeModel.getName();
             defaultDesc = bookmarkNodeModel.getDesc();
@@ -163,19 +160,19 @@ public final class BookmarksManager {
         popup.navigate();
     }
 
-    public void setToolWindowRootPanel(@NotNull BookmarksManagePanel panel) {
-        this.toolWindowRootPanel = panel;
-    }
-
     /**
      * 重新加载标签树
      */
     public void reload() {
-        toolWindowRootPanel.reInit(project);
+        ProgressManager.getInstance().run(new TreeLoadTask(project, this));
     }
 
     public Map<String, Set<BookmarkNodeModel>> getFileMarksCache() {
         return fileMarksCache;
+    }
+
+    public BookmarksManagePanel getToolWindowRootPanel() {
+        return toolWindowRootPanel;
     }
 
 
@@ -204,7 +201,7 @@ public final class BookmarksManager {
 
                 // 初始化文件到标签签行缓存
                 List<BookmarkNodeModel> bookmarkNodeModels = PersistenceUtil.treeToList(root);
-                intiFileMarksLinesCache(bookmarkNodeModels);
+                reIntiFileMarksCache(bookmarkNodeModels);
             } catch (Exception e) {
                 // 错误处理
                 LOG.error("初始化标签树失败", e);
@@ -212,7 +209,8 @@ public final class BookmarksManager {
             LOG.info("初始化标签树成功");
         }
 
-        private void intiFileMarksLinesCache(List<BookmarkNodeModel> bookmarkNodeModels) {
+        private void reIntiFileMarksCache(List<BookmarkNodeModel> bookmarkNodeModels) {
+            bookmarksManager.getFileMarksCache().clear();
             for (BookmarkNodeModel model : bookmarkNodeModels) {
                 OpenFileDescriptor openFileDescriptor = model.getOpenFileDescriptor();
                 if (openFileDescriptor == null) {
@@ -228,7 +226,7 @@ public final class BookmarksManager {
 
         @Override
         public void onSuccess() {
-
+            bookmarksManager.getToolWindowRootPanel().reInit(treeModel, project);
         }
     }
 }

@@ -62,16 +62,53 @@ public class BookmarksManagePanel extends JPanel {
         // 设置背景色
         setBackground(JBColor.WHITE);
 
-        reInit(project);
-
     }
 
-    public void reInit(Project project) {
-        loadTree(project);
+    public void reInit(DefaultTreeModel treeModel, Project project) {
+        loadTree(treeModel, project);
     }
 
-    private void loadTree(Project project) {
-        ProgressManager.getInstance().run(new TreeLoadTask(project, tree));
+    private void loadTree(DefaultTreeModel treeModel, Project project) {
+        if (treeModel == null) {
+            return;
+        }
+        treeModel.addTreeModelListener(new TreeModelListener() {
+            @Override
+            public void treeNodesChanged(TreeModelEvent e) {
+                persistenceSave();
+            }
+
+            @Override
+            public void treeNodesInserted(TreeModelEvent e) {
+                persistenceSave();
+            }
+
+            @Override
+            public void treeNodesRemoved(TreeModelEvent e) {
+                persistenceSave();
+            }
+
+            @Override
+            public void treeStructureChanged(TreeModelEvent e) {
+                // do nothing
+            }
+
+            private void persistenceSave() {
+                ApplicationManager.getApplication().executeOnPooledThread(() -> {
+                    BookmarksManager manager = BookmarksManager.getInstance(project);
+                    manager.persistentSave();
+                });
+            }
+        });
+
+        ApplicationManager.getApplication().invokeLater(() -> {
+            tree.setModel(treeModel);
+            treeModel.nodeStructureChanged((TreeNode) treeModel.getRoot());
+
+            BookmarkArrayListTable bookmarkArrayListTable = BookmarkArrayListTable.getInstance(project);
+            bookmarkArrayListTable.initData(tree);
+            treeLoaded = true;
+        });
     }
 
     public void prev() {
@@ -110,77 +147,6 @@ public class BookmarksManagePanel extends JPanel {
      */
     public static BookmarksManagePanel create(Project project) {
         return new BookmarksManagePanel(project);
-    }
-
-    class TreeLoadTask extends Task.Backgroundable {
-
-        private final Project project;
-        private final BookmarkTree tree;
-        private DefaultTreeModel treeModel;
-
-        public TreeLoadTask(Project project, BookmarkTree tree) {
-            super(project, "Loading Tree Data");
-            this.project = project;
-            this.tree = tree;
-        }
-
-        @Override
-        public void run(@NotNull ProgressIndicator indicator) {
-            try {
-                MyPersistent persistent = MyPersistent.getInstance(project);
-                BookmarkPO rootPO = persistent.getState();
-                BookmarkTreeNode root = PersistenceUtil.generateTreeNode(rootPO, project);
-                treeModel = new DefaultTreeModel(root);
-            } catch (Exception e) {
-                // 错误处理
-                LOG.error("初始化标签树失败", e);
-            }
-            LOG.info("初始化标签树成功");
-        }
-
-        @Override
-        public void onSuccess() {
-            if (treeModel == null) {
-                return;
-            }
-            treeModel.addTreeModelListener(new TreeModelListener() {
-                @Override
-                public void treeNodesChanged(TreeModelEvent e) {
-                    persistenceSave();
-                }
-
-                @Override
-                public void treeNodesInserted(TreeModelEvent e) {
-                    persistenceSave();
-                }
-
-                @Override
-                public void treeNodesRemoved(TreeModelEvent e) {
-                    persistenceSave();
-                }
-
-                @Override
-                public void treeStructureChanged(TreeModelEvent e) {
-                    // do nothing
-                }
-
-                private void persistenceSave() {
-                    ApplicationManager.getApplication().executeOnPooledThread(() -> {
-                        BookmarksManager manager = BookmarksManager.getInstance(project);
-                        manager.persistentSave();
-                    });
-                }
-            });
-
-            ApplicationManager.getApplication().invokeLater(() -> {
-                tree.setModel(treeModel);
-                treeModel.nodeStructureChanged((TreeNode) treeModel.getRoot());
-
-                BookmarkArrayListTable bookmarkArrayListTable = BookmarkArrayListTable.getInstance(project);
-                bookmarkArrayListTable.initData(tree);
-                treeLoaded = true;
-            });
-        }
     }
 
 }
