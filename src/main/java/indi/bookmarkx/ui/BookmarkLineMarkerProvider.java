@@ -10,17 +10,15 @@ import com.intellij.openapi.util.IconLoader;
 import com.intellij.psi.PsiElement;
 import com.intellij.psi.PsiFile;
 import indi.bookmarkx.BookmarksManager;
+import indi.bookmarkx.global.FileMarksCache;
 import indi.bookmarkx.model.BookmarkNodeModel;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
-import java.util.Map;
-import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
-import java.util.stream.Collectors;
 
 /**
  * @author Nonoas
@@ -42,7 +40,7 @@ public class BookmarkLineMarkerProvider implements LineMarkerProvider {
 
         Project project = elements.get(0).getProject();
         BookmarksManager manager = BookmarksManager.getInstance(project);
-        Map<String, Set<BookmarkNodeModel>> linesCache = manager.getFileMarksCache();
+        FileMarksCache fileMarksCache = manager.getFileMarksCache();
 
         Set<Integer> lineNumbers = new HashSet<>();
         for (PsiElement element : elements) {
@@ -54,9 +52,7 @@ public class BookmarkLineMarkerProvider implements LineMarkerProvider {
             if (!lineNumbers.add(number)) {
                 continue;
             }
-            Optional<BookmarkNodeModel> nodeModel = linesCache.getOrDefault(path, new HashSet<>()).stream()
-                    .filter(e -> Objects.equals(number, e.getLine()))
-                    .findAny();
+            Optional<BookmarkNodeModel> nodeModel = fileMarksCache.findModel(path, number);
 
             if (nodeModel.isEmpty()) {
                 continue;

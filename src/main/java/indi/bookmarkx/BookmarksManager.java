@@ -12,6 +12,7 @@ import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vfs.VirtualFile;
 import indi.bookmarkx.common.I18N;
 import indi.bookmarkx.common.data.BookmarkArrayListTable;
+import indi.bookmarkx.global.FileMarksCache;
 import indi.bookmarkx.model.BookmarkConverter;
 import indi.bookmarkx.model.BookmarkNodeModel;
 import indi.bookmarkx.model.po.BookmarkPO;
@@ -24,16 +25,12 @@ import indi.bookmarkx.utils.PersistenceUtil;
 import org.jetbrains.annotations.NotNull;
 
 import javax.swing.tree.DefaultTreeModel;
-import java.util.HashSet;
 import java.util.List;
-import java.util.Map;
 import java.util.Objects;
-import java.util.Set;
 import java.util.UUID;
-import java.util.concurrent.ConcurrentHashMap;
 
 /**
- * 项目级别的管理器：用于管理所有「书签UI」的变化，命令模式，是一切用户操作的入口，管理所有数据及 UI 的引用
+ * 项目级别的管理器（命令模式）：用于管理所有「书签UI」的变化，是一切用户操作的入口，管理所有数据及 UI 的引用
  */
 @Service(Service.Level.PROJECT)
 public final class BookmarksManager {
@@ -46,10 +43,7 @@ public final class BookmarksManager {
 
     private final BookmarkArrayListTable bookmarkArrayListTable;
 
-    /**
-     * 标识文件哪些行存在书签
-     */
-    private final Map<String, Set<BookmarkNodeModel>> fileMarksCache = new ConcurrentHashMap<>();
+    private final FileMarksCache fileMarksCache = new FileMarksCache();
 
     public BookmarksManager(Project project) {
         this.project = project;
@@ -167,14 +161,13 @@ public final class BookmarksManager {
         ProgressManager.getInstance().run(new TreeLoadTask(project, this));
     }
 
-    public Map<String, Set<BookmarkNodeModel>> getFileMarksCache() {
+    public FileMarksCache getFileMarksCache() {
         return fileMarksCache;
     }
 
     public BookmarksManagePanel getToolWindowRootPanel() {
         return toolWindowRootPanel;
     }
-
 
     /**
      * 数据加载任务
@@ -210,17 +203,14 @@ public final class BookmarksManager {
         }
 
         private void reIntiFileMarksCache(List<BookmarkNodeModel> bookmarkNodeModels) {
-            bookmarksManager.getFileMarksCache().clear();
+            FileMarksCache fileMarksCache = bookmarksManager.getFileMarksCache();
+            fileMarksCache.clear();
             for (BookmarkNodeModel model : bookmarkNodeModels) {
                 OpenFileDescriptor openFileDescriptor = model.getOpenFileDescriptor();
                 if (openFileDescriptor == null) {
                     continue;
                 }
-                String path = openFileDescriptor.getFile().getPath();
-                Map<String, Set<BookmarkNodeModel>> linesCache = bookmarksManager.getFileMarksCache();
-                Set<BookmarkNodeModel> models = linesCache.getOrDefault(path, new HashSet<>());
-                models.add(model);
-                linesCache.put(path, models);
+                fileMarksCache.addBookMark(model);
             }
         }
 

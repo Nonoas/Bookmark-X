@@ -1,13 +1,11 @@
 package indi.bookmarkx.model;
 
-import com.intellij.openapi.editor.Document;
-import com.intellij.openapi.editor.RangeMarker;
 import com.intellij.openapi.fileEditor.OpenFileDescriptor;
-import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vfs.VirtualFile;
 
 import javax.swing.Icon;
 import java.util.Objects;
+import java.util.Optional;
 
 /**
  * 书签数据模型
@@ -102,5 +100,11 @@ public class BookmarkNodeModel extends AbstractTreeNodeModel {
 
     public void setUuid(String uuid) {
         this.uuid = uuid;
+    }
+
+    public Optional<String> getFilePath() {
+        return Optional.ofNullable(openFileDescriptor)
+                .map(OpenFileDescriptor::getFile)
+                .map(VirtualFile::getPath);
     }
 }

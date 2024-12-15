@@ -2,23 +2,18 @@ package indi.bookmarkx.ui.pannel;
 
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.diagnostic.Logger;
-import com.intellij.openapi.progress.ProgressIndicator;
-import com.intellij.openapi.progress.ProgressManager;
-import com.intellij.openapi.progress.Task;
 import com.intellij.openapi.project.Project;
 import com.intellij.ui.JBColor;
 import com.intellij.ui.components.JBScrollPane;
 import com.intellij.util.ui.JBUI;
 import indi.bookmarkx.BookmarksManager;
-import indi.bookmarkx.model.AbstractTreeNodeModel;
-import indi.bookmarkx.persistence.MyPersistent;
 import indi.bookmarkx.common.data.BookmarkArrayListTable;
+import indi.bookmarkx.global.FileMarksCache;
+import indi.bookmarkx.listener.BkDataChangeListener;
+import indi.bookmarkx.model.AbstractTreeNodeModel;
 import indi.bookmarkx.model.BookmarkNodeModel;
-import indi.bookmarkx.model.po.BookmarkPO;
 import indi.bookmarkx.ui.tree.BookmarkTree;
 import indi.bookmarkx.ui.tree.BookmarkTreeNode;
-import indi.bookmarkx.utils.PersistenceUtil;
-import org.jetbrains.annotations.NotNull;
 
 import javax.swing.JPanel;
 import javax.swing.event.TreeModelEvent;
@@ -80,6 +75,7 @@ public class BookmarksManagePanel extends JPanel {
 
             @Override
             public void treeNodesInserted(TreeModelEvent e) {
+                // printEventDetails(e);
                 persistenceSave();
             }
 
@@ -99,10 +95,13 @@ public class BookmarksManagePanel extends JPanel {
                     manager.persistentSave();
                 });
             }
+
+
         });
 
         ApplicationManager.getApplication().invokeLater(() -> {
             tree.setModel(treeModel);
+            tree.getDataChangeListeners().add(new TreeDataChangeListener(project));
             treeModel.nodeStructureChanged((TreeNode) treeModel.getRoot());
 
             BookmarkArrayListTable bookmarkArrayListTable = BookmarkArrayListTable.getInstance(project);
@@ -147,6 +146,38 @@ public class BookmarksManagePanel extends JPanel {
      */
     public static BookmarksManagePanel create(Project project) {
         return new BookmarksManagePanel(project);
+    }
+
+    public static class TreeDataChangeListener implements BkDataChangeListener {
+        private final BookmarksManager manager;
+
+        public TreeDataChangeListener(Project project) {
+            manager = BookmarksManager.getInstance(project);
+        }
+
+        @Override
+        public void onDataAdd(AbstractTreeNodeModel model) {
+            if (model.isGroup()) {
+                return;
+            }
+            BookmarkNodeModel bookmarkNodeModel = (BookmarkNodeModel) model;
+            bookmarkNodeModel.getFilePath().ifPresent(e->{
+                FileMarksCache fileMarksCache = manager.getFileMarksCache();
+                fileMarksCache.addBookMark((BookmarkNodeModel) model);
+            });
+        }
+
+        @Override
+        public void onDataDelete(AbstractTreeNodeModel model) {
+            if (model.isGroup()) {
+                return;
+            }
+            BookmarkNodeModel bookmarkNodeModel = (BookmarkNodeModel) model;
+            bookmarkNodeModel.getFilePath().ifPresent(e->{
+                FileMarksCache fileMarksCache = manager.getFileMarksCache();
+                fileMarksCache.deleteBookMark((BookmarkNodeModel) model);
+            });
+        }
     }
 
 }

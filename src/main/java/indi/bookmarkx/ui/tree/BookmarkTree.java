@@ -12,6 +12,7 @@ import com.intellij.ui.awt.RelativePoint;
 import com.intellij.ui.treeStructure.Tree;
 import indi.bookmarkx.common.I18N;
 import indi.bookmarkx.common.data.BookmarkArrayListTable;
+import indi.bookmarkx.listener.BkDataChangeListener;
 import indi.bookmarkx.model.AbstractTreeNodeModel;
 import indi.bookmarkx.model.BookmarkNodeModel;
 import indi.bookmarkx.model.GroupNodeModel;
@@ -39,6 +40,7 @@ import java.awt.event.ActionListener;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseMotionAdapter;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
@@ -68,6 +70,8 @@ public class BookmarkTree extends Tree {
 
     private BookmarkArrayListTable bookmarkArrayListTable;
 
+    private final List<BkDataChangeListener> dataChangeListeners = new ArrayList<>();
+
     public BookmarkTree(Project project) {
         super();
         initData(project);
@@ -76,6 +80,10 @@ public class BookmarkTree extends Tree {
         initCellRenderer();
         initTreeListeners();
         initContextMenu();
+    }
+
+    public List<BkDataChangeListener> getDataChangeListeners() {
+        return dataChangeListeners;
     }
 
     private void initView() {
@@ -295,6 +303,12 @@ public class BookmarkTree extends Tree {
         scrollPathToVisible(new TreePath(node.getPath()));
 
         addToCache(node);
+
+        // 通知监听器
+        AbstractTreeNodeModel model = (AbstractTreeNodeModel) node.getUserObject();
+        for (BkDataChangeListener dataChangeListener : dataChangeListeners) {
+            dataChangeListener.onDataAdd(model);
+        }
     }
 
     /**
@@ -305,10 +319,18 @@ public class BookmarkTree extends Tree {
     public void remove(BookmarkTreeNode node) {
         model.removeNodeFromParent(node);
         Object userObject = node.getUserObject();
+        BookmarkNodeModel model = null;
         if (userObject instanceof BookmarkNodeModel) {
-            bookmarkArrayListTable.delete((BookmarkNodeModel) node.getUserObject());
+            model = (BookmarkNodeModel) node.getUserObject();
+            bookmarkArrayListTable.delete(model);
         }
         removeFromCache(node);
+
+        if (model != null) {
+            for (BkDataChangeListener dataChangeListener : dataChangeListeners) {
+                dataChangeListener.onDataDelete(model);
+            }
+        }
     }
 
     public BookmarkTreeNode getNodeByModel(BookmarkNodeModel nodeModel) {
