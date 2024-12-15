@@ -10,6 +10,7 @@ import com.intellij.ui.JBColor;
 import com.intellij.ui.components.JBScrollPane;
 import com.intellij.util.ui.JBUI;
 import indi.bookmarkx.BookmarksManager;
+import indi.bookmarkx.model.AbstractTreeNodeModel;
 import indi.bookmarkx.persistence.MyPersistent;
 import indi.bookmarkx.common.data.BookmarkArrayListTable;
 import indi.bookmarkx.model.BookmarkNodeModel;
@@ -27,7 +28,7 @@ import javax.swing.tree.TreeNode;
 import java.awt.BorderLayout;
 
 /**
- * 标签目录面板
+ * 标签树目录面板
  *
  * @author Nonoas
  * @date 2023/6/1
@@ -94,6 +95,11 @@ public class BookmarksManagePanel extends JPanel {
 
     public BookmarkTree tree() {
         return tree;
+    }
+
+    public void treeNodesChanged(BookmarkNodeModel model) {
+        BookmarkTreeNode nodeByModel = tree.getNodeByModel(model);
+        tree.getModel().nodeChanged(nodeByModel);
     }
 
     /**

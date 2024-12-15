@@ -20,12 +20,12 @@ public class ArrayListTable<T> implements DataPool{
 
     protected final HashMap<Function, SimpleColumnIndex<Set<T>>> columnIndices = new HashMap<>();
 
-    public ArrayListTable(List<T> arrayList, List<Function<T, Object>> functions) {
+    public ArrayListTable(List<T> arrayList, List<Function<T, String>> functions) {
         this.dataList = arrayList;
         functions.forEach(this::addColumIndex);
     }
 
-    protected void addColumIndex(Function<T, Object> function) {
+    protected void addColumIndex(Function<T, String> function) {
         SimpleColumnIndex<Set<T>> index = new SimpleColumnIndex<>();
         dataList.forEach(data -> {
             try {

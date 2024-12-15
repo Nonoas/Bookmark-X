@@ -5,7 +5,7 @@ plugins {
 
 group 'indi.bookmarkx'
 
-version '2.1.0'
+version '2.1.1'
 
 repositories {
     mavenLocal()
@@ -29,7 +29,7 @@ intellij {
 patchPluginXml {
     sinceBuild = '210.0'
     untilBuild = "242.*"
-    changeNotes = "1. 支持切换插件语言<br> 2. 支持配置是否弹窗显示描述，以及弹窗前置延迟"
+    changeNotes = "1. 添加行首标签显示"
 }
 
 tasks.named('initializeIntelliJPlugin') {

@@ -52,6 +52,12 @@ public class LineEndPainter extends EditorLinePainter {
         return null;
     }
 
+    /**
+     * chan
+     * @param list
+     * @param i
+     * @return
+     */
     public static BookmarkNodeModel findLine(List<BookmarkNodeModel> list, int i) {
         if (list == null || list.isEmpty()){
             return null;

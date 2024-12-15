@@ -2,6 +2,7 @@ package indi.bookmarkx.utils;
 
 import com.google.gson.Gson;
 import com.intellij.openapi.project.Project;
+import indi.bookmarkx.model.BookmarkNodeModel;
 import indi.bookmarkx.persistence.MyPersistent;
 import indi.bookmarkx.model.AbstractTreeNodeModel;
 import indi.bookmarkx.model.BookmarkConverter;
@@ -83,6 +84,23 @@ public class PersistenceUtil {
         Gson gson = new Gson();
         String json = gson.toJson(object, clazz);
         return gson.fromJson(json, clazz);
+    }
+
+    public static List<BookmarkNodeModel> treeToList(BookmarkTreeNode node) {
+        List<BookmarkNodeModel> list = new ArrayList<>();
+        int childCount = node.getChildCount();
+        if (0 == childCount) {
+            return list;
+        }
+        for (int i = 0; i < childCount; i++) {
+            BookmarkTreeNode treeNode = (BookmarkTreeNode) node.getChildAt(i);
+            Object userObject = treeNode.getUserObject();
+            if (userObject instanceof BookmarkNodeModel) {
+                list.add((BookmarkNodeModel) userObject);
+            }
+            list.addAll(treeToList(treeNode));
+        }
+        return list;
     }
 
 }
