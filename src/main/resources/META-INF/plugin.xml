@@ -26,7 +26,7 @@
         <toolWindow id="Bookmark-X" anchor="left"
                     icon="/icons/logo.svg"
                     factoryClass="indi.bookmarkx.RootWindowFactory" secondary="true"/>
-
+        <!--行首书签图标-->
         <codeInsight.lineMarkerProvider implementationClass="indi.bookmarkx.ui.BookmarkLineMarkerProvider" language=""/>
 
         <projectService serviceImplementation="indi.bookmarkx.persistence.MyPersistent"/>
@@ -43,11 +43,7 @@
     <applicationListeners>
         <listener class="indi.bookmarkx.global.ProjectListener"
                   topic="com.intellij.openapi.project.ProjectManagerListener"/>
-
-        <listener class="indi.bookmarkx.global.ToolWindowListener"
-                  topic="com.intellij.openapi.wm.ex.ToolWindowManagerListener"/>
     </applicationListeners>
-
 
     <!--插件动作-->
     <actions>
@@ -77,6 +73,12 @@
             </action>
         </group>
 
+        <action id="indi.bookmarkx.action.MyGutterContextMenuAction"
+                class="indi.bookmarkx.action.MyGutterContextMenuAction"
+                text="Add Bookmark-X"
+                description="Custom action for editor gutter">
+            <add-to-group group-id="EditorGutterPopupMenu" anchor="first"/>
+        </action>
     </actions>
 
 </idea-plugin>
