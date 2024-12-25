@@ -27,6 +27,7 @@ import org.jetbrains.annotations.NotNull;
 import javax.swing.tree.DefaultTreeModel;
 import java.util.List;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.UUID;
 
 /**
@@ -65,27 +66,35 @@ public final class BookmarksManager {
      */
     public void createBookRemark(Project project, Editor editor, VirtualFile file) {
         CaretModel caretModel = editor.getCaretModel();
-
         // 获取行号
         int line = caretModel.getLogicalPosition().line;
-        int column = caretModel.getLogicalPosition().column;
+        String selectedText = caretModel.getCurrentCaret().getSelectedText();
+        createBookRemark(project, file, selectedText, line);
+    }
 
+    /**
+     * 创建书签
+     *
+     * @param project  项目
+     * @param file     添加标签的文件
+     * @param descText 描述文本
+     * @param line     文件行
+     */
+    public void createBookRemark(Project project, VirtualFile file, String descText, int line) {
         BookmarkNodeModel bookmarkNodeModel = LineEndPainter.findLine(BookmarkArrayListTable.getInstance(project).getOnlyIndex(file.getPath()), line);
         String defaultName = file.getName();
         String defaultDesc;
         boolean add = true;
         if (bookmarkNodeModel == null) {
             // 获取选中文本
-            String selectedText = caretModel.getCurrentCaret().getSelectedText();
-            defaultDesc = selectedText == null ? "" : (" " + selectedText + " ");
+            defaultDesc = Optional.ofNullable(descText).map(text -> (" " + text + " ")).orElse("");
             String uuid = UUID.randomUUID().toString();
             bookmarkNodeModel = new BookmarkNodeModel();
             bookmarkNodeModel.setUuid(uuid);
             bookmarkNodeModel.setLine(line);
-            bookmarkNodeModel.setColumn(column);
             bookmarkNodeModel.setIcon(file.getFileType().getIcon());
             bookmarkNodeModel.setIcon(file.getFileType().getIcon());
-            bookmarkNodeModel.setOpenFileDescriptor(new OpenFileDescriptor(project, file, line, column));
+            bookmarkNodeModel.setOpenFileDescriptor(new OpenFileDescriptor(project, file, line, 0));
         } else {
             add = false;
             defaultName = bookmarkNodeModel.getName();
@@ -101,7 +110,7 @@ public final class BookmarksManager {
                     finalBookmarkNodeModel.setDesc(desc);
                     bookmarkArrayListTable.insert(finalBookmarkNodeModel);
                     if (addFlag) {
-                        submitCreateBookRemark(finalBookmarkNodeModel, editor);
+                        submitCreateBookRemark(finalBookmarkNodeModel);
                     } else {
                         if (Objects.nonNull(toolWindowRootPanel)) {
                             toolWindowRootPanel.treeNodesChanged(finalBookmarkNodeModel);
@@ -111,18 +120,18 @@ public final class BookmarksManager {
                 });
     }
 
-    private void submitCreateBookRemark(BookmarkNodeModel bookmarkModel, Editor editor) {
+    private void submitCreateBookRemark(BookmarkNodeModel bookmarkModel) {
         //  The toolWindowRootPanel may be null the first time IDEA is opened
         if (Objects.isNull(toolWindowRootPanel)) {
             MyPersistent persistent = MyPersistent.getInstance(project);
             persistent.getState().getChildren().add(BookmarkConverter.convertToPO(bookmarkModel));
         } else {
-            afterCreateSubmit(bookmarkModel, editor);
+            afterCreateSubmit(bookmarkModel);
         }
 
     }
 
-    private void afterCreateSubmit(BookmarkNodeModel bookmarkModel, Editor editor) {
+    private void afterCreateSubmit(BookmarkNodeModel bookmarkModel) {
         addToTree(bookmarkModel);
     }
 

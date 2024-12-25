@@ -76,6 +76,7 @@
         <action id="indi.bookmarkx.action.MyGutterContextMenuAction"
                 class="indi.bookmarkx.action.MyGutterContextMenuAction"
                 text="Add Bookmark-X"
+                icon="/icons/bookmark.svg"
                 description="Custom action for editor gutter">
             <add-to-group group-id="EditorGutterPopupMenu" anchor="first"/>
         </action>

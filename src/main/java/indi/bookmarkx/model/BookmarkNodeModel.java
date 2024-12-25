@@ -19,7 +19,6 @@ public class BookmarkNodeModel extends AbstractTreeNodeModel {
 
     private int index;
     private int line;
-    private int column;
 
     private Icon icon;
 
@@ -71,14 +70,6 @@ public class BookmarkNodeModel extends AbstractTreeNodeModel {
      */
     public void setLine(int newLine) {
         this.line = newLine;
-    }
-
-    public int getColumn() {
-        return column;
-    }
-
-    public void setColumn(int column) {
-        this.column = column;
     }
 
     public Icon getIcon() {
