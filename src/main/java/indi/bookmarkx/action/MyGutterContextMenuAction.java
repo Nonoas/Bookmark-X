@@ -1,5 +1,6 @@
 package indi.bookmarkx.action;
 
+import com.intellij.codeInsight.daemon.DaemonCodeAnalyzer;
 import com.intellij.openapi.actionSystem.AnAction;
 import com.intellij.openapi.actionSystem.AnActionEvent;
 import com.intellij.openapi.actionSystem.CommonDataKeys;
@@ -13,6 +14,8 @@ import indi.bookmarkx.BookmarksManager;
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 
+import java.util.Optional;
+
 /**
  * 通过在行标签处右键添加书签时触发的事件
  */
@@ -20,7 +23,6 @@ public class MyGutterContextMenuAction extends AnAction {
 
     @Override
     public void actionPerformed(@NotNull AnActionEvent e) {
-
         // 获取 ContextComponent，即触发动作的 UI 组件
         DataContext dataContext = e.getDataContext();
         Integer lineNum = EditorGutterComponentEx.LOGICAL_LINE_AT_CURSOR.getData(dataContext);
@@ -39,6 +41,11 @@ public class MyGutterContextMenuAction extends AnAction {
 
         BookmarksManager manager = BookmarksManager.getInstance(project);
         manager.createBookRemark(project, file, StringUtils.trim(lineText), lineNum);
+
+        // 使文件标记失效并强制重新计算
+        DaemonCodeAnalyzer daemonCodeAnalyzer = DaemonCodeAnalyzer.getInstance(project);
+        Optional.ofNullable(e.getData(CommonDataKeys.PSI_FILE))
+                .ifPresent(daemonCodeAnalyzer::restart);
     }
 
 }
