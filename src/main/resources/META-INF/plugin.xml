@@ -80,6 +80,17 @@
                 description="Custom action for editor gutter">
             <add-to-group group-id="EditorGutterPopupMenu" anchor="first"/>
         </action>
+
+        <actions>
+            <action id="indi.bookmarkx.action.MyGutterContextMenuAction"
+                    class="indi.bookmarkx.action.MyGutterContextMenuAction"
+                    text="测试在IDEA书签上添加"
+                    description="Perform a custom action on a bookmark">
+                <!-- 添加到书签右键菜单 -->
+                <add-to-group group-id="BookmarksViewPopupMenu" anchor="last"/>
+            </action>
+        </actions>
+
     </actions>
 
 </idea-plugin>

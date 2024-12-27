@@ -13,6 +13,7 @@ import com.intellij.openapi.vfs.VirtualFile;
 import indi.bookmarkx.common.I18N;
 import indi.bookmarkx.common.data.BookmarkArrayListTable;
 import indi.bookmarkx.global.FileMarksCache;
+import indi.bookmarkx.listener.BookmarkListener;
 import indi.bookmarkx.model.BookmarkConverter;
 import indi.bookmarkx.model.BookmarkNodeModel;
 import indi.bookmarkx.model.po.BookmarkPO;
@@ -144,6 +145,8 @@ public final class BookmarksManager {
 
     private void addToTree(BookmarkNodeModel bookmarkModel) {
         toolWindowRootPanel.addAndGet(bookmarkModel);
+        BookmarkListener listener = this.project.getMessageBus().syncPublisher(BookmarkListener.TOPIC);
+        listener.bookmarkAdded(bookmarkModel);
     }
 
     public static void add(BookmarkPopup p) {

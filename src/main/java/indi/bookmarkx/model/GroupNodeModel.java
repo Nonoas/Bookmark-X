@@ -6,8 +6,6 @@ package indi.bookmarkx.model;
  */
 public class GroupNodeModel extends AbstractTreeNodeModel {
 
-    private String name;
-
     public GroupNodeModel() {
 
     }
@@ -19,14 +17,5 @@ public class GroupNodeModel extends AbstractTreeNodeModel {
     @Override
     public boolean isBookmark() {
         return false;
-    }
-
-    @Override
-    public String getName() {
-        return name;
-    }
-
-    public void setName(String name) {
-        this.name = name;
     }
 }

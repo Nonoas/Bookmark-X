@@ -9,18 +9,19 @@ import com.intellij.util.ui.JBUI;
 import indi.bookmarkx.BookmarksManager;
 import indi.bookmarkx.common.data.BookmarkArrayListTable;
 import indi.bookmarkx.global.FileMarksCache;
-import indi.bookmarkx.listener.BkDataChangeListener;
+import indi.bookmarkx.listener.BookmarkListener;
 import indi.bookmarkx.model.AbstractTreeNodeModel;
 import indi.bookmarkx.model.BookmarkNodeModel;
 import indi.bookmarkx.ui.tree.BookmarkTree;
 import indi.bookmarkx.ui.tree.BookmarkTreeNode;
+import org.jetbrains.annotations.NotNull;
 
-import javax.swing.JPanel;
+import javax.swing.*;
 import javax.swing.event.TreeModelEvent;
 import javax.swing.event.TreeModelListener;
 import javax.swing.tree.DefaultTreeModel;
 import javax.swing.tree.TreeNode;
-import java.awt.BorderLayout;
+import java.awt.*;
 
 /**
  * 标签树目录面板
@@ -101,9 +102,8 @@ public class BookmarksManagePanel extends JPanel {
 
         ApplicationManager.getApplication().invokeLater(() -> {
             tree.setModel(treeModel);
-            tree.getDataChangeListeners().add(new TreeDataChangeListener(project));
+            project.getMessageBus().connect().subscribe(TreeDataChangeListener.TOPIC, new TreeDataChangeListener(project));
             treeModel.nodeStructureChanged((TreeNode) treeModel.getRoot());
-
             BookmarkArrayListTable bookmarkArrayListTable = BookmarkArrayListTable.getInstance(project);
             bookmarkArrayListTable.initData(tree);
             treeLoaded = true;
@@ -148,7 +148,7 @@ public class BookmarksManagePanel extends JPanel {
         return new BookmarksManagePanel(project);
     }
 
-    public static class TreeDataChangeListener implements BkDataChangeListener {
+    public static class TreeDataChangeListener implements BookmarkListener {
         private final BookmarksManager manager;
 
         public TreeDataChangeListener(Project project) {
@@ -156,24 +156,24 @@ public class BookmarksManagePanel extends JPanel {
         }
 
         @Override
-        public void onDataAdd(AbstractTreeNodeModel model) {
+        public void bookmarkAdded(@NotNull AbstractTreeNodeModel model) {
             if (model.isGroup()) {
                 return;
             }
             BookmarkNodeModel bookmarkNodeModel = (BookmarkNodeModel) model;
-            bookmarkNodeModel.getFilePath().ifPresent(e->{
+            bookmarkNodeModel.getFilePath().ifPresent(e -> {
                 FileMarksCache fileMarksCache = manager.getFileMarksCache();
                 fileMarksCache.addBookMark((BookmarkNodeModel) model);
             });
         }
 
         @Override
-        public void onDataDelete(AbstractTreeNodeModel model) {
+        public void bookmarkRemoved(@NotNull AbstractTreeNodeModel model) {
             if (model.isGroup()) {
                 return;
             }
             BookmarkNodeModel bookmarkNodeModel = (BookmarkNodeModel) model;
-            bookmarkNodeModel.getFilePath().ifPresent(e->{
+            bookmarkNodeModel.getFilePath().ifPresent(e -> {
                 FileMarksCache fileMarksCache = manager.getFileMarksCache();
                 fileMarksCache.deleteBookMark((BookmarkNodeModel) model);
             });

@@ -6,13 +6,13 @@ package indi.bookmarkx.model;
  */
 public abstract class AbstractTreeNodeModel {
 
-    private String desc;
+    protected String desc;
 
-    private String name;
+    protected String name;
 
     public abstract boolean isBookmark();
 
-    public boolean isGroup() {
+    public final boolean isGroup() {
         return !isBookmark();
     }
 

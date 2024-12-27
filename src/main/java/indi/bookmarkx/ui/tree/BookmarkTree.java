@@ -12,7 +12,7 @@ import com.intellij.ui.awt.RelativePoint;
 import com.intellij.ui.treeStructure.Tree;
 import indi.bookmarkx.common.I18N;
 import indi.bookmarkx.common.data.BookmarkArrayListTable;
-import indi.bookmarkx.listener.BkDataChangeListener;
+import indi.bookmarkx.listener.BookmarkListener;
 import indi.bookmarkx.model.AbstractTreeNodeModel;
 import indi.bookmarkx.model.BookmarkNodeModel;
 import indi.bookmarkx.model.GroupNodeModel;
@@ -21,18 +21,13 @@ import indi.bookmarkx.ui.dialog.BookmarkCreatorDialog;
 import indi.bookmarkx.ui.pannel.BookmarkTipPanel;
 import org.apache.commons.lang3.Validate;
 
-import javax.swing.DropMode;
-import javax.swing.JComponent;
-import javax.swing.JTree;
-import javax.swing.SwingUtilities;
-import javax.swing.Timer;
-import javax.swing.TransferHandler;
+import javax.swing.*;
 import javax.swing.tree.DefaultTreeModel;
 import javax.swing.tree.TreeModel;
 import javax.swing.tree.TreeNode;
 import javax.swing.tree.TreePath;
 import javax.swing.tree.TreeSelectionModel;
-import java.awt.Point;
+import java.awt.*;
 import java.awt.datatransfer.DataFlavor;
 import java.awt.datatransfer.Transferable;
 import java.awt.datatransfer.UnsupportedFlavorException;
@@ -40,7 +35,6 @@ import java.awt.event.ActionListener;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseMotionAdapter;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
@@ -70,8 +64,6 @@ public class BookmarkTree extends Tree {
 
     private BookmarkArrayListTable bookmarkArrayListTable;
 
-    private final List<BkDataChangeListener> dataChangeListeners = new ArrayList<>();
-
     public BookmarkTree(Project project) {
         super();
         initData(project);
@@ -80,10 +72,6 @@ public class BookmarkTree extends Tree {
         initCellRenderer();
         initTreeListeners();
         initContextMenu();
-    }
-
-    public List<BkDataChangeListener> getDataChangeListeners() {
-        return dataChangeListeners;
     }
 
     private void initView() {
@@ -303,12 +291,6 @@ public class BookmarkTree extends Tree {
         scrollPathToVisible(new TreePath(node.getPath()));
 
         addToCache(node);
-
-        // 通知监听器
-        AbstractTreeNodeModel model = (AbstractTreeNodeModel) node.getUserObject();
-        for (BkDataChangeListener dataChangeListener : dataChangeListeners) {
-            dataChangeListener.onDataAdd(model);
-        }
     }
 
     /**
@@ -324,13 +306,8 @@ public class BookmarkTree extends Tree {
             model = (BookmarkNodeModel) node.getUserObject();
             bookmarkArrayListTable.delete(model);
         }
+        project.getMessageBus().syncPublisher(BookmarkListener.TOPIC).bookmarkRemoved((AbstractTreeNodeModel) userObject);
         removeFromCache(node);
-
-        if (model != null) {
-            for (BkDataChangeListener dataChangeListener : dataChangeListeners) {
-                dataChangeListener.onDataDelete(model);
-            }
-        }
     }
 
     public BookmarkTreeNode getNodeByModel(BookmarkNodeModel nodeModel) {
