@@ -1,8 +1,12 @@
 package indi.bookmarkx.ui.pannel;
 
+import com.intellij.codeInsight.daemon.DaemonCodeAnalyzer;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.project.Project;
+import com.intellij.openapi.vfs.VirtualFile;
+import com.intellij.psi.PsiFile;
+import com.intellij.psi.PsiManager;
 import com.intellij.ui.JBColor;
 import com.intellij.ui.components.JBScrollPane;
 import com.intellij.util.ui.JBUI;
@@ -16,12 +20,12 @@ import indi.bookmarkx.ui.tree.BookmarkTree;
 import indi.bookmarkx.ui.tree.BookmarkTreeNode;
 import org.jetbrains.annotations.NotNull;
 
-import javax.swing.*;
+import javax.swing.JPanel;
 import javax.swing.event.TreeModelEvent;
 import javax.swing.event.TreeModelListener;
 import javax.swing.tree.DefaultTreeModel;
 import javax.swing.tree.TreeNode;
-import java.awt.*;
+import java.awt.BorderLayout;
 
 /**
  * 标签树目录面板
@@ -150,9 +154,11 @@ public class BookmarksManagePanel extends JPanel {
 
     public static class TreeDataChangeListener implements BookmarkListener {
         private final BookmarksManager manager;
+        private final Project project;
 
         public TreeDataChangeListener(Project project) {
             manager = BookmarksManager.getInstance(project);
+            this.project = project;
         }
 
         @Override
@@ -164,7 +170,19 @@ public class BookmarksManagePanel extends JPanel {
             bookmarkNodeModel.getFilePath().ifPresent(e -> {
                 FileMarksCache fileMarksCache = manager.getFileMarksCache();
                 fileMarksCache.addBookMark((BookmarkNodeModel) model);
+
+                refreshFile((BookmarkNodeModel) model);
             });
+        }
+
+        private void refreshFile(BookmarkNodeModel model) {
+            VirtualFile virtualFile = model.getOpenFileDescriptor().getFile();
+            PsiFile psiFile = PsiManager.getInstance(project).findFile(virtualFile);
+            if (null == psiFile) {
+                return;
+            }
+            DaemonCodeAnalyzer daemonCodeAnalyzer = DaemonCodeAnalyzer.getInstance(project);
+            daemonCodeAnalyzer.restart(psiFile);
         }
 
         @Override
@@ -176,6 +194,8 @@ public class BookmarksManagePanel extends JPanel {
             bookmarkNodeModel.getFilePath().ifPresent(e -> {
                 FileMarksCache fileMarksCache = manager.getFileMarksCache();
                 fileMarksCache.deleteBookMark((BookmarkNodeModel) model);
+
+                refreshFile((BookmarkNodeModel) model);
             });
         }
     }

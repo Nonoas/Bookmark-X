@@ -3,7 +3,6 @@ package indi.bookmarkx.common.data;
 import com.intellij.openapi.components.Service;
 import com.intellij.openapi.fileEditor.OpenFileDescriptor;
 import com.intellij.openapi.project.Project;
-import com.intellij.openapi.ui.Messages;
 import indi.bookmarkx.listener.BookmarkListener;
 import indi.bookmarkx.model.AbstractTreeNodeModel;
 import indi.bookmarkx.model.BookmarkNodeModel;
@@ -26,15 +25,12 @@ import java.util.function.Function;
 @Service(Service.Level.PROJECT)
 public final class BookmarkArrayListTable extends ArrayListTable<BookmarkNodeModel> implements BookmarkListener {
 
-    private final Project project;
-
     public static BookmarkArrayListTable getInstance(Project project) {
         return project.getService(BookmarkArrayListTable.class);
     }
 
     public BookmarkArrayListTable(Project project) {
         super(new ArrayList<>(), getColumnIndexFunctions());
-        this.project = project;
         project.getMessageBus().connect().subscribe(TOPIC, this);
     }
 
@@ -80,13 +76,15 @@ public final class BookmarkArrayListTable extends ArrayListTable<BookmarkNodeMod
 
     @Override
     public void bookmarkChanged(@NotNull AbstractTreeNodeModel model) {
-        Messages.showMessageDialog(
-                "行尾注释改变" + model, // 提示文本
-                "Message",                   // 标题
-                Messages.getInformationIcon() // 图标
-        );
         if (model.isBookmark()) {
             this.insert((BookmarkNodeModel) model);
+        }
+    }
+
+    @Override
+    public void bookmarkRemoved(@NotNull AbstractTreeNodeModel model) {
+        if (model.isBookmark()) {
+            this.delete((BookmarkNodeModel) model);
         }
     }
 }

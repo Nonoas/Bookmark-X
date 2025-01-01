@@ -22,7 +22,6 @@ import indi.bookmarkx.persistence.MyPersistent;
 import indi.bookmarkx.ui.dialog.BookmarkCreatorDialog;
 import indi.bookmarkx.ui.painter.LineEndPainter;
 import indi.bookmarkx.ui.pannel.BookmarksManagePanel;
-import indi.bookmarkx.ui.tree.BookmarkTree;
 import indi.bookmarkx.ui.tree.BookmarkTreeNode;
 import indi.bookmarkx.utils.PersistenceUtil;
 import org.jetbrains.annotations.NotNull;
@@ -34,7 +33,7 @@ import java.util.Optional;
 import java.util.UUID;
 
 /**
- * 项目级别的管理器（命令模式）：用于管理所有「书签UI」的变化，是一切用户操作的入口，管理所有数据及 UI 的引用
+ * 项目级别的管理器（命令模式）：用于管理所有「书签UI」的变化，发布书签变更的消息，是一切用户操作的入口，管理所有数据及 UI 的引用
  */
 @Service(Service.Level.PROJECT)
 public final class BookmarksManager {
@@ -134,6 +133,15 @@ public final class BookmarksManager {
                 });
     }
 
+    /**
+     * 删除书签
+     *
+     * @param model 需要删除的书签
+     */
+    public void removeBookRemark(AbstractTreeNodeModel model) {
+        getBookmarkPublisher(project).bookmarkRemoved(model);
+    }
+
     @NotNull
     private static BookmarkListener getBookmarkPublisher(Project project) {
         return project.getMessageBus().syncPublisher(BookmarkListener.TOPIC);
@@ -163,12 +171,7 @@ public final class BookmarksManager {
 
     private void addToTree(BookmarkNodeModel bookmarkModel) {
         toolWindowRootPanel.addAndGet(bookmarkModel);
-        BookmarkListener listener = getBookmarkPublisher(this.project);
-        listener.bookmarkAdded(bookmarkModel);
-    }
-
-    public static void add(BookmarkPopup p) {
-
+        getBookmarkPublisher(project).bookmarkAdded(bookmarkModel);
     }
 
     public void prev() {
@@ -177,11 +180,6 @@ public final class BookmarksManager {
 
     public void next() {
         toolWindowRootPanel.next();
-    }
-
-    public void select(BookmarkPopup popup) {
-        popup.select(true);
-        popup.navigate();
     }
 
     /**

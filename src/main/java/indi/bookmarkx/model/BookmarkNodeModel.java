@@ -15,8 +15,6 @@ import java.util.Optional;
  */
 public class BookmarkNodeModel extends AbstractTreeNodeModel {
 
-    private String uuid;
-
     private int index;
     private int line;
 
@@ -28,19 +26,6 @@ public class BookmarkNodeModel extends AbstractTreeNodeModel {
     private OpenFileDescriptor openFileDescriptor;
 
     public BookmarkNodeModel() {
-    }
-
-    @Override
-    public int hashCode() {
-        return Objects.hash(uuid);
-    }
-
-    @Override
-    public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
-        BookmarkNodeModel yourClass = (BookmarkNodeModel) o;
-        return uuid.equals(yourClass.uuid);
     }
 
     public OpenFileDescriptor getOpenFileDescriptor() {
@@ -80,17 +65,9 @@ public class BookmarkNodeModel extends AbstractTreeNodeModel {
         this.icon = icon;
     }
 
-    public String getUuid() {
-        return uuid;
-    }
-
     @Override
     public final boolean isBookmark() {
         return true;
-    }
-
-    public void setUuid(String uuid) {
-        this.uuid = uuid;
     }
 
     public Optional<String> getFilePath() {

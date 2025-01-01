@@ -1,10 +1,14 @@
 package indi.bookmarkx.model;
 
+import java.util.Objects;
+
 /**
  * @author Nonoas
  * @date 2023/6/6
  */
 public abstract class AbstractTreeNodeModel {
+
+    private String uuid;
 
     protected String desc;
 
@@ -37,4 +41,24 @@ public abstract class AbstractTreeNodeModel {
         return getName();
     }
 
+    @Override
+    public int hashCode() {
+        return Objects.hash(uuid);
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        AbstractTreeNodeModel yourClass = (AbstractTreeNodeModel) o;
+        return uuid.equals(yourClass.uuid);
+    }
+
+    public void setUuid(String uuid) {
+        this.uuid = uuid;
+    }
+
+    public String getUuid() {
+        return uuid;
+    }
 }

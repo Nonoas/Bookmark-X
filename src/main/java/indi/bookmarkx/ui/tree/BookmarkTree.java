@@ -10,8 +10,8 @@ import com.intellij.openapi.ui.popup.JBPopupFactory;
 import com.intellij.ui.TreeSpeedSearch;
 import com.intellij.ui.awt.RelativePoint;
 import com.intellij.ui.treeStructure.Tree;
+import indi.bookmarkx.BookmarksManager;
 import indi.bookmarkx.common.I18N;
-import indi.bookmarkx.common.data.BookmarkArrayListTable;
 import indi.bookmarkx.listener.BookmarkListener;
 import indi.bookmarkx.model.AbstractTreeNodeModel;
 import indi.bookmarkx.model.BookmarkNodeModel;
@@ -47,6 +47,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.UUID;
 import java.util.stream.Collectors;
 
 /**
@@ -68,8 +69,6 @@ public class BookmarkTree extends Tree implements BookmarkListener {
 
     private Project project;
 
-    private BookmarkArrayListTable bookmarkArrayListTable;
-
     public BookmarkTree(Project project) {
         super();
         initData(project);
@@ -89,7 +88,6 @@ public class BookmarkTree extends Tree implements BookmarkListener {
 
     private void initData(Project project) {
         this.project = project;
-        bookmarkArrayListTable = BookmarkArrayListTable.getInstance(project);
 
         BookmarkTreeNode root = new BookmarkTreeNode(new GroupNodeModel(project.getName()));
         model = new DefaultTreeModel(root);
@@ -181,18 +179,7 @@ public class BookmarkTree extends Tree implements BookmarkListener {
             }
             BookmarkTreeNode selectedNode = (BookmarkTreeNode) path.getLastPathComponent();
             AbstractTreeNodeModel nodeModel = (AbstractTreeNodeModel) selectedNode.getUserObject();
-
-            new BookmarkCreatorDialog(project, I18N.get("bookmark.create.title"))
-                    .defaultName(nodeModel.getName())
-                    .defaultDesc(nodeModel.getDesc())
-                    .showAndCallback((name, desc) -> {
-                        nodeModel.setName(name);
-                        nodeModel.setDesc(desc);
-                        if (selectedNode.isBookmark()) {
-                            bookmarkArrayListTable.insert((BookmarkNodeModel) nodeModel);
-                        }
-                        BookmarkTree.this.model.nodeChanged(selectedNode);
-                    });
+            BookmarksManager.getInstance(project).editBookRemark(nodeModel);
         });
 
         imDel.addActionListener(e -> {
@@ -239,13 +226,14 @@ public class BookmarkTree extends Tree implements BookmarkListener {
 
             new BookmarkCreatorDialog(project, I18N.get("group.create.title"))
                     .showAndCallback((name, desc) -> {
+                        String uuid = UUID.randomUUID().toString();
+                        groupNodeModel.setUuid(uuid);
                         groupNodeModel.setName(name);
                         groupNodeModel.setDesc(desc);
 
                         // 新的分组节点
                         BookmarkTreeNode groupNode = new BookmarkTreeNode(groupNodeModel);
                         model.insertNodeInto(groupNode, parent, 0);
-
                         BookmarkTree.this.model.nodeChanged(selectedNode);
                     });
         };
@@ -307,16 +295,17 @@ public class BookmarkTree extends Tree implements BookmarkListener {
      *
      * @param node 要删除的节点
      */
-    public void remove(BookmarkTreeNode node) {
-        model.removeNodeFromParent(node);
-        Object userObject = node.getUserObject();
-        BookmarkNodeModel model = null;
-        if (userObject instanceof BookmarkNodeModel) {
-            model = (BookmarkNodeModel) node.getUserObject();
-            bookmarkArrayListTable.delete(model);
+    private void remove(@NotNull BookmarkTreeNode node) {
+        if (node.isBookmark()) {
+            BookmarksManager.getInstance(project).removeBookRemark((BookmarkNodeModel) node.getUserObject());
+            return;
         }
-        project.getMessageBus().syncPublisher(BookmarkListener.TOPIC).bookmarkRemoved((AbstractTreeNodeModel) userObject);
-        removeFromCache(node);
+        int childCount = node.getChildCount();
+        for (int i = 0; i < childCount; i++) {
+            remove((BookmarkTreeNode) node.getChildAt(i));
+        }
+        // 删除完所有书签节点之后，删除分组节点
+        this.model.removeNodeFromParent(node);
     }
 
     public BookmarkTreeNode getNodeByModel(BookmarkNodeModel nodeModel) {
@@ -325,35 +314,39 @@ public class BookmarkTree extends Tree implements BookmarkListener {
     }
 
     private void addToCache(BookmarkTreeNode node) {
-        BookmarkNodeModel userObject = (BookmarkNodeModel) node.getUserObject();
+        AbstractTreeNodeModel userObject = (AbstractTreeNodeModel) node.getUserObject();
         nodeCache.put(userObject.getUuid(), node);
-    }
-
-    /**
-     * 递归从缓存删除节点，确保不要内存泄露
-     *
-     * @param node 递归根节点
-     */
-    private void removeFromCache(BookmarkTreeNode node) {
-        if (node.isBookmark()) {
-            BookmarkNodeModel userObject = (BookmarkNodeModel) node.getUserObject();
-            nodeCache.remove(userObject.getUuid());
-            return;
-        }
-        int childCount = node.getChildCount();
-        for (int i = 0; i < childCount; i++) {
-            removeFromCache((BookmarkTreeNode) node.getChildAt(i));
-        }
     }
 
     @Override
     public void setModel(TreeModel newModel) {
         this.model = (DefaultTreeModel) newModel;
         Object root = model.getRoot();
-        if (root instanceof BookmarkTreeNode) {
-            navigator.activatedGroup = (BookmarkTreeNode) root;
+        if (!(root instanceof BookmarkTreeNode)) {
+            super.setModel(model);
+            return;
         }
+        navigator.activatedGroup = (BookmarkTreeNode) root;
+        nodeCache.clear();
+        loadNodeCache((BookmarkTreeNode) root);
         super.setModel(model);
+    }
+
+    /**
+     * 加载当前节点下的所有节点到缓存
+     *
+     * @param node 当前节点
+     */
+    private void loadNodeCache(BookmarkTreeNode node) {
+        AbstractTreeNodeModel model = (AbstractTreeNodeModel) node.getUserObject();
+        if (node.isBookmark()) {
+            nodeCache.put(model.getUuid(), node);
+            return;
+        }
+        int childCount = node.getChildCount();
+        for (int i = 0; i < childCount; i++) {
+            loadNodeCache((BookmarkTreeNode) node.getChildAt(i));
+        }
     }
 
     @Override
@@ -372,6 +365,26 @@ public class BookmarkTree extends Tree implements BookmarkListener {
         } else {
             return null;
         }
+    }
+
+    @Override
+    public void bookmarkChanged(@NotNull AbstractTreeNodeModel model) {
+        if (model.isGroup()) {
+            return;
+        }
+        BookmarkNodeModel bookmarkNodeModel = (BookmarkNodeModel) model;
+        BookmarkTreeNode node = nodeCache.get(bookmarkNodeModel.getUuid());
+        this.model.nodeChanged(node);
+    }
+
+    @Override
+    public void bookmarkRemoved(@NotNull AbstractTreeNodeModel model) {
+        if (model.isGroup()) {
+            return;
+        }
+        BookmarkNodeModel bookmarkNodeModel = (BookmarkNodeModel) model;
+        BookmarkTreeNode node = nodeCache.remove(bookmarkNodeModel.getUuid());
+        this.model.removeNodeFromParent(node);
     }
 
     /**
@@ -722,18 +735,5 @@ public class BookmarkTree extends Tree implements BookmarkListener {
 
     }
 
-    @Override
-    public void bookmarkChanged(@NotNull AbstractTreeNodeModel model) {
-        if (model.isGroup()) {
-            return;
-        }
-        BookmarkNodeModel bookmarkNodeModel = (BookmarkNodeModel) model;
-        BookmarkTreeNode node = nodeCache.get(bookmarkNodeModel.getUuid());
-        this.model.nodeChanged(node);
-        Messages.showMessageDialog(
-                "树节点改变" + model, // 提示文本
-                "Message",                   // 标题
-                Messages.getInformationIcon() // 图标
-        );
-    }
+
 }

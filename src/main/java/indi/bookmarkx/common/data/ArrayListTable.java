@@ -14,11 +14,11 @@ import java.util.function.Function;
  * @createTime: 2024/03/20 14:58
  * @description: 数组表格
  */
-public class ArrayListTable<T> implements DataPool{
+public class ArrayListTable<T> implements DataPool {
 
     protected List<T> dataList;
 
-    protected final HashMap<Function, SimpleColumnIndex<Set<T>>> columnIndices = new HashMap<>();
+    protected final HashMap<Function<T, String>, SimpleColumnIndex<Set<T>>> columnIndices = new HashMap<>();
 
     public ArrayListTable(List<T> arrayList, List<Function<T, String>> functions) {
         this.dataList = arrayList;
@@ -30,15 +30,15 @@ public class ArrayListTable<T> implements DataPool{
         dataList.forEach(data -> {
             try {
                 saveHunt(data, function, index);
-            }catch (Exception ignored) {
+            } catch (Exception ignored) {
 
             }
         });
         columnIndices.put(function, index);
     }
 
-    public List<T> getOnlyIndex(Object key){
-        for (SimpleColumnIndex<Set<T>> index: columnIndices.values()) {
+    public List<T> getOnlyIndex(Object key) {
+        for (SimpleColumnIndex<Set<T>> index : columnIndices.values()) {
             Set<T> hunt = index.hunt(String.valueOf(key));
             if (hunt != null) {
                 return new ArrayList<>(hunt);
@@ -47,12 +47,12 @@ public class ArrayListTable<T> implements DataPool{
         return null;
     }
 
-    public void insert(T data){
+    public void insert(T data) {
         columnIndices.forEach((function, index) -> saveHunt(data, function, index));
         this.dataList.add(data);
     }
 
-    private void saveHunt(T data, Function function, SimpleColumnIndex<Set<T>> index) {
+    private void saveHunt(T data, Function<T, String> function, SimpleColumnIndex<Set<T>> index) {
         String key = String.valueOf(function.apply(data));
         Set<T> hunt = index.hunt(key);
         if (hunt == null) {

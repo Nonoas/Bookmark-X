@@ -2,7 +2,8 @@ package indi.bookmarkx.action;
 
 import com.intellij.openapi.actionSystem.AnAction;
 import com.intellij.openapi.actionSystem.AnActionEvent;
-import com.intellij.openapi.ui.Messages;
+import com.intellij.openapi.project.Project;
+import indi.bookmarkx.BookmarksManager;
 import indi.bookmarkx.common.I18N;
 import indi.bookmarkx.model.AbstractTreeNodeModel;
 import org.jetbrains.annotations.NotNull;
@@ -22,10 +23,11 @@ public class BookmarkRemoveAction extends AnAction {
     }
 
     public void actionPerformed(@NotNull AnActionEvent e) {
-        Messages.showMessageDialog(
-                "删除" + model, // 提示文本
-                "Message",                   // 标题
-                Messages.getInformationIcon() // 图标
-        );
+        Project project = e.getProject();
+        if (null == project) {
+            return;
+        }
+        BookmarksManager manager = BookmarksManager.getInstance(project);
+        manager.removeBookRemark(model);
     }
 }
