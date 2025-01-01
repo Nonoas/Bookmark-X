@@ -1,8 +1,10 @@
 package indi.bookmarkx.utils;
 
+import com.intellij.openapi.util.IconLoader;
 import indi.bookmarkx.model.AbstractTreeNodeModel;
 import indi.bookmarkx.ui.tree.BookmarkTreeNode;
 
+import javax.swing.Icon;
 import javax.swing.event.TreeModelEvent;
 import java.util.ArrayList;
 import java.util.Arrays;

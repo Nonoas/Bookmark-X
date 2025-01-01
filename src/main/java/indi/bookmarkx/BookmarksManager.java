@@ -14,6 +14,7 @@ import indi.bookmarkx.common.I18N;
 import indi.bookmarkx.common.data.BookmarkArrayListTable;
 import indi.bookmarkx.global.FileMarksCache;
 import indi.bookmarkx.listener.BookmarkListener;
+import indi.bookmarkx.model.AbstractTreeNodeModel;
 import indi.bookmarkx.model.BookmarkConverter;
 import indi.bookmarkx.model.BookmarkNodeModel;
 import indi.bookmarkx.model.po.BookmarkPO;
@@ -21,6 +22,7 @@ import indi.bookmarkx.persistence.MyPersistent;
 import indi.bookmarkx.ui.dialog.BookmarkCreatorDialog;
 import indi.bookmarkx.ui.painter.LineEndPainter;
 import indi.bookmarkx.ui.pannel.BookmarksManagePanel;
+import indi.bookmarkx.ui.tree.BookmarkTree;
 import indi.bookmarkx.ui.tree.BookmarkTreeNode;
 import indi.bookmarkx.utils.PersistenceUtil;
 import org.jetbrains.annotations.NotNull;
@@ -121,6 +123,22 @@ public final class BookmarksManager {
                 });
     }
 
+    public void editBookRemark(AbstractTreeNodeModel nodeModel) {
+        new BookmarkCreatorDialog(project, I18N.get("bookmark.create.title"))
+                .defaultName(nodeModel.getName())
+                .defaultDesc(nodeModel.getDesc())
+                .showAndCallback((name, desc) -> {
+                    nodeModel.setName(name);
+                    nodeModel.setDesc(desc);
+                    getBookmarkPublisher(project).bookmarkChanged(nodeModel);
+                });
+    }
+
+    @NotNull
+    private static BookmarkListener getBookmarkPublisher(Project project) {
+        return project.getMessageBus().syncPublisher(BookmarkListener.TOPIC);
+    }
+
     private void submitCreateBookRemark(BookmarkNodeModel bookmarkModel) {
         //  The toolWindowRootPanel may be null the first time IDEA is opened
         if (Objects.isNull(toolWindowRootPanel)) {
@@ -145,7 +163,7 @@ public final class BookmarksManager {
 
     private void addToTree(BookmarkNodeModel bookmarkModel) {
         toolWindowRootPanel.addAndGet(bookmarkModel);
-        BookmarkListener listener = this.project.getMessageBus().syncPublisher(BookmarkListener.TOPIC);
+        BookmarkListener listener = getBookmarkPublisher(this.project);
         listener.bookmarkAdded(bookmarkModel);
     }
 

@@ -20,14 +20,20 @@ import indi.bookmarkx.persistence.MySettings;
 import indi.bookmarkx.ui.dialog.BookmarkCreatorDialog;
 import indi.bookmarkx.ui.pannel.BookmarkTipPanel;
 import org.apache.commons.lang3.Validate;
+import org.jetbrains.annotations.NotNull;
 
-import javax.swing.*;
+import javax.swing.DropMode;
+import javax.swing.JComponent;
+import javax.swing.JTree;
+import javax.swing.SwingUtilities;
+import javax.swing.Timer;
+import javax.swing.TransferHandler;
 import javax.swing.tree.DefaultTreeModel;
 import javax.swing.tree.TreeModel;
 import javax.swing.tree.TreeNode;
 import javax.swing.tree.TreePath;
 import javax.swing.tree.TreeSelectionModel;
-import java.awt.*;
+import java.awt.Point;
 import java.awt.datatransfer.DataFlavor;
 import java.awt.datatransfer.Transferable;
 import java.awt.datatransfer.UnsupportedFlavorException;
@@ -49,7 +55,7 @@ import java.util.stream.Collectors;
  * @author Nonoas
  * @date 2023/6/1
  */
-public class BookmarkTree extends Tree {
+public class BookmarkTree extends Tree implements BookmarkListener {
 
     /**
      * BookmarkTreeNode 缓存，便于通过 UUID 直接取到节点引用
@@ -104,6 +110,9 @@ public class BookmarkTree extends Tree {
     }
 
     private void initTreeListeners() {
+        // 订阅书签变化事件
+        project.getMessageBus().connect().subscribe(BookmarkListener.TOPIC, this);
+
         // 选中监听
         addTreeSelectionListener(event -> {
             int selectionCount = getSelectionCount();
@@ -713,4 +722,18 @@ public class BookmarkTree extends Tree {
 
     }
 
+    @Override
+    public void bookmarkChanged(@NotNull AbstractTreeNodeModel model) {
+        if (model.isGroup()) {
+            return;
+        }
+        BookmarkNodeModel bookmarkNodeModel = (BookmarkNodeModel) model;
+        BookmarkTreeNode node = nodeCache.get(bookmarkNodeModel.getUuid());
+        this.model.nodeChanged(node);
+        Messages.showMessageDialog(
+                "树节点改变" + model, // 提示文本
+                "Message",                   // 标题
+                Messages.getInformationIcon() // 图标
+        );
+    }
 }

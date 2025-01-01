@@ -52,8 +52,7 @@
             <add-to-group group-id="GoToMenu" anchor="after"
                           relative-to-action="indi.bookmarkx.action.BookmarkCreateAction"/>
 
-            <action id="indi.bookmarkx.action.BookmarkCreateAction" class="indi.bookmarkx.action.BookmarkCreateAction"
-                    text="Add With Line">
+            <action id="indi.bookmarkx.action.BookmarkCreateAction" class="indi.bookmarkx.action.BookmarkCreateAction">
                 <keyboard-shortcut first-keystroke="shift alt d" keymap="$default"/>
             </action>
             <action id="indi.bookmarkx.action.NextBookmarkAction" class="indi.bookmarkx.action.NextBookmarkAction"
@@ -80,16 +79,6 @@
                 description="Custom action for editor gutter">
             <add-to-group group-id="EditorGutterPopupMenu" anchor="first"/>
         </action>
-
-        <actions>
-            <action id="indi.bookmarkx.action.MyGutterContextMenuAction"
-                    class="indi.bookmarkx.action.MyGutterContextMenuAction"
-                    text="测试在IDEA书签上添加"
-                    description="Perform a custom action on a bookmark">
-                <!-- 添加到书签右键菜单 -->
-                <add-to-group group-id="BookmarksViewPopupMenu" anchor="last"/>
-            </action>
-        </actions>
 
     </actions>
 

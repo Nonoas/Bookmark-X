@@ -3,11 +3,14 @@ package indi.bookmarkx.common.data;
 import com.intellij.openapi.components.Service;
 import com.intellij.openapi.fileEditor.OpenFileDescriptor;
 import com.intellij.openapi.project.Project;
+import com.intellij.openapi.ui.Messages;
+import indi.bookmarkx.listener.BookmarkListener;
 import indi.bookmarkx.model.AbstractTreeNodeModel;
 import indi.bookmarkx.model.BookmarkNodeModel;
 import indi.bookmarkx.ui.tree.BookmarkTree;
 import indi.bookmarkx.ui.tree.BookmarkTreeNode;
 import indi.bookmarkx.utils.PersistenceUtil;
+import org.jetbrains.annotations.NotNull;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -21,7 +24,7 @@ import java.util.function.Function;
  * @description: 数组表格
  */
 @Service(Service.Level.PROJECT)
-public final class BookmarkArrayListTable extends ArrayListTable<BookmarkNodeModel> {
+public final class BookmarkArrayListTable extends ArrayListTable<BookmarkNodeModel> implements BookmarkListener {
 
     private final Project project;
 
@@ -32,6 +35,7 @@ public final class BookmarkArrayListTable extends ArrayListTable<BookmarkNodeMod
     public BookmarkArrayListTable(Project project) {
         super(new ArrayList<>(), getColumnIndexFunctions());
         this.project = project;
+        project.getMessageBus().connect().subscribe(TOPIC, this);
     }
 
     public void initData(BookmarkTree bookmarkPO) {
@@ -71,5 +75,18 @@ public final class BookmarkArrayListTable extends ArrayListTable<BookmarkNodeMod
         }
         return PersistenceUtil.treeToList(bookmarkTreeNode);
 
+    }
+
+
+    @Override
+    public void bookmarkChanged(@NotNull AbstractTreeNodeModel model) {
+        Messages.showMessageDialog(
+                "行尾注释改变" + model, // 提示文本
+                "Message",                   // 标题
+                Messages.getInformationIcon() // 图标
+        );
+        if (model.isBookmark()) {
+            this.insert((BookmarkNodeModel) model);
+        }
     }
 }

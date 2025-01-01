@@ -15,7 +15,7 @@ public class GroupNodeModel extends AbstractTreeNodeModel {
     }
 
     @Override
-    public boolean isBookmark() {
+    public final boolean isBookmark() {
         return false;
     }
 }

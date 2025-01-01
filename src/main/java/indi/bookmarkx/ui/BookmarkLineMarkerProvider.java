@@ -1,15 +1,19 @@
 package indi.bookmarkx.ui;
 
-import com.intellij.codeHighlighting.Pass;
+import com.intellij.codeInsight.daemon.GutterIconNavigationHandler;
 import com.intellij.codeInsight.daemon.LineMarkerInfo;
 import com.intellij.codeInsight.daemon.LineMarkerProvider;
+import com.intellij.openapi.actionSystem.ActionGroup;
+import com.intellij.openapi.actionSystem.DefaultActionGroup;
 import com.intellij.openapi.editor.Document;
 import com.intellij.openapi.editor.markup.GutterIconRenderer;
 import com.intellij.openapi.project.Project;
-import com.intellij.openapi.util.IconLoader;
 import com.intellij.psi.PsiElement;
 import com.intellij.psi.PsiFile;
 import indi.bookmarkx.BookmarksManager;
+import indi.bookmarkx.action.BookmarkEditAction;
+import indi.bookmarkx.action.BookmarkRemoveAction;
+import indi.bookmarkx.common.MyIcons;
 import indi.bookmarkx.global.FileMarksCache;
 import indi.bookmarkx.model.BookmarkNodeModel;
 import org.jetbrains.annotations.NotNull;
@@ -23,7 +27,7 @@ import java.util.Set;
 /**
  * @author Nonoas
  * @date 2024/12/14
- * @since
+ * @since 2.2.0
  */
 public class BookmarkLineMarkerProvider implements LineMarkerProvider {
 
@@ -58,19 +62,48 @@ public class BookmarkLineMarkerProvider implements LineMarkerProvider {
                 continue;
             }
 
-            LineMarkerInfo<PsiElement> markerInfo = new LineMarkerInfo<>(
+            LineMarkerInfo<PsiElement> markerInfo = new BkLineMarkerInfo(
+                    nodeModel.get(),
                     element,
-                    element.getTextRange(),
-                    IconLoader.getIcon("/icons/bookmark.svg", getClass()),
-                    Pass.LINE_MARKERS,
-                    psiElement -> nodeModel.get().getUuid(),
-                    (mouseEvent, psiElement) -> {
-                        // 点击事件
-                        System.out.println(nodeModel.get().getUuid());
-                    },
-                    GutterIconRenderer.Alignment.LEFT
+                    (ev, el) -> {
+                    }
             );
             result.add(markerInfo);
+        }
+    }
+
+
+    /**
+     * 书签的标签信息类，存储行标记中的书签信息，指定标签文本，图标样式
+     */
+    static class BkLineMarkerInfo extends LineMarkerInfo<PsiElement> {
+
+        private final BookmarkNodeModel model;
+
+        public BkLineMarkerInfo(BookmarkNodeModel model,
+                                @NotNull PsiElement element,
+                                GutterIconNavigationHandler<PsiElement> navHandler) {
+            super(element, element.getTextRange(), MyIcons.BOOKMARK, null, navHandler, GutterIconRenderer.Alignment.LEFT, model::getName);
+            this.model = model;
+        }
+
+        @Override
+        public GutterIconRenderer createGutterRenderer() {
+            return new LineMarkerGutterIconRenderer<>(this) {
+
+                @Override
+                public @NotNull ActionGroup getPopupMenuActions() {
+                    DefaultActionGroup actionGroup = new DefaultActionGroup();
+                    actionGroup.add(new BookmarkEditAction(model));
+                    actionGroup.add(new BookmarkRemoveAction(model));
+                    return actionGroup;
+                }
+            };
+        }
+
+        @Override
+        public String getLineMarkerTooltip() {
+            return model.getDesc();
         }
     }
 }

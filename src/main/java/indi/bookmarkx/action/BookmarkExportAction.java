@@ -32,7 +32,7 @@ import static indi.bookmarkx.utils.PersistenceUtil.deepCopy;
  */
 public final class BookmarkExportAction extends AnAction {
 
-    private static final String ACTION_ID = I18N.get("bookmark.export");
+    private static String ACTION_ID = I18N.get("bookmark.export");
 
     private Project project;
 

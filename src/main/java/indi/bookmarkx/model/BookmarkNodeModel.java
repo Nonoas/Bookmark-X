@@ -85,7 +85,7 @@ public class BookmarkNodeModel extends AbstractTreeNodeModel {
     }
 
     @Override
-    public boolean isBookmark() {
+    public final boolean isBookmark() {
         return true;
     }
 
