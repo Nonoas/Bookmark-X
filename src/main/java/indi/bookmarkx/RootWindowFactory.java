@@ -76,7 +76,8 @@ public class RootWindowFactory implements ToolWindowFactory, DumbAware {
                 String groupId = ToolWindowId.PROJECT_VIEW;
                 Notification notification = new Notification(groupId,
                         "版本更新",
-                        "A new Beta version is available: " + latestVersion,
+                        "A new Beta version is available: " + latestVersion + ",You can go to " +
+                                "https://plugins.jetbrains.com/plugin/22013-bookmark-x/edit/versions/beta for download.",
                         NotificationType.INFORMATION);
                 Notifications.Bus.notify(notification, project);
             }

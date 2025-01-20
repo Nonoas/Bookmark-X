@@ -26,8 +26,6 @@
         <toolWindow id="Bookmark-X" anchor="left"
                     icon="/icons/logo.svg"
                     factoryClass="indi.bookmarkx.RootWindowFactory" secondary="true"/>
-        <!--行首书签图标-->
-        <codeInsight.lineMarkerProvider implementationClass="indi.bookmarkx.ui.BookmarkLineMarkerProvider" language=""/>
 
         <projectService serviceImplementation="indi.bookmarkx.persistence.MyPersistent"/>
 
@@ -72,8 +70,8 @@
             </action>
         </group>
 
-        <action id="indi.bookmarkx.action.MyGutterContextMenuAction"
-                class="indi.bookmarkx.action.MyGutterContextMenuAction"
+        <action id="indi.bookmarkx.action.BkGutterContextMenuAction"
+                class="indi.bookmarkx.action.BkGutterContextMenuAction"
                 text="Add Bookmark-X"
                 icon="/icons/bookmark.svg"
                 description="Custom action for editor gutter">

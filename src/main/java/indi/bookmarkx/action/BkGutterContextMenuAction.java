@@ -16,10 +16,12 @@ import org.jetbrains.annotations.NotNull;
 
 import java.util.Optional;
 
+import static com.intellij.openapi.actionSystem.CommonDataKeys.EDITOR;
+
 /**
  * 通过在行标签处右键添加书签时触发的事件
  */
-public class MyGutterContextMenuAction extends AnAction {
+public class BkGutterContextMenuAction extends AnAction {
 
     @Override
     public void actionPerformed(@NotNull AnActionEvent e) {
@@ -29,7 +31,7 @@ public class MyGutterContextMenuAction extends AnAction {
 
         Project project = e.getProject();
         VirtualFile file = CommonDataKeys.VIRTUAL_FILE.getData(dataContext);
-        Editor editor = e.getData(CommonDataKeys.EDITOR);
+        Editor editor = e.getData(EDITOR);
 
         if (project == null || file == null || null == lineNum || null == editor) {
             return;
