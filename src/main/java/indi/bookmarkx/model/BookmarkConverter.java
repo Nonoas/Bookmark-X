@@ -25,7 +25,6 @@ public class BookmarkConverter {
             po.setUuid(nodeModel.getUuid());
             po.setIndex(nodeModel.getIndex());
             po.setLine(nodeModel.getLine());
-            po.setColumn(nodeModel.getColumn());
             po.setName(model.getName());
             po.setDesc(nodeModel.getDesc());
             po.setBookmark(true);
@@ -58,7 +57,6 @@ public class BookmarkConverter {
             model.setUuid(po.getUuid());
             model.setIndex(po.getIndex());
             model.setLine(po.getLine());
-            model.setColumn(po.getColumn());
             model.setName(po.getName());
             model.setDesc(po.getDesc());
 
@@ -71,7 +69,7 @@ public class BookmarkConverter {
             }
             FileType fileType = virtualFile.getFileType();
             model.setIcon(fileType.getIcon());
-            model.setOpenFileDescriptor(new OpenFileDescriptor(project, virtualFile, po.getLine(), po.getColumn()));
+            model.setOpenFileDescriptor(new OpenFileDescriptor(project, virtualFile, po.getLine(), 0));
             return model;
         } else {
             GroupNodeModel model = new GroupNodeModel();

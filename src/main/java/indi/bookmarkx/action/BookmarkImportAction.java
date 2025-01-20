@@ -11,7 +11,7 @@ import com.intellij.openapi.util.io.FileUtil;
 import com.intellij.openapi.util.text.StringUtil;
 import com.intellij.openapi.vfs.VirtualFile;
 import indi.bookmarkx.BookmarksManager;
-import indi.bookmarkx.MyPersistent;
+import indi.bookmarkx.persistence.MyPersistent;
 import indi.bookmarkx.common.I18N;
 import indi.bookmarkx.model.po.BookmarkPO;
 import org.apache.commons.collections.CollectionUtils;

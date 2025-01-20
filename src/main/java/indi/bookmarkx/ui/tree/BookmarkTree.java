@@ -10,19 +10,23 @@ import com.intellij.openapi.ui.popup.JBPopupFactory;
 import com.intellij.ui.TreeSpeedSearch;
 import com.intellij.ui.awt.RelativePoint;
 import com.intellij.ui.treeStructure.Tree;
+import indi.bookmarkx.BookmarksManager;
 import indi.bookmarkx.common.I18N;
-import indi.bookmarkx.common.data.BookmarkArrayListTable;
+import indi.bookmarkx.listener.BookmarkListener;
 import indi.bookmarkx.model.AbstractTreeNodeModel;
 import indi.bookmarkx.model.BookmarkNodeModel;
 import indi.bookmarkx.model.GroupNodeModel;
+import indi.bookmarkx.persistence.MySettings;
 import indi.bookmarkx.ui.dialog.BookmarkCreatorDialog;
 import indi.bookmarkx.ui.pannel.BookmarkTipPanel;
 import org.apache.commons.lang3.Validate;
+import org.jetbrains.annotations.NotNull;
 
 import javax.swing.DropMode;
 import javax.swing.JComponent;
 import javax.swing.JTree;
 import javax.swing.SwingUtilities;
+import javax.swing.Timer;
 import javax.swing.TransferHandler;
 import javax.swing.tree.DefaultTreeModel;
 import javax.swing.tree.TreeModel;
@@ -43,6 +47,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.UUID;
 import java.util.stream.Collectors;
 
 /**
@@ -51,7 +56,7 @@ import java.util.stream.Collectors;
  * @author Nonoas
  * @date 2023/6/1
  */
-public class BookmarkTree extends Tree {
+public class BookmarkTree extends Tree implements BookmarkListener {
 
     /**
      * BookmarkTreeNode 缓存，便于通过 UUID 直接取到节点引用
@@ -63,8 +68,6 @@ public class BookmarkTree extends Tree {
     private DefaultTreeModel model;
 
     private Project project;
-
-    private BookmarkArrayListTable bookmarkArrayListTable;
 
     public BookmarkTree(Project project) {
         super();
@@ -85,7 +88,6 @@ public class BookmarkTree extends Tree {
 
     private void initData(Project project) {
         this.project = project;
-        bookmarkArrayListTable = BookmarkArrayListTable.getInstance(project);
 
         BookmarkTreeNode root = new BookmarkTreeNode(new GroupNodeModel(project.getName()));
         model = new DefaultTreeModel(root);
@@ -106,6 +108,9 @@ public class BookmarkTree extends Tree {
     }
 
     private void initTreeListeners() {
+        // 订阅书签变化事件
+        project.getMessageBus().connect().subscribe(BookmarkListener.TOPIC, this);
+
         // 选中监听
         addTreeSelectionListener(event -> {
             int selectionCount = getSelectionCount();
@@ -121,60 +126,7 @@ public class BookmarkTree extends Tree {
             }
         });
 
-        addMouseMotionListener(new MouseMotionAdapter() {
-            @Override
-            public void mouseMoved(MouseEvent e) {
-                // Get the selected node
-                TreePath path = getPathForLocation(e.getX(), e.getY());
-                if (path != null) {
-                    // Show tooltip for the node
-                    showToolTip(getToolTipText(e), e);
-                } else {
-                    if (this.lastPopup != null) {
-                        lastPopup.cancel();
-                    }
-                }
-            }
-
-            private AbstractTreeNodeModel getToolTipText(MouseEvent e) {
-                TreePath path = getPathForLocation(e.getX(), e.getY());
-                if (path != null) {
-                    BookmarkTreeNode selectedNode = (BookmarkTreeNode) path.getLastPathComponent();
-                    if (selectedNode != null) {
-                        return (AbstractTreeNodeModel) selectedNode.getUserObject();
-                    }
-                }
-                return null;
-            }
-
-            private JBPopup lastPopup;
-            private AbstractTreeNodeModel lastAbstractTreeNodeModel;
-
-            private void showToolTip(AbstractTreeNodeModel abstractTreeNodeModel, MouseEvent e) {
-                if (abstractTreeNodeModel == null) {
-                    return;
-                }
-                if (lastAbstractTreeNodeModel == abstractTreeNodeModel) {
-                    return;
-                }
-                if (this.lastPopup != null) {
-                    lastPopup.cancel();
-                }
-                lastAbstractTreeNodeModel = abstractTreeNodeModel;
-
-                JBPopupFactory popupFactory = JBPopupFactory.getInstance();
-                lastPopup = popupFactory.createComponentPopupBuilder(new BookmarkTipPanel(lastAbstractTreeNodeModel), null)
-                        .setFocusable(true)
-                        .setResizable(true)
-                        .setRequestFocus(true)
-                        .createPopup();
-
-                Point adjustedLocation = new Point(e.getLocationOnScreen().x + 5, e.getLocationOnScreen().y + 10); // Adjust position
-                lastPopup.show(RelativePoint.fromScreen(adjustedLocation));
-            }
-
-        });
-
+        addMouseMotionListener(new TreeMouseMotionAdapter(this));
 
         // 鼠标点击事件
         addMouseListener(new MouseAdapter() {
@@ -227,22 +179,17 @@ public class BookmarkTree extends Tree {
             }
             BookmarkTreeNode selectedNode = (BookmarkTreeNode) path.getLastPathComponent();
             AbstractTreeNodeModel nodeModel = (AbstractTreeNodeModel) selectedNode.getUserObject();
-
-            new BookmarkCreatorDialog(project, I18N.get("bookmark.create.title"))
-                    .defaultName(nodeModel.getName())
-                    .defaultDesc(nodeModel.getDesc())
-                    .showAndCallback((name, desc) -> {
-                        nodeModel.setName(name);
-                        nodeModel.setDesc(desc);
-                        if (selectedNode.isBookmark()) {
-                            bookmarkArrayListTable.insert((BookmarkNodeModel) nodeModel);
-                        }
-                        BookmarkTree.this.model.nodeChanged(selectedNode);
-                    });
+            BookmarksManager.getInstance(project).editBookRemark(nodeModel);
         });
 
         imDel.addActionListener(e -> {
-            int result = Messages.showOkCancelDialog(project, "是否删除选中的标签", "删除确认", "删除", "取消", Messages.getQuestionIcon());
+            int result = Messages.showOkCancelDialog(project,
+                    I18N.get("bookmark.delete.msg"),
+                    I18N.get("bookmark.delete.ok"),
+                    I18N.get("delete"),
+                    I18N.get("cancel"),
+                    Messages.getQuestionIcon());
+
             if (result == Messages.CANCEL) {
                 return;
             }
@@ -279,13 +226,14 @@ public class BookmarkTree extends Tree {
 
             new BookmarkCreatorDialog(project, I18N.get("group.create.title"))
                     .showAndCallback((name, desc) -> {
+                        String uuid = UUID.randomUUID().toString();
+                        groupNodeModel.setUuid(uuid);
                         groupNodeModel.setName(name);
                         groupNodeModel.setDesc(desc);
 
                         // 新的分组节点
                         BookmarkTreeNode groupNode = new BookmarkTreeNode(groupNodeModel);
                         model.insertNodeInto(groupNode, parent, 0);
-
                         BookmarkTree.this.model.nodeChanged(selectedNode);
                     });
         };
@@ -347,13 +295,17 @@ public class BookmarkTree extends Tree {
      *
      * @param node 要删除的节点
      */
-    public void remove(BookmarkTreeNode node) {
-        model.removeNodeFromParent(node);
-        Object userObject = node.getUserObject();
-        if (userObject instanceof BookmarkNodeModel) {
-            bookmarkArrayListTable.delete((BookmarkNodeModel) node.getUserObject());
+    private void remove(@NotNull BookmarkTreeNode node) {
+        if (node.isBookmark()) {
+            BookmarksManager.getInstance(project).removeBookRemark((BookmarkNodeModel) node.getUserObject());
+            return;
         }
-        removeFromCache(node);
+        int childCount = node.getChildCount();
+        for (int i = 0; i < childCount; i++) {
+            remove((BookmarkTreeNode) node.getChildAt(i));
+        }
+        // 删除完所有书签节点之后，删除分组节点
+        this.model.removeNodeFromParent(node);
     }
 
     public BookmarkTreeNode getNodeByModel(BookmarkNodeModel nodeModel) {
@@ -362,35 +314,39 @@ public class BookmarkTree extends Tree {
     }
 
     private void addToCache(BookmarkTreeNode node) {
-        BookmarkNodeModel userObject = (BookmarkNodeModel) node.getUserObject();
+        AbstractTreeNodeModel userObject = (AbstractTreeNodeModel) node.getUserObject();
         nodeCache.put(userObject.getUuid(), node);
-    }
-
-    /**
-     * 递归从缓存删除节点，确保不要内存泄露
-     *
-     * @param node 递归根节点
-     */
-    private void removeFromCache(BookmarkTreeNode node) {
-        if (node.isBookmark()) {
-            BookmarkNodeModel userObject = (BookmarkNodeModel) node.getUserObject();
-            nodeCache.remove(userObject.getUuid());
-            return;
-        }
-        int childCount = node.getChildCount();
-        for (int i = 0; i < childCount; i++) {
-            removeFromCache((BookmarkTreeNode) node.getChildAt(i));
-        }
     }
 
     @Override
     public void setModel(TreeModel newModel) {
         this.model = (DefaultTreeModel) newModel;
         Object root = model.getRoot();
-        if (root instanceof BookmarkTreeNode) {
-            navigator.activatedGroup = (BookmarkTreeNode) root;
+        if (!(root instanceof BookmarkTreeNode)) {
+            super.setModel(model);
+            return;
         }
+        navigator.activatedGroup = (BookmarkTreeNode) root;
+        nodeCache.clear();
+        loadNodeCache((BookmarkTreeNode) root);
         super.setModel(model);
+    }
+
+    /**
+     * 加载当前节点下的所有节点到缓存
+     *
+     * @param node 当前节点
+     */
+    private void loadNodeCache(BookmarkTreeNode node) {
+        AbstractTreeNodeModel model = (AbstractTreeNodeModel) node.getUserObject();
+        if (node.isBookmark()) {
+            nodeCache.put(model.getUuid(), node);
+            return;
+        }
+        int childCount = node.getChildCount();
+        for (int i = 0; i < childCount; i++) {
+            loadNodeCache((BookmarkTreeNode) node.getChildAt(i));
+        }
     }
 
     @Override
@@ -409,6 +365,26 @@ public class BookmarkTree extends Tree {
         } else {
             return null;
         }
+    }
+
+    @Override
+    public void bookmarkChanged(@NotNull AbstractTreeNodeModel model) {
+        if (model.isGroup()) {
+            return;
+        }
+        BookmarkNodeModel bookmarkNodeModel = (BookmarkNodeModel) model;
+        BookmarkTreeNode node = nodeCache.get(bookmarkNodeModel.getUuid());
+        this.model.nodeChanged(node);
+    }
+
+    @Override
+    public void bookmarkRemoved(@NotNull AbstractTreeNodeModel model) {
+        if (model.isGroup()) {
+            return;
+        }
+        BookmarkNodeModel bookmarkNodeModel = (BookmarkNodeModel) model;
+        BookmarkTreeNode node = nodeCache.remove(bookmarkNodeModel.getUuid());
+        this.model.removeNodeFromParent(node);
     }
 
     /**
@@ -578,6 +554,9 @@ public class BookmarkTree extends Tree {
         }
     }
 
+    /**
+     * 节点拖拽处理器
+     */
     static class DragHandler extends TransferHandler {
 
         @Override
@@ -632,9 +611,6 @@ public class BookmarkTree extends Tree {
 
                 int childIndex = dl.getChildIndex();
 
-                System.out.println(childIndex);
-                System.out.println(targetNode);
-
                 if (-1 == childIndex) {
                     for (BookmarkTreeNode node : nodes) {
                         // 目标节点不能是拖动节点的后代，拖动节点不能是目标节点的直接子代
@@ -669,5 +645,95 @@ public class BookmarkTree extends Tree {
             return false;
         }
     }
+
+    /**
+     * 鼠标选父监听
+     */
+    static class TreeMouseMotionAdapter extends MouseMotionAdapter {
+        private Timer timer;
+        private TreePath selectedPath;
+        private final JTree tree;
+        private JBPopup lastPopup;
+        private AbstractTreeNodeModel lastAbstractTreeNodeModel;
+
+        public TreeMouseMotionAdapter(JTree tree) {
+            this.tree = tree;
+        }
+
+        @Override
+        public void mouseMoved(MouseEvent e) {
+            MySettings instance = MySettings.getInstance();
+            int tipDelay = instance.getTipDelay();
+            if (tipDelay < 0) {
+                return;
+            }
+
+            // Get the selected node
+            TreePath path = tree.getPathForLocation(e.getX(), e.getY());
+            if (path != null) {
+                if (Objects.equals(path, selectedPath)) {
+                    return;
+                }
+                removeTimer();
+                selectedPath = path;
+
+                timer = new Timer(tipDelay, te -> showToolTip(getToolTipText(e), e));
+                timer.setRepeats(false);
+                timer.restart();
+            } else {
+                selectedPath = null;
+                lastAbstractTreeNodeModel = null;
+                removeTimer();
+            }
+        }
+
+        private void removeTimer() {
+            if (timer != null) {
+                timer.stop();
+                timer = null;
+            }
+
+            if (this.lastPopup != null) {
+                lastPopup.cancel();
+            }
+        }
+
+
+        private AbstractTreeNodeModel getToolTipText(MouseEvent e) {
+            TreePath path = tree.getPathForLocation(e.getX(), e.getY());
+            if (path != null) {
+                BookmarkTreeNode selectedNode = (BookmarkTreeNode) path.getLastPathComponent();
+                if (selectedNode != null) {
+                    return (AbstractTreeNodeModel) selectedNode.getUserObject();
+                }
+            }
+            return null;
+        }
+
+        private void showToolTip(AbstractTreeNodeModel abstractTreeNodeModel, MouseEvent e) {
+            if (abstractTreeNodeModel == null) {
+                return;
+            }
+            if (lastAbstractTreeNodeModel == abstractTreeNodeModel) {
+                return;
+            }
+            if (this.lastPopup != null) {
+                lastPopup.cancel();
+            }
+            lastAbstractTreeNodeModel = abstractTreeNodeModel;
+
+            JBPopupFactory popupFactory = JBPopupFactory.getInstance();
+            lastPopup = popupFactory.createComponentPopupBuilder(new BookmarkTipPanel(lastAbstractTreeNodeModel), null)
+                    .setFocusable(true)
+                    .setResizable(true)
+                    .setRequestFocus(true)
+                    .createPopup();
+
+            Point adjustedLocation = new Point(e.getLocationOnScreen().x + 10, e.getLocationOnScreen().y + 10); // Adjust position
+            lastPopup.show(RelativePoint.fromScreen(adjustedLocation));
+        }
+
+    }
+
 
 }

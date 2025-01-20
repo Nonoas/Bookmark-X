@@ -7,7 +7,7 @@ import com.intellij.openapi.editor.markup.TextAttributes;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.ui.JBColor;
-import indi.bookmarkx.MyPersistent;
+import indi.bookmarkx.persistence.MyPersistent;
 import indi.bookmarkx.common.data.BookmarkArrayListTable;
 import indi.bookmarkx.model.BookmarkNodeModel;
 
@@ -52,6 +52,12 @@ public class LineEndPainter extends EditorLinePainter {
         return null;
     }
 
+    /**
+     * chan
+     * @param list
+     * @param i
+     * @return
+     */
     public static BookmarkNodeModel findLine(List<BookmarkNodeModel> list, int i) {
         if (list == null || list.isEmpty()){
             return null;

@@ -1,22 +1,23 @@
 package indi.bookmarkx.ui.pannel;
 
+import com.intellij.codeInsight.daemon.DaemonCodeAnalyzer;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.diagnostic.Logger;
-import com.intellij.openapi.progress.ProgressIndicator;
-import com.intellij.openapi.progress.ProgressManager;
-import com.intellij.openapi.progress.Task;
 import com.intellij.openapi.project.Project;
+import com.intellij.openapi.vfs.VirtualFile;
+import com.intellij.psi.PsiFile;
+import com.intellij.psi.PsiManager;
 import com.intellij.ui.JBColor;
 import com.intellij.ui.components.JBScrollPane;
 import com.intellij.util.ui.JBUI;
 import indi.bookmarkx.BookmarksManager;
-import indi.bookmarkx.MyPersistent;
 import indi.bookmarkx.common.data.BookmarkArrayListTable;
+import indi.bookmarkx.global.FileMarksCache;
+import indi.bookmarkx.listener.BookmarkListener;
+import indi.bookmarkx.model.AbstractTreeNodeModel;
 import indi.bookmarkx.model.BookmarkNodeModel;
-import indi.bookmarkx.model.po.BookmarkPO;
 import indi.bookmarkx.ui.tree.BookmarkTree;
 import indi.bookmarkx.ui.tree.BookmarkTreeNode;
-import indi.bookmarkx.utils.PersistenceUtil;
 import org.jetbrains.annotations.NotNull;
 
 import javax.swing.JPanel;
@@ -27,7 +28,7 @@ import javax.swing.tree.TreeNode;
 import java.awt.BorderLayout;
 
 /**
- * 标签目录面板
+ * 标签树目录面板
  *
  * @author Nonoas
  * @date 2023/6/1
@@ -61,16 +62,56 @@ public class BookmarksManagePanel extends JPanel {
         // 设置背景色
         setBackground(JBColor.WHITE);
 
-        reInit(project);
-
     }
 
-    public void reInit(Project project) {
-        loadTree(project);
+    public void reInit(DefaultTreeModel treeModel, Project project) {
+        loadTree(treeModel, project);
     }
 
-    private void loadTree(Project project) {
-        ProgressManager.getInstance().run(new TreeLoadTask(project, tree));
+    private void loadTree(DefaultTreeModel treeModel, Project project) {
+        if (treeModel == null) {
+            return;
+        }
+        treeModel.addTreeModelListener(new TreeModelListener() {
+            @Override
+            public void treeNodesChanged(TreeModelEvent e) {
+                persistenceSave();
+            }
+
+            @Override
+            public void treeNodesInserted(TreeModelEvent e) {
+                // printEventDetails(e);
+                persistenceSave();
+            }
+
+            @Override
+            public void treeNodesRemoved(TreeModelEvent e) {
+                persistenceSave();
+            }
+
+            @Override
+            public void treeStructureChanged(TreeModelEvent e) {
+                // do nothing
+            }
+
+            private void persistenceSave() {
+                ApplicationManager.getApplication().executeOnPooledThread(() -> {
+                    BookmarksManager manager = BookmarksManager.getInstance(project);
+                    manager.persistentSave();
+                });
+            }
+
+
+        });
+
+        ApplicationManager.getApplication().invokeLater(() -> {
+            tree.setModel(treeModel);
+            project.getMessageBus().connect().subscribe(TreeDataChangeListener.TOPIC, new TreeDataChangeListener(project));
+            treeModel.nodeStructureChanged((TreeNode) treeModel.getRoot());
+            BookmarkArrayListTable bookmarkArrayListTable = BookmarkArrayListTable.getInstance(project);
+            bookmarkArrayListTable.initData(tree);
+            treeLoaded = true;
+        });
     }
 
     public void prev() {
@@ -96,6 +137,11 @@ public class BookmarksManagePanel extends JPanel {
         return tree;
     }
 
+    public void treeNodesChanged(BookmarkNodeModel model) {
+        BookmarkTreeNode nodeByModel = tree.getNodeByModel(model);
+        tree.getModel().nodeChanged(nodeByModel);
+    }
+
     /**
      * 创建一个属于项目 project 的标签管理面板
      *
@@ -106,73 +152,50 @@ public class BookmarksManagePanel extends JPanel {
         return new BookmarksManagePanel(project);
     }
 
-    class TreeLoadTask extends Task.Backgroundable {
-
+    public static class TreeDataChangeListener implements BookmarkListener {
+        private final BookmarksManager manager;
         private final Project project;
-        private final BookmarkTree tree;
-        private DefaultTreeModel treeModel;
 
-        public TreeLoadTask(Project project, BookmarkTree tree) {
-            super(project, "Loading Tree Data");
+        public TreeDataChangeListener(Project project) {
+            manager = BookmarksManager.getInstance(project);
             this.project = project;
-            this.tree = tree;
         }
 
         @Override
-        public void run(@NotNull ProgressIndicator indicator) {
-            try {
-                MyPersistent persistent = MyPersistent.getInstance(project);
-                BookmarkPO rootPO = persistent.getState();
-                BookmarkTreeNode root = PersistenceUtil.generateTreeNode(rootPO, project);
-                treeModel = new DefaultTreeModel(root);
-            } catch (Exception e) {
-                // 错误处理
-                LOG.error("初始化标签树失败", e);
-            }
-            LOG.info("初始化标签树成功");
-        }
-
-        @Override
-        public void onSuccess() {
-            if (treeModel == null) {
+        public void bookmarkAdded(@NotNull AbstractTreeNodeModel model) {
+            if (model.isGroup()) {
                 return;
             }
-            treeModel.addTreeModelListener(new TreeModelListener() {
-                @Override
-                public void treeNodesChanged(TreeModelEvent e) {
-                    persistenceSave();
-                }
+            BookmarkNodeModel bookmarkNodeModel = (BookmarkNodeModel) model;
+            bookmarkNodeModel.getFilePath().ifPresent(e -> {
+                FileMarksCache fileMarksCache = manager.getFileMarksCache();
+                fileMarksCache.addBookMark((BookmarkNodeModel) model);
 
-                @Override
-                public void treeNodesInserted(TreeModelEvent e) {
-                    persistenceSave();
-                }
-
-                @Override
-                public void treeNodesRemoved(TreeModelEvent e) {
-                    persistenceSave();
-                }
-
-                @Override
-                public void treeStructureChanged(TreeModelEvent e) {
-                    // do nothing
-                }
-
-                private void persistenceSave() {
-                    ApplicationManager.getApplication().executeOnPooledThread(() -> {
-                        BookmarksManager manager = BookmarksManager.getInstance(project);
-                        manager.persistentSave();
-                    });
-                }
+                refreshFile((BookmarkNodeModel) model);
             });
+        }
 
-            ApplicationManager.getApplication().invokeLater(() -> {
-                tree.setModel(treeModel);
-                treeModel.nodeStructureChanged((TreeNode) treeModel.getRoot());
+        private void refreshFile(BookmarkNodeModel model) {
+            VirtualFile virtualFile = model.getOpenFileDescriptor().getFile();
+            PsiFile psiFile = PsiManager.getInstance(project).findFile(virtualFile);
+            if (null == psiFile) {
+                return;
+            }
+            DaemonCodeAnalyzer daemonCodeAnalyzer = DaemonCodeAnalyzer.getInstance(project);
+            daemonCodeAnalyzer.restart(psiFile);
+        }
 
-                BookmarkArrayListTable bookmarkArrayListTable = BookmarkArrayListTable.getInstance(project);
-                bookmarkArrayListTable.initData(tree);
-                treeLoaded = true;
+        @Override
+        public void bookmarkRemoved(@NotNull AbstractTreeNodeModel model) {
+            if (model.isGroup()) {
+                return;
+            }
+            BookmarkNodeModel bookmarkNodeModel = (BookmarkNodeModel) model;
+            bookmarkNodeModel.getFilePath().ifPresent(e -> {
+                FileMarksCache fileMarksCache = manager.getFileMarksCache();
+                fileMarksCache.deleteBookMark((BookmarkNodeModel) model);
+
+                refreshFile((BookmarkNodeModel) model);
             });
         }
     }

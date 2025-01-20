@@ -21,7 +21,6 @@ public class BookmarkPO {
 
     private int index;
     private int line;
-    private int column;
 
     private String desc;
 
@@ -92,14 +91,6 @@ public class BookmarkPO {
 
     public void setLine(int line) {
         this.line = line;
-    }
-
-    public int getColumn() {
-        return column;
-    }
-
-    public void setColumn(int column) {
-        this.column = column;
     }
 
     public String getDesc() {

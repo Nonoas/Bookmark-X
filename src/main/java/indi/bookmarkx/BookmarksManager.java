@@ -1,41 +1,72 @@
 package indi.bookmarkx;
 
 import com.intellij.openapi.components.Service;
+import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.editor.CaretModel;
+import com.intellij.openapi.editor.Document;
 import com.intellij.openapi.editor.Editor;
+import com.intellij.openapi.editor.colors.TextAttributesKey;
+import com.intellij.openapi.editor.ex.MarkupModelEx;
+import com.intellij.openapi.editor.ex.RangeHighlighterEx;
+import com.intellij.openapi.editor.impl.DocumentMarkupModel;
+import com.intellij.openapi.editor.markup.HighlighterLayer;
+import com.intellij.openapi.editor.markup.RangeHighlighter;
+import com.intellij.openapi.fileEditor.FileEditorManager;
+import com.intellij.openapi.fileEditor.FileEditorManagerEvent;
+import com.intellij.openapi.fileEditor.FileEditorManagerListener;
 import com.intellij.openapi.fileEditor.OpenFileDescriptor;
+import com.intellij.openapi.progress.ProgressIndicator;
+import com.intellij.openapi.progress.ProgressManager;
+import com.intellij.openapi.progress.Task;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vfs.VirtualFile;
+import com.intellij.util.messages.MessageBusConnection;
 import indi.bookmarkx.common.I18N;
 import indi.bookmarkx.common.data.BookmarkArrayListTable;
-import indi.bookmarkx.ui.dialog.BookmarkCreatorDialog;
+import indi.bookmarkx.global.FileMarksCache;
+import indi.bookmarkx.listener.BookmarkListener;
+import indi.bookmarkx.model.AbstractTreeNodeModel;
 import indi.bookmarkx.model.BookmarkConverter;
 import indi.bookmarkx.model.BookmarkNodeModel;
+import indi.bookmarkx.model.po.BookmarkPO;
+import indi.bookmarkx.persistence.MyPersistent;
+import indi.bookmarkx.ui.MyGutterIconRenderer;
+import indi.bookmarkx.ui.dialog.BookmarkCreatorDialog;
 import indi.bookmarkx.ui.painter.LineEndPainter;
-import indi.bookmarkx.ui.tree.BookmarkTree;
-import indi.bookmarkx.ui.tree.BookmarkTreeNode;
 import indi.bookmarkx.ui.pannel.BookmarksManagePanel;
+import indi.bookmarkx.ui.tree.BookmarkTreeNode;
 import indi.bookmarkx.utils.PersistenceUtil;
+import org.apache.commons.collections.CollectionUtils;
 import org.jetbrains.annotations.NotNull;
 
+import javax.swing.tree.DefaultTreeModel;
+import java.util.List;
 import java.util.Objects;
+import java.util.Optional;
+import java.util.Set;
 import java.util.UUID;
 
 /**
- * 项目级别的管理器：用于管理所有「书签UI」的变化
+ * 项目级别的管理器（命令模式）：用于管理所有「书签UI」的变化，发布书签变更的消息，是一切用户操作的入口，管理所有数据及 UI 的引用
  */
 @Service(Service.Level.PROJECT)
 public final class BookmarksManager {
 
+    private static final Logger LOG = Logger.getInstance(BookmarksManagePanel.class);
+
     public Project project;
 
-    private BookmarksManagePanel toolWindowRootPanel;
+    private final BookmarksManagePanel toolWindowRootPanel;
 
-    private BookmarkArrayListTable bookmarkArrayListTable;
+    private final BookmarkArrayListTable bookmarkArrayListTable;
+
+    private final FileMarksCache fileMarksCache = new FileMarksCache();
 
     public BookmarksManager(Project project) {
         this.project = project;
+        this.toolWindowRootPanel = BookmarksManagePanel.create(project);
         bookmarkArrayListTable = BookmarkArrayListTable.getInstance(project);
+        reload();
     }
 
     public static BookmarksManager getInstance(Project project) {
@@ -51,28 +82,36 @@ public final class BookmarksManager {
      */
     public void createBookRemark(Project project, Editor editor, VirtualFile file) {
         CaretModel caretModel = editor.getCaretModel();
-
         // 获取行号
         int line = caretModel.getLogicalPosition().line;
-        int column = caretModel.getLogicalPosition().column;
+        String selectedText = caretModel.getCurrentCaret().getSelectedText();
+        createBookRemark(project, file, selectedText, line);
+    }
 
+    /**
+     * 创建书签
+     *
+     * @param project  项目
+     * @param file     添加标签的文件
+     * @param descText 描述文本
+     * @param line     文件行
+     */
+    public void createBookRemark(Project project, VirtualFile file, String descText, int line) {
         BookmarkNodeModel bookmarkNodeModel = LineEndPainter.findLine(BookmarkArrayListTable.getInstance(project).getOnlyIndex(file.getPath()), line);
         String defaultName = file.getName();
         String defaultDesc;
         boolean add = true;
         if (bookmarkNodeModel == null) {
             // 获取选中文本
-            String selectedText = caretModel.getCurrentCaret().getSelectedText();
-            defaultDesc = selectedText == null ? "" : (" " + selectedText + " ");
+            defaultDesc = Optional.ofNullable(descText).map(text -> (" " + text + " ")).orElse("");
             String uuid = UUID.randomUUID().toString();
             bookmarkNodeModel = new BookmarkNodeModel();
             bookmarkNodeModel.setUuid(uuid);
             bookmarkNodeModel.setLine(line);
-            bookmarkNodeModel.setColumn(column);
             bookmarkNodeModel.setIcon(file.getFileType().getIcon());
             bookmarkNodeModel.setIcon(file.getFileType().getIcon());
-            bookmarkNodeModel.setOpenFileDescriptor(new OpenFileDescriptor(project, file, line, column));
-        }else {
+            bookmarkNodeModel.setOpenFileDescriptor(new OpenFileDescriptor(project, file, line, 0));
+        } else {
             add = false;
             defaultName = bookmarkNodeModel.getName();
             defaultDesc = bookmarkNodeModel.getDesc();
@@ -87,30 +126,53 @@ public final class BookmarksManager {
                     finalBookmarkNodeModel.setDesc(desc);
                     bookmarkArrayListTable.insert(finalBookmarkNodeModel);
                     if (addFlag) {
-                        submitCreateBookRemark(finalBookmarkNodeModel, editor);
+                        submitCreateBookRemark(finalBookmarkNodeModel);
                     } else {
-                        if (!Objects.isNull(toolWindowRootPanel)) {
-                            BookmarkTree tree = toolWindowRootPanel.tree();
-                            BookmarkTreeNode nodeByModel = tree.getNodeByModel(finalBookmarkNodeModel);
-                            tree.getModel().nodeChanged(nodeByModel);
+                        if (Objects.nonNull(toolWindowRootPanel)) {
+                            toolWindowRootPanel.treeNodesChanged(finalBookmarkNodeModel);
                         }
                     }
 
                 });
     }
 
-    private void submitCreateBookRemark(BookmarkNodeModel bookmarkModel, Editor editor) {
+    public void editBookRemark(AbstractTreeNodeModel nodeModel) {
+        new BookmarkCreatorDialog(project, I18N.get("bookmark.create.title"))
+                .defaultName(nodeModel.getName())
+                .defaultDesc(nodeModel.getDesc())
+                .showAndCallback((name, desc) -> {
+                    nodeModel.setName(name);
+                    nodeModel.setDesc(desc);
+                    getBookmarkPublisher(project).bookmarkChanged(nodeModel);
+                });
+    }
+
+    /**
+     * 删除书签
+     *
+     * @param model 需要删除的书签
+     */
+    public void removeBookRemark(AbstractTreeNodeModel model) {
+        getBookmarkPublisher(project).bookmarkRemoved(model);
+    }
+
+    @NotNull
+    private BookmarkListener getBookmarkPublisher(Project project) {
+        return project.getMessageBus().syncPublisher(BookmarkListener.TOPIC);
+    }
+
+    private void submitCreateBookRemark(BookmarkNodeModel bookmarkModel) {
         //  The toolWindowRootPanel may be null the first time IDEA is opened
         if (Objects.isNull(toolWindowRootPanel)) {
             MyPersistent persistent = MyPersistent.getInstance(project);
             persistent.getState().getChildren().add(BookmarkConverter.convertToPO(bookmarkModel));
         } else {
-            afterCreateSubmit(bookmarkModel, editor);
+            afterCreateSubmit(bookmarkModel);
         }
 
     }
 
-    private void afterCreateSubmit(BookmarkNodeModel bookmarkModel, Editor editor) {
+    private void afterCreateSubmit(BookmarkNodeModel bookmarkModel) {
         addToTree(bookmarkModel);
     }
 
@@ -123,10 +185,7 @@ public final class BookmarksManager {
 
     private void addToTree(BookmarkNodeModel bookmarkModel) {
         toolWindowRootPanel.addAndGet(bookmarkModel);
-    }
-
-    public static void add(BookmarkPopup p) {
-
+        getBookmarkPublisher(project).bookmarkAdded(bookmarkModel);
     }
 
     public void prev() {
@@ -137,19 +196,157 @@ public final class BookmarksManager {
         toolWindowRootPanel.next();
     }
 
-    public void select(BookmarkPopup popup) {
-        popup.select(true);
-        popup.navigate();
-    }
-
-    public void setToolWindowRootPanel(@NotNull BookmarksManagePanel panel) {
-        this.toolWindowRootPanel = panel;
-    }
-
     /**
      * 重新加载标签树
      */
     public void reload() {
-        toolWindowRootPanel.reInit(project);
+        ProgressManager.getInstance().run(new TreeLoadTask(project, this));
+    }
+
+    public FileMarksCache getFileMarksCache() {
+        return fileMarksCache;
+    }
+
+    public BookmarksManagePanel getToolWindowRootPanel() {
+        return toolWindowRootPanel;
+    }
+
+    /**
+     * 数据加载任务
+     */
+    static class TreeLoadTask extends Task.Backgroundable {
+
+        private final Project project;
+        private DefaultTreeModel treeModel;
+        private final BookmarksManager bookmarksManager;
+
+        public TreeLoadTask(Project project, BookmarksManager bookmarksManager) {
+            super(project, "Loading Tree Data");
+            this.project = project;
+            this.bookmarksManager = bookmarksManager;
+        }
+
+        @Override
+        public void run(@NotNull ProgressIndicator indicator) {
+            try {
+                MyPersistent persistent = MyPersistent.getInstance(project);
+                BookmarkPO rootPO = persistent.getState();
+                BookmarkTreeNode root = PersistenceUtil.generateTreeNode(rootPO, project);
+                treeModel = new DefaultTreeModel(root);
+
+                // 初始化文件到标签签行缓存
+                reIntiFileMarksCache(root);
+                registerFileGutterIconListener();
+            } catch (Exception e) {
+                // 错误处理
+                LOG.error("初始化标签树失败", e);
+            }
+            LOG.info("初始化标签树成功");
+        }
+
+        private void reIntiFileMarksCache(BookmarkTreeNode root) {
+            List<BookmarkNodeModel> bookmarkNodeModels = PersistenceUtil.treeToList(root);
+            FileMarksCache fileMarksCache = bookmarksManager.getFileMarksCache();
+            fileMarksCache.clear();
+            for (BookmarkNodeModel model : bookmarkNodeModels) {
+                OpenFileDescriptor openFileDescriptor = model.getOpenFileDescriptor();
+                if (openFileDescriptor == null) {
+                    continue;
+                }
+                fileMarksCache.addBookMark(model);
+            }
+        }
+
+        @Override
+        public void onSuccess() {
+            bookmarksManager.getToolWindowRootPanel().reInit(treeModel, project);
+            // 获取当前打开的文件
+            FileEditorManager fileEditorManager = FileEditorManager.getInstance(project);
+            VirtualFile[] openFiles = fileEditorManager.getOpenFiles();
+            for (VirtualFile file : openFiles) {
+                Set<BookmarkNodeModel> models = bookmarksManager.fileMarksCache.getCache().get(file.getPath());
+                if (CollectionUtils.isEmpty(models)) {
+                    return;
+                }
+                for (BookmarkNodeModel model : models) {
+                    addLineMarker(model);
+                }
+            }
+        }
+
+        public void registerFileGutterIconListener() {
+            MessageBusConnection connection = project.getMessageBus().connect();
+            connection.subscribe(FileEditorManagerListener.FILE_EDITOR_MANAGER, new FileEditorManagerListener() {
+                @Override
+                public void fileOpened(@NotNull FileEditorManager source, @NotNull VirtualFile file) {
+                    Set<BookmarkNodeModel> models = bookmarksManager.fileMarksCache.getCache().get(file.getPath());
+                    if (CollectionUtils.isEmpty(models)) {
+                        return;
+                    }
+                    Editor editor = source.getSelectedTextEditor();
+                    if (null == editor) {
+                        return;
+                    }
+                    for (BookmarkNodeModel model : models) {
+                        addLineMarker(model);
+                    }
+                }
+
+                @Override
+                public void selectionChanged(@NotNull FileEditorManagerEvent event) {
+                    VirtualFile file = event.getNewFile();
+                    if (null == file) {
+                        return;
+                    }
+                    String path = file.getPath();
+                    Set<BookmarkNodeModel> models = bookmarksManager.fileMarksCache.getCache().get(path);
+                    if (CollectionUtils.isEmpty(models)) {
+                        return;
+                    }
+                    for (BookmarkNodeModel model : models) {
+                        addLineMarker(model);
+                    }
+                }
+            });
+
+            // 监听书签用来控制GutterIcon
+            connection.subscribe(BookmarkListener.TOPIC, new BookmarkListener() {
+                @Override
+                public void bookmarkAdded(@NotNull AbstractTreeNodeModel model) {
+                    if (!model.isBookmark()) {
+                        return;
+                    }
+                    BookmarkNodeModel bookmarkNodeModel = (BookmarkNodeModel) model;
+                    addLineMarker(bookmarkNodeModel);
+                }
+
+                @Override
+                public void bookmarkRemoved(@NotNull AbstractTreeNodeModel model) {
+                    if (!model.isBookmark()) {
+                        return;
+                    }
+                    BookmarkNodeModel bookmarkNodeModel = (BookmarkNodeModel) model;
+                    bookmarkNodeModel.release();
+                }
+            });
+        }
+
+        private void addLineMarker(BookmarkNodeModel model) {
+            RangeHighlighter myHighlighter = model.findMyHighlighter();
+
+            if (myHighlighter != null) {
+                return;
+            }
+            Document document = model.getCachedDocument();
+            if (null == document) {
+                return;
+            }
+            MarkupModelEx markupModel = (MarkupModelEx) DocumentMarkupModel.forDocument(document, project, true);
+            RangeHighlighterEx bkx = markupModel.addPersistentLineHighlighter(TextAttributesKey.createTextAttributesKey("BKX"), model.getLine(), HighlighterLayer.ERROR + 1);
+            if (bkx == null) {
+                return;
+            }
+            bkx.setGutterIconRenderer(new MyGutterIconRenderer(model));
+        }
     }
 }
