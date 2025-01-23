@@ -3,14 +3,7 @@ package indi.bookmarkx;
 import com.intellij.openapi.components.Service;
 import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.editor.CaretModel;
-import com.intellij.openapi.editor.Document;
 import com.intellij.openapi.editor.Editor;
-import com.intellij.openapi.editor.colors.TextAttributesKey;
-import com.intellij.openapi.editor.ex.MarkupModelEx;
-import com.intellij.openapi.editor.ex.RangeHighlighterEx;
-import com.intellij.openapi.editor.impl.DocumentMarkupModel;
-import com.intellij.openapi.editor.markup.HighlighterLayer;
-import com.intellij.openapi.editor.markup.RangeHighlighter;
 import com.intellij.openapi.fileEditor.FileEditorManager;
 import com.intellij.openapi.fileEditor.FileEditorManagerEvent;
 import com.intellij.openapi.fileEditor.FileEditorManagerListener;
@@ -30,7 +23,6 @@ import indi.bookmarkx.model.BookmarkConverter;
 import indi.bookmarkx.model.BookmarkNodeModel;
 import indi.bookmarkx.model.po.BookmarkPO;
 import indi.bookmarkx.persistence.MyPersistent;
-import indi.bookmarkx.ui.MyGutterIconRenderer;
 import indi.bookmarkx.ui.dialog.BookmarkCreatorDialog;
 import indi.bookmarkx.ui.painter.LineEndPainter;
 import indi.bookmarkx.ui.pannel.BookmarksManagePanel;
@@ -264,13 +256,11 @@ public final class BookmarksManager {
             FileEditorManager fileEditorManager = FileEditorManager.getInstance(project);
             VirtualFile[] openFiles = fileEditorManager.getOpenFiles();
             for (VirtualFile file : openFiles) {
-                Set<BookmarkNodeModel> models = bookmarksManager.fileMarksCache.getCache().get(file.getPath());
+                Set<BookmarkNodeModel> models = bookmarksManager.fileMarksCache.getBookmarks(file.getPath());
                 if (CollectionUtils.isEmpty(models)) {
                     return;
                 }
-                for (BookmarkNodeModel model : models) {
-                    addLineMarker(model);
-                }
+                models.forEach(BookmarkNodeModel::createLineMarker);
             }
         }
 
@@ -279,17 +269,11 @@ public final class BookmarksManager {
             connection.subscribe(FileEditorManagerListener.FILE_EDITOR_MANAGER, new FileEditorManagerListener() {
                 @Override
                 public void fileOpened(@NotNull FileEditorManager source, @NotNull VirtualFile file) {
-                    Set<BookmarkNodeModel> models = bookmarksManager.fileMarksCache.getCache().get(file.getPath());
+                    Set<BookmarkNodeModel> models = bookmarksManager.fileMarksCache.getBookmarks(file.getPath());
                     if (CollectionUtils.isEmpty(models)) {
                         return;
                     }
-                    Editor editor = source.getSelectedTextEditor();
-                    if (null == editor) {
-                        return;
-                    }
-                    for (BookmarkNodeModel model : models) {
-                        addLineMarker(model);
-                    }
+                    models.forEach(BookmarkNodeModel::createLineMarker);
                 }
 
                 @Override
@@ -299,13 +283,11 @@ public final class BookmarksManager {
                         return;
                     }
                     String path = file.getPath();
-                    Set<BookmarkNodeModel> models = bookmarksManager.fileMarksCache.getCache().get(path);
+                    Set<BookmarkNodeModel> models = bookmarksManager.fileMarksCache.getBookmarks(path);
                     if (CollectionUtils.isEmpty(models)) {
                         return;
                     }
-                    for (BookmarkNodeModel model : models) {
-                        addLineMarker(model);
-                    }
+                    models.forEach(BookmarkNodeModel::createLineMarker);
                 }
             });
 
@@ -317,7 +299,7 @@ public final class BookmarksManager {
                         return;
                     }
                     BookmarkNodeModel bookmarkNodeModel = (BookmarkNodeModel) model;
-                    addLineMarker(bookmarkNodeModel);
+                    bookmarkNodeModel.createLineMarker();
                 }
 
                 @Override
@@ -329,24 +311,6 @@ public final class BookmarksManager {
                     bookmarkNodeModel.release();
                 }
             });
-        }
-
-        private void addLineMarker(BookmarkNodeModel model) {
-            RangeHighlighter myHighlighter = model.findMyHighlighter();
-
-            if (myHighlighter != null) {
-                return;
-            }
-            Document document = model.getCachedDocument();
-            if (null == document) {
-                return;
-            }
-            MarkupModelEx markupModel = (MarkupModelEx) DocumentMarkupModel.forDocument(document, project, true);
-            RangeHighlighterEx bkx = markupModel.addPersistentLineHighlighter(TextAttributesKey.createTextAttributesKey("BKX"), model.getLine(), HighlighterLayer.ERROR + 1);
-            if (bkx == null) {
-                return;
-            }
-            bkx.setGutterIconRenderer(new MyGutterIconRenderer(model));
         }
     }
 }

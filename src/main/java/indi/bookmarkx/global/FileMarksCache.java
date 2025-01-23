@@ -59,4 +59,8 @@ public class FileMarksCache {
                 .filter(e -> Objects.equals(line, e.getLine()))
                 .findAny();
     }
+
+    public Set<BookmarkNodeModel> getBookmarks(String path) {
+        return fileMarksCache.getOrDefault(path, new HashSet<>());
+    }
 }

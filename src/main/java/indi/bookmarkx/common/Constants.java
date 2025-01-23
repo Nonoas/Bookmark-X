@@ -1,5 +1,7 @@
 package indi.bookmarkx.common;
 
+import com.intellij.openapi.editor.colors.TextAttributesKey;
+
 /**
  * 全局常量类
  *
@@ -18,4 +20,6 @@ public interface Constants {
      * 插件在IDEA插件官网的id
      */
     String PLUGIN_MARKET_ID = "22013";
+
+    TextAttributesKey TK_BOOKMARK_X = TextAttributesKey.createTextAttributesKey("BOOKMARK_X");
 }

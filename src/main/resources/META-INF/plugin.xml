@@ -5,15 +5,13 @@
 
     <description>
         <![CDATA[
-        <pre>
-        中文：
+        <p>中文：</p>
         一个扩展版书签，允许你将书签进行分组，并可以上下切换，帮助你更轻松地阅读代码，避免在多层嵌套代码中迷失。
         我们需要你的意见来改进这个插件，你的反馈将有助于项目的成长。
-
-        English:
+        <p></p>
+        <p>English:</p>
         An extended bookmark that allows you to group and switch up and down, making it easier to read code and avoid getting lost in multiple layers of nested code.
         We need your thoughts to improve this plugin and your feedback helps to grow the project.
-        </pre>
         ]]>
     </description>
 
@@ -39,8 +37,8 @@
     </extensions>
 
     <applicationListeners>
-        <listener class="indi.bookmarkx.global.ProjectListener"
-                  topic="com.intellij.openapi.project.ProjectManagerListener"/>
+        <listener class="indi.bookmarkx.global.VersionChecker"
+                  topic="com.intellij.ide.AppLifecycleListener"/>
     </applicationListeners>
 
     <!--插件动作-->
