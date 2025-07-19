@@ -37,8 +37,7 @@
     </extensions>
 
     <applicationListeners>
-        <listener class="indi.bookmarkx.global.VersionChecker"
-                  topic="com.intellij.ide.AppLifecycleListener"/>
+
     </applicationListeners>
 
     <!--插件动作-->

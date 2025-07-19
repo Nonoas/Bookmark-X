@@ -5,7 +5,7 @@ plugins {
 
 group 'indi.bookmarkx'
 
-version '2.2.1'
+version '2.3.0'
 
 repositories {
     mavenLocal()
@@ -28,8 +28,8 @@ intellij {
 
 patchPluginXml {
     sinceBuild = '210.0'
-    untilBuild = "242.*"
-    changeNotes = "1. 添加行首标签显示"
+    untilBuild = "252.*"
+    changeNotes = "版本支持到 2025.2"
 }
 
 tasks.named('initializeIntelliJPlugin') {
