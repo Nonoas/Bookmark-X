@@ -11,9 +11,9 @@ import com.intellij.openapi.project.Project;
 import com.intellij.openapi.util.io.FileUtil;
 import com.intellij.openapi.util.text.StringUtil;
 import com.intellij.openapi.wm.ToolWindowId;
-import indi.bookmarkx.persistence.MyPersistent;
 import indi.bookmarkx.common.I18N;
 import indi.bookmarkx.model.po.BookmarkPO;
+import indi.bookmarkx.persistence.MyPersistent;
 import org.apache.commons.collections.CollectionUtils;
 import org.jetbrains.annotations.NotNull;
 
@@ -24,6 +24,7 @@ import java.util.Objects;
 
 import static indi.bookmarkx.utils.PersistenceUtil.deepCopy;
 
+
 /**
  * 书签导出
  *
@@ -32,12 +33,22 @@ import static indi.bookmarkx.utils.PersistenceUtil.deepCopy;
  */
 public final class BookmarkExportAction extends AnAction {
 
-    private static String ACTION_ID = I18N.get("bookmark.export");
+    // 移除了这行代码: private static String ACTION_ID = I18N.get("bookmark.export");
+    // 因为它会在类加载时就调用服务，从而导致报错。
 
     private Project project;
 
     public BookmarkExportAction() {
-        super(ACTION_ID, null, AllIcons.ToolbarDecorator.Export);
+        /*
+         * ✅ 正确的修改方式：
+         * 使用 Supplier (一个 Lambda 表达式) 来包装 I18N.get() 调用。
+         * 这样，I18N.get("bookmark.export") 不会在构造函数执行时立即调用，
+         * 而是等到 IntelliJ 平台真正需要显示这个 Action 的文本时，才会执行这个 Lambda。
+         * 此时，平台已经完全初始化，可以安全地获取服务了。
+         *
+         * AnAction 的父构造函数接受一个 Supplier<String> 作为动态文本。
+         */
+        super(() -> I18N.get("bookmark.export"), () -> null, AllIcons.ToolbarDecorator.Export);
     }
 
     @Override
@@ -46,6 +57,7 @@ public final class BookmarkExportAction extends AnAction {
         if (null == project) {
             return;
         }
+        // 在 actionPerformed 方法中获取服务是安全的，这里无需改动。
         MyPersistent persistent = MyPersistent.getInstance(project);
         BookmarkPO state = persistent.getState();
 
@@ -69,6 +81,7 @@ public final class BookmarkExportAction extends AnAction {
 
     private void success(String outputPath) {
         String groupId = ToolWindowId.PROJECT_VIEW;
+        // 在这里调用 I18N.get() 也是安全的，因为它是在 Action 被触发后执行的。
         Notification notification = new Notification(groupId,
                 I18N.get("bookmark.notification.title"),
                 I18N.get("bookmark.export.success", outputPath),
