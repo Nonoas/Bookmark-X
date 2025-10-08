@@ -1,5 +1,6 @@
 package indi.bookmarkx.ui.tree;
 
+import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.fileEditor.OpenFileDescriptor;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.ui.JBMenuItem;
@@ -57,6 +58,8 @@ import java.util.stream.Collectors;
  * @date 2023/6/1
  */
 public class BookmarkTree extends Tree implements BookmarkListener {
+
+    private static final Logger log = Logger.getInstance(BookmarkTree.class);
 
     /**
      * BookmarkTreeNode 缓存，便于通过 UUID 直接取到节点引用
@@ -129,29 +132,7 @@ public class BookmarkTree extends Tree implements BookmarkListener {
         addMouseMotionListener(new TreeMouseMotionAdapter(this));
 
         // 鼠标点击事件
-        addMouseListener(new MouseAdapter() {
-            @Override
-            public void mouseClicked(MouseEvent e) {
-                // 双击事件
-                if (SwingUtilities.isLeftMouseButton(e) && e.getClickCount() == 2) {
-                    TreePath path = BookmarkTree.this.getSelectionPath();
-                    if (Objects.isNull(path)) {
-                        return;
-                    }
-                    BookmarkTreeNode selectedNode = (BookmarkTreeNode) path.getLastPathComponent();
-                    if (selectedNode != null && selectedNode.isBookmark()) {
-                        BookmarkNodeModel bookmark = (BookmarkNodeModel) selectedNode.getUserObject();
-
-                        OpenFileDescriptor fileDescriptor = bookmark.getOpenFileDescriptor();
-                        if (null == fileDescriptor) {
-                            return;
-                        }
-                        fileDescriptor.navigate(true);
-                    }
-                }
-
-            }
-        });
+        addMouseListener(new DoubleClickAdapter(this));
 
     }
 
@@ -487,7 +468,12 @@ public class BookmarkTree extends Tree implements BookmarkListener {
             activeBookmark(nextNode);
 
             BookmarkNodeModel model = (BookmarkNodeModel) nextNode.getUserObject();
-            model.getOpenFileDescriptor().navigate(true);
+            OpenFileDescriptor openFileDescriptor = model.getOpenFileDescriptor();
+            if (null == openFileDescriptor) {
+                log.warn("Can't find open file descriptor for " + model.getName());
+                return;
+            }
+            openFileDescriptor.navigate(true);
         }
 
         private int preTreeNodeIndex(BookmarkTreeNode activeGroup, BookmarkTreeNode activatedBookmark) {
@@ -639,7 +625,7 @@ public class BookmarkTree extends Tree implements BookmarkListener {
                 return true;
 
             } catch (Exception e) {
-                e.printStackTrace();
+                log.error(e);
             }
 
             return false;
@@ -735,5 +721,100 @@ public class BookmarkTree extends Tree implements BookmarkListener {
 
     }
 
+    /**
+     * 鼠标双击事件适配器
+     */
+    static class DoubleClickAdapter extends MouseAdapter {
+        // 假设 log 变量已在外部或父类中正确声明和初始化
+        private static final Logger log = Logger.getInstance(DoubleClickAdapter.class);
+
+        // 记录上一次点击的时间（毫秒）
+        private long lastClickTime = 0;
+        // 记录上一次点击的坐标
+        private Point lastClickPoint = new Point();
+
+        // 可以根据用户体验调整这些阈值
+        // 设置双击时间阈值（毫秒）。标准通常是 300ms
+        private static final int DOUBLE_CLICK_TIME_THRESHOLD = 300;
+        // 设置双击距离阈值（像素）。防止鼠标轻微移动导致双击失败
+        private static final int DOUBLE_CLICK_DISTANCE_THRESHOLD = 5;
+
+        private final JTree tree;
+
+        DoubleClickAdapter(JTree tree) {
+            this.tree = tree;
+        }
+
+        /**
+         * 将双击判断逻辑从 mouseClicked 转移到更可靠的 mousePressed
+         */
+        @Override
+        public void mousePressed(MouseEvent e) {
+            // 1. 只处理左键事件
+            if (!SwingUtilities.isLeftMouseButton(e)) {
+                return;
+            }
+
+            long currentTime = e.getWhen();
+            Point currentPoint = e.getPoint();
+
+            // 2. 检查时间间隔是否满足双击要求
+            if (currentTime - lastClickTime < DOUBLE_CLICK_TIME_THRESHOLD) {
+
+                // 3. 检查距离是否满足双击要求
+                double distance = currentPoint.distance(lastClickPoint);
+
+                if (distance < DOUBLE_CLICK_DISTANCE_THRESHOLD) {
+
+                    // *** 手动识别为双击！ ***
+                    log.info("【手动识别】进入鼠标双击逻辑");
+                    log.info("【手动识别】识别为双击");
+
+                    // 执行双击动作
+                    performDoubleClickAction(e);
+
+                    // 4. 重置状态：将 lastClickTime 设为 0，防止用户快速三连击被误判为两次双击
+                    lastClickTime = 0;
+                    return;
+                }
+            }
+
+            // 5. 如果不是双击，则记录本次点击，作为下一次判断的基础
+            lastClickTime = currentTime;
+            lastClickPoint = currentPoint;
+        }
+
+        // 移除原有的 mouseClicked 方法，因为它不再是主逻辑
+
+        /**
+         * 封装双击成功后的实际导航逻辑
+         */
+        private void performDoubleClickAction(MouseEvent e) {
+            // 关键：使用 getClosestPathForLocation(e.getX(), e.getY())
+            // 替代 getSelectionPath()，直接通过坐标获取节点，避免选区丢失问题。
+            TreePath path = tree.getClosestPathForLocation(e.getX(), e.getY());
+
+            if (Objects.isNull(path)) {
+                log.info("【手动识别】退出鼠标双击逻辑：path 为空");
+                return;
+            }
+
+            // 可选：强制选中路径，提供视觉反馈
+            tree.setSelectionPath(path);
+
+            BookmarkTreeNode selectedNode = (BookmarkTreeNode) path.getLastPathComponent();
+            if (selectedNode != null && selectedNode.isBookmark()) {
+                BookmarkNodeModel bookmark = (BookmarkNodeModel) selectedNode.getUserObject();
+
+                OpenFileDescriptor fileDescriptor = bookmark.getOpenFileDescriptor();
+                if (null == fileDescriptor) {
+                    log.info("【手动识别】退出鼠标双击逻辑：fileDescriptor为空");
+                    return;
+                }
+                fileDescriptor.navigate(true);
+            }
+            log.info("【手动识别】退出鼠标双击逻辑，导航成功");
+        }
+    }
 
 }

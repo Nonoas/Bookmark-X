@@ -21,12 +21,11 @@ import java.io.IOException;
 
 public final class BookmarkImportAction extends AnAction {
 
-    private static final String ACTION_ID = I18N.get("bookmark.import");
 
     private Project project;
 
     public BookmarkImportAction() {
-        super(ACTION_ID, null, AllIcons.ToolbarDecorator.Import);
+        super(() -> I18N.get("bookmark.import"), () -> null, AllIcons.ToolbarDecorator.Import);
     }
 
     @Override

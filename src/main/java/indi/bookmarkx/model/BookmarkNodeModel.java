@@ -5,16 +5,18 @@ import com.intellij.openapi.editor.Document;
 import com.intellij.openapi.editor.ex.MarkupModelEx;
 import com.intellij.openapi.editor.ex.RangeHighlighterEx;
 import com.intellij.openapi.editor.impl.DocumentMarkupModel;
+import com.intellij.openapi.editor.markup.HighlighterLayer;
 import com.intellij.openapi.editor.markup.RangeHighlighter;
 import com.intellij.openapi.fileEditor.FileDocumentManager;
 import com.intellij.openapi.fileEditor.OpenFileDescriptor;
 import com.intellij.openapi.util.Ref;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.reference.SoftReference;
+import indi.bookmarkx.common.Constants;
 import indi.bookmarkx.ui.MyGutterIconRenderer;
 import org.jetbrains.annotations.Nullable;
 
-import javax.swing.Icon;
+import javax.swing.*;
 import java.lang.ref.Reference;
 import java.lang.ref.WeakReference;
 import java.util.Optional;
@@ -136,5 +138,28 @@ public class BookmarkNodeModel extends AbstractTreeNodeModel {
             refHighlighter = null;
             highlighter.dispose();
         }
+    }
+
+    public void createLineMarker() {
+        RangeHighlighter myHighlighter = findMyHighlighter();
+
+        if (myHighlighter != null) {
+            return;
+        }
+        Document document = getCachedDocument();
+        if (null == document) {
+            return;
+        }
+        Optional.ofNullable(openFileDescriptor)
+                .map(OpenFileDescriptor::getProject)
+                .ifPresent(project -> {
+                    MarkupModelEx markupModel = (MarkupModelEx) DocumentMarkupModel.forDocument(document, project, true);
+                    RangeHighlighterEx bkx = markupModel.addPersistentLineHighlighter(Constants.TK_BOOKMARK_X, getLine(), HighlighterLayer.ERROR + 1);
+                    if (bkx == null) {
+                        return;
+                    }
+                    bkx.setGutterIconRenderer(new MyGutterIconRenderer(this));
+                });
+
     }
 }
