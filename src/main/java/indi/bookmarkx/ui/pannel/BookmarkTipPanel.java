@@ -46,13 +46,13 @@ public class BookmarkTipPanel extends JBPanel<BookmarkTipPanel> {
 
     private static JBLabel createHtmlLabel(@NotNull AbstractTreeNodeModel model) {
         String name = escapeHtml(model.getName());
-        String desc = model.getDesc() != null && !model.getDesc().trim().isEmpty() ? escapeHtml(model.getDesc()) : "no description";
+        String desc = model.getDesc() != null && !model.getDesc().trim().isEmpty() ? model.getDesc() : "no description";
 
         String html = "<html>" +
                 "<body style='font-family:" + UIManager.getFont("Label.font").getFamily() + ";" +
                 " font-size:" + UIManager.getFont("Label.font").getSize() + "pt;" +
                 " color:" + toHtmlColor(JBColor.foreground()) + "; margin:0;'>" +
-                "<h3 style='margin:0; padding:0;'>" + name + "</h3>" +
+                "<h2 style='margin:0; padding:0;'>" + name + "</h2>" +
                 "<div style='margin-top:4px; color:" + toHtmlColor(JBColor.gray) + ";'>" + desc + "</div>" +
                 "</body></html>";
 
