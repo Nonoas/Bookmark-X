@@ -39,7 +39,7 @@ public class BookmarkTipPanel extends JBPanel<BookmarkTipPanel> {
         add(scrollPane, BorderLayout.CENTER);
 
         // 边距和圆角
-        setBorder(JBUI.Borders.empty(8, 10, 8, 10));
+        setBorder(JBUI.Borders.empty(8, 10));
         setBackground(JBColor.PanelBackground);
         setOpaque(true);
     }

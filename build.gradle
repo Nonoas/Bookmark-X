@@ -5,7 +5,7 @@ plugins {
 
 group 'indi.bookmarkx'
 
-version '2.3.0'
+version '2.3.1'
 
 repositories {
     mavenLocal()
@@ -24,12 +24,20 @@ dependencies {
 // See https://github.com/JetBrains/gradle-intellij-plugin/
 intellij {
     version = '2021.2.2'
+//    version = '2023.3.6'
+//    version = '2024.3.7'
 }
 
 patchPluginXml {
     sinceBuild = '210.0'
     untilBuild = "252.*"
-    changeNotes = "版本支持到 2025.2"
+
+    changeNotes = """
+      <ul>
+        <li><b>修复双击稳定性：</b>解决了在不同 JRE (如 JDK 17) 环境下，双击书签偶现无法触发跳转的问题。</li>
+        <li><b>修复启动错误：</b>解决了首次打开插件面板时，可能导致的报错问题。</li>
+      </ul>
+    """
 }
 
 tasks.named('initializeIntelliJPlugin') {
