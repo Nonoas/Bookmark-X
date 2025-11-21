@@ -305,19 +305,24 @@ public class BookmarkTree extends Tree implements BookmarkListener {
             @Override
             public void popupMenuWillBecomeVisible(javax.swing.event.PopupMenuEvent e) {
                 boolean showBatchAdjust = showBatchAdjustMenu();
-                batchAdjustLineSeparator.setVisible(showBatchAdjust);
-                batchAdjustLineItem.setVisible(showBatchAdjust);
+                if (showBatchAdjust && popupMenu.getComponentIndex(batchAdjustLineItem) == -1) {
+                    popupMenu.add(batchAdjustLineSeparator);
+                    popupMenu.add(batchAdjustLineItem);
+                }
             }
 
             @Override
-            public void popupMenuWillBecomeInvisible(javax.swing.event.PopupMenuEvent e) {}
+            public void popupMenuWillBecomeInvisible(javax.swing.event.PopupMenuEvent e) {
+                popupMenu.remove(batchAdjustLineSeparator);
+                popupMenu.remove(batchAdjustLineItem);
+            }
 
             @Override
-            public void popupMenuCanceled(javax.swing.event.PopupMenuEvent e) {}
+            public void popupMenuCanceled(javax.swing.event.PopupMenuEvent e) {
+                popupMenu.remove(batchAdjustLineSeparator);
+                popupMenu.remove(batchAdjustLineItem);
+            }
         });
-
-        popupMenu.add(batchAdjustLineSeparator);
-        popupMenu.add(batchAdjustLineItem);
     }
 
     private boolean showBatchAdjustMenu() {
