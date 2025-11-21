@@ -1,8 +1,6 @@
 package indi.bookmarkx.ui.tree;
 
 import com.intellij.openapi.diagnostic.Logger;
-import com.intellij.openapi.editor.Document;
-import com.intellij.openapi.fileEditor.FileDocumentManager;
 import com.intellij.openapi.fileEditor.OpenFileDescriptor;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.ui.JBMenuItem;
@@ -10,7 +8,6 @@ import com.intellij.openapi.ui.JBPopupMenu;
 import com.intellij.openapi.ui.Messages;
 import com.intellij.openapi.ui.popup.JBPopup;
 import com.intellij.openapi.ui.popup.JBPopupFactory;
-import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.ui.TreeSpeedSearch;
 import com.intellij.ui.awt.RelativePoint;
 import com.intellij.ui.treeStructure.Tree;
@@ -24,6 +21,7 @@ import indi.bookmarkx.persistence.MySettings;
 import indi.bookmarkx.ui.dialog.BookmarkCreatorDialog;
 import indi.bookmarkx.ui.dialog.LineAdjustDialog;
 import indi.bookmarkx.ui.pannel.BookmarkTipPanel;
+import indi.bookmarkx.utils.FileLineCounter;
 import org.apache.commons.lang3.Validate;
 import org.jetbrains.annotations.NotNull;
 
@@ -211,7 +209,7 @@ public class BookmarkTree extends Tree implements BookmarkListener {
             final GroupNodeModel groupNodeModel = new GroupNodeModel();
 
             new BookmarkCreatorDialog(project, I18N.get("group.create.title"))
-                    .showAndCallback((name, desc) -> {
+                    .showAndCallback((name, desc, line) -> {
                         String uuid = UUID.randomUUID().toString();
                         groupNodeModel.setUuid(uuid);
                         groupNodeModel.setName(name);
@@ -272,7 +270,7 @@ public class BookmarkTree extends Tree implements BookmarkListener {
 
                     // 计算新行号，确保不小于0
                     int newLine = Math.max(0, model.getLine() + adjustValue);
-                    int maxLine = this.getFileMaxLine(model.getOpenFileDescriptor());
+                    int maxLine = FileLineCounter.getFileMaxLine(model.getOpenFileDescriptor());
                     if (maxLine > 0) {
                         newLine = Math.min(newLine, maxLine - 1);// 从0开始
                     }
@@ -289,11 +287,9 @@ public class BookmarkTree extends Tree implements BookmarkListener {
                                 )
                         );
                     }
-
                     // 刷新UI
                     model.release(); // 清除旧的标记
                     model.createLineMarker(); // 创建新的标记
-                    treeNodesChanged(model);
                 }
 
                 // 通知变更
@@ -338,33 +334,6 @@ public class BookmarkTree extends Tree implements BookmarkListener {
             }
         }
         return true;
-    }
-
-    private int getFileMaxLine(OpenFileDescriptor descriptor) {
-        if (descriptor == null) {
-            return -1;
-        }
-        try {
-            VirtualFile file = descriptor.getFile();
-            if (file != null) {
-                Document document = FileDocumentManager.getInstance().getDocument(file);
-                if (document != null) {
-                    return document.getLineCount();
-                }
-            }
-        } catch (Exception e) {
-            log.warn("Failed to get file line count", e);
-        }
-        return -1;
-    }
-
-
-    public void treeNodesChanged(BookmarkNodeModel model) {
-        BookmarkTreeNode nodeByModel = getNodeByModel(model);
-        if (nodeByModel != null) {
-            model.fireChanged();
-            getModel().nodeChanged(nodeByModel);
-        }
     }
 
 
