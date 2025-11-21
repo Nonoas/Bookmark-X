@@ -17,8 +17,12 @@ import indi.bookmarkx.ui.MyGutterIconRenderer;
 import org.jetbrains.annotations.Nullable;
 
 import javax.swing.*;
+import javax.swing.event.ChangeEvent;
+import javax.swing.event.ChangeListener;
 import java.lang.ref.Reference;
 import java.lang.ref.WeakReference;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Optional;
 
 /**
@@ -161,5 +165,21 @@ public class BookmarkNodeModel extends AbstractTreeNodeModel {
                     bkx.setGutterIconRenderer(new MyGutterIconRenderer(this));
                 });
 
+    }
+
+    private final List<ChangeListener> changeListeners = new ArrayList<>();
+
+    public void addChangeListener(ChangeListener listener) {
+        changeListeners.add(listener);
+    }
+
+    public void removeChangeListener(ChangeListener listener) {
+        changeListeners.remove(listener);
+    }
+
+    public void fireChanged() {
+        for (ChangeListener listener : new ArrayList<>(changeListeners)) {
+            listener.stateChanged(new ChangeEvent(this));
+        }
     }
 }

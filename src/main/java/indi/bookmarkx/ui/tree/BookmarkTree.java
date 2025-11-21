@@ -1,6 +1,8 @@
 package indi.bookmarkx.ui.tree;
 
 import com.intellij.openapi.diagnostic.Logger;
+import com.intellij.openapi.editor.Document;
+import com.intellij.openapi.fileEditor.FileDocumentManager;
 import com.intellij.openapi.fileEditor.OpenFileDescriptor;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.ui.JBMenuItem;
@@ -8,6 +10,7 @@ import com.intellij.openapi.ui.JBPopupMenu;
 import com.intellij.openapi.ui.Messages;
 import com.intellij.openapi.ui.popup.JBPopup;
 import com.intellij.openapi.ui.popup.JBPopupFactory;
+import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.ui.TreeSpeedSearch;
 import com.intellij.ui.awt.RelativePoint;
 import com.intellij.ui.treeStructure.Tree;
@@ -19,12 +22,14 @@ import indi.bookmarkx.model.BookmarkNodeModel;
 import indi.bookmarkx.model.GroupNodeModel;
 import indi.bookmarkx.persistence.MySettings;
 import indi.bookmarkx.ui.dialog.BookmarkCreatorDialog;
+import indi.bookmarkx.ui.dialog.LineAdjustDialog;
 import indi.bookmarkx.ui.pannel.BookmarkTipPanel;
 import org.apache.commons.lang3.Validate;
 import org.jetbrains.annotations.NotNull;
 
 import javax.swing.DropMode;
 import javax.swing.JComponent;
+import javax.swing.JPopupMenu;
 import javax.swing.JTree;
 import javax.swing.SwingUtilities;
 import javax.swing.Timer;
@@ -244,6 +249,117 @@ public class BookmarkTree extends Tree implements BookmarkListener {
                 }
             }
         });
+
+        // 批量调整行号菜单项
+        JPopupMenu.Separator batchAdjustLineSeparator = new JPopupMenu.Separator();
+        JBMenuItem batchAdjustLineItem = new JBMenuItem(I18N.get("bookmark.batchAdjustLine"));
+        batchAdjustLineItem.addActionListener(e -> {
+            TreePath[] selectionPaths = BookmarkTree.this.getSelectionPaths();
+            if (!this.showBatchAdjustMenu()) {
+                return;
+            }
+            LineAdjustDialog dialog = new LineAdjustDialog(project);
+            if (dialog.showAndGet()) {
+                int adjustValue = dialog.getAdjustValue();
+                if (adjustValue == 0) {
+                    return;
+                }
+
+                // 调整所有选中书签的行号
+                for (TreePath path : selectionPaths) {
+                    BookmarkTreeNode node = (BookmarkTreeNode) path.getLastPathComponent();
+                    BookmarkNodeModel model = (BookmarkNodeModel) node.getUserObject();
+
+                    // 计算新行号，确保不小于0
+                    int newLine = Math.max(0, model.getLine() + adjustValue);
+                    int maxLine = this.getFileMaxLine(model.getOpenFileDescriptor());
+                    if (maxLine > 0) {
+                        newLine = Math.min(newLine, maxLine - 1);// 从0开始
+                    }
+                    model.setLine(newLine);
+
+                    OpenFileDescriptor oldDescriptor = model.getOpenFileDescriptor();
+                    if (oldDescriptor != null) {
+                        model.setOpenFileDescriptor(
+                                new OpenFileDescriptor(
+                                        oldDescriptor.getProject(),
+                                        oldDescriptor.getFile(),
+                                        newLine,
+                                        0
+                                )
+                        );
+                    }
+
+                    // 刷新UI
+                    model.release(); // 清除旧的标记
+                    model.createLineMarker(); // 创建新的标记
+                    treeNodesChanged(model);
+                }
+
+                // 通知变更
+                BookmarksManager.getInstance(project).persistentSave();
+            }
+        });
+
+        popupMenu.addPopupMenuListener(new javax.swing.event.PopupMenuListener() {
+            @Override
+            public void popupMenuWillBecomeVisible(javax.swing.event.PopupMenuEvent e) {
+                boolean showBatchAdjust = showBatchAdjustMenu();
+                batchAdjustLineSeparator.setVisible(showBatchAdjust);
+                batchAdjustLineItem.setVisible(showBatchAdjust);
+            }
+
+            @Override
+            public void popupMenuWillBecomeInvisible(javax.swing.event.PopupMenuEvent e) {}
+
+            @Override
+            public void popupMenuCanceled(javax.swing.event.PopupMenuEvent e) {}
+        });
+
+        popupMenu.add(batchAdjustLineSeparator);
+        popupMenu.add(batchAdjustLineItem);
+    }
+
+    private boolean showBatchAdjustMenu() {
+        TreePath[] selectionPaths = this.getSelectionPaths();
+        if (selectionPaths == null || selectionPaths.length < 2) {
+            return false;
+        }
+        // 检查是否所有选中项都是书签
+        for (TreePath path : selectionPaths) {
+            BookmarkTreeNode node = (BookmarkTreeNode) path.getLastPathComponent();
+            if (!node.isBookmark()) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    private int getFileMaxLine(OpenFileDescriptor descriptor) {
+        if (descriptor == null) {
+            return -1;
+        }
+        try {
+            VirtualFile file = descriptor.getFile();
+            if (file != null) {
+                Document document = FileDocumentManager.getInstance().getDocument(file);
+                if (document != null) {
+                    return document.getLineCount();
+                }
+            }
+        } catch (Exception e) {
+            log.warn("Failed to get file line count", e);
+        }
+        return -1;
+    }
+
+
+    public void treeNodesChanged(BookmarkNodeModel model) {
+        BookmarkTreeNode nodeByModel = getNodeByModel(model);
+        if (nodeByModel != null) {
+            model.fireChanged();
+            getModel().nodeChanged(nodeByModel);
+        }
     }
 
 
