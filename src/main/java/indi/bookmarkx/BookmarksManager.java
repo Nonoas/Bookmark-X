@@ -137,37 +137,43 @@ public final class BookmarksManager {
             lineNumber = bookmarkModel.getLine() + 1; // 界面显示从1开始
             OpenFileDescriptor descriptor = bookmarkModel.getOpenFileDescriptor();
             maxLineNumber = FileLineCounter.getFileMaxLine(descriptor);
-        }
+            new BookmarkCreatorDialog(project, I18N.get("bookmark.create.title"), lineNumber, maxLineNumber)
+                    .defaultName(nodeModel.getName())
+                    .defaultDesc(nodeModel.getDesc())
+                    .showAndCallback((name, desc, newLineNo) -> {
+                        nodeModel.setName(name);
+                        nodeModel.setDesc(desc);
 
-        new BookmarkCreatorDialog(project, I18N.get("bookmark.create.title"), lineNumber, maxLineNumber)
-                .defaultName(nodeModel.getName())
-                .defaultDesc(nodeModel.getDesc())
-                .showAndCallback((name, desc, lineNo) -> {
-                    nodeModel.setName(name);
-                    nodeModel.setDesc(desc);
-
-                    // 如果是书签节点且行号有修改，更新行号
-                    if (nodeModel instanceof BookmarkNodeModel && lineNo != null) {
-                        BookmarkNodeModel bookmarkModel = (BookmarkNodeModel) nodeModel;
-                        int oldLine = bookmarkModel.getLine();
-                        if (oldLine != lineNo) {
-                            bookmarkModel.setLine(lineNo);
-                            // 更新文件描述符的行号
-                            OpenFileDescriptor descriptor = bookmarkModel.getOpenFileDescriptor();
-                            if (descriptor != null) {
-                                bookmarkModel.setOpenFileDescriptor(
-                                        new OpenFileDescriptor(descriptor.getProject(), descriptor.getFile(), lineNo, 0)
-                                );
+                        // 如果是书签节点且行号有修改，更新行号
+                        if (newLineNo != null) {
+                            int oldLine = bookmarkModel.getLine();
+                            if (oldLine != newLineNo) {
+                                bookmarkModel.setLine(newLineNo);
+                                // 更新文件描述符的行号
+                                if (descriptor != null) {
+                                    bookmarkModel.setOpenFileDescriptor(
+                                            new OpenFileDescriptor(descriptor.getProject(), descriptor.getFile(), newLineNo, 0)
+                                    );
+                                }
+                                bookmarkModel.release();
+                                bookmarkModel.createLineMarker();
+                                // getBookmarkPublisher(project).bookmarkRemoved(nodeModel);
+                                // getBookmarkPublisher(project).bookmarkAdded(nodeModel);
                             }
-                            bookmarkModel.release();
-                            bookmarkModel.createLineMarker();
-                            // getBookmarkPublisher(project).bookmarkRemoved(nodeModel);
-                            // getBookmarkPublisher(project).bookmarkAdded(nodeModel);
                         }
-                    }
 
-                    getBookmarkPublisher(project).bookmarkChanged(nodeModel);
-                });
+                        getBookmarkPublisher(project).bookmarkChanged(nodeModel);
+                    });
+        } else {
+            new BookmarkCreatorDialog(project, I18N.get("bookmark.create.title"))
+                    .defaultName(nodeModel.getName())
+                    .defaultDesc(nodeModel.getDesc())
+                    .showAndCallback((name, desc, lineNo) -> {
+                        nodeModel.setName(name);
+                        nodeModel.setDesc(desc);
+                        getBookmarkPublisher(project).bookmarkChanged(nodeModel);
+                    });
+        }
     }
 
     /**
