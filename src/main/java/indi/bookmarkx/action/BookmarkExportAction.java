@@ -20,6 +20,7 @@ import org.jetbrains.annotations.NotNull;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.nio.file.Paths;
 import java.util.Objects;
 
 import static indi.bookmarkx.utils.PersistenceUtil.deepCopy;
@@ -68,8 +69,8 @@ public final class BookmarkExportAction extends AnAction {
 
     public void saveToJsonFile(BookmarkPO state) {
         BookmarkPO copy = deepCopy(state, BookmarkPO.class);
-        String projectDir = FileUtil.toSystemIndependentName(Objects.requireNonNull(project.getBasePath()));
-        String outputPath = projectDir + File.separator + "Bookmark_X.json";
+        String projectDir = Objects.requireNonNull(project.getBasePath());
+        String outputPath = Paths.get(projectDir, "Bookmark_X.json").toString();
         Gson gson = new Gson();
         try (FileWriter fw = new FileWriter(outputPath)) {
             gson.toJson(copy, fw);
