@@ -24,7 +24,6 @@ import java.io.IOException;
  */
 public final class BookmarkImportAction extends AnAction {
 
-
     private Project project;
 
     public BookmarkImportAction() {
