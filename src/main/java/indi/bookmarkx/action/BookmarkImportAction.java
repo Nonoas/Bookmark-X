@@ -19,6 +19,9 @@ import org.jetbrains.annotations.NotNull;
 
 import java.io.IOException;
 
+/**
+ * 书签导入
+ */
 public final class BookmarkImportAction extends AnAction {
 
 
