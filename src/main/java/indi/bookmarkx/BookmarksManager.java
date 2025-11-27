@@ -146,20 +146,7 @@ public final class BookmarksManager {
 
                         // 如果是书签节点且行号有修改，更新行号
                         if (newLineNo != null) {
-                            int oldLine = bookmarkModel.getLine();
-                            if (oldLine != newLineNo) {
-                                bookmarkModel.setLine(newLineNo);
-                                // 更新文件描述符的行号
-                                if (descriptor != null) {
-                                    bookmarkModel.setOpenFileDescriptor(
-                                            new OpenFileDescriptor(descriptor.getProject(), descriptor.getFile(), newLineNo, 0)
-                                    );
-                                }
-                                bookmarkModel.release();
-                                bookmarkModel.createLineMarker();
-                                // getBookmarkPublisher(project).bookmarkRemoved(nodeModel);
-                                // getBookmarkPublisher(project).bookmarkAdded(nodeModel);
-                            }
+                            bookmarkModel.updateBookmarkLine(newLineNo, true);
                         }
 
                         getBookmarkPublisher(project).bookmarkChanged(nodeModel);

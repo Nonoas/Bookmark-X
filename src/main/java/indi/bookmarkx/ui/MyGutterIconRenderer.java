@@ -97,7 +97,7 @@ public class MyGutterIconRenderer extends GutterIconRenderer {
                 if (editor != null) {
                     clearDragHighlights(editor);
                 }
-                updateBookmarkLine(line);
+                model.updateBookmarkLine(line, true);
                 return true;
             }
 
@@ -151,26 +151,5 @@ public class MyGutterIconRenderer extends GutterIconRenderer {
         if (lastHighlighter != null) {
             markupModel.removeHighlighter(lastHighlighter);
         }
-    }
-
-    private void updateBookmarkLine(int newLine) {
-        if (model.getLine() == newLine) {
-            return;
-        }
-        model.setLine(newLine);
-        OpenFileDescriptor oldDescriptor = model.getOpenFileDescriptor();
-        if (oldDescriptor != null) {
-            model.setOpenFileDescriptor(
-                    new OpenFileDescriptor(
-                            oldDescriptor.getProject(),
-                            oldDescriptor.getFile(),
-                            newLine,
-                            0
-                    )
-            );
-        }
-        model.release();
-        model.createLineMarker();
-        BookmarksManager.getInstance(oldDescriptor.getProject()).persistentSave();
     }
 }
