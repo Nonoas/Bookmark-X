@@ -11,12 +11,10 @@ import com.intellij.openapi.editor.markup.RangeHighlighter;
 import com.intellij.openapi.editor.markup.TextAttributes;
 import com.intellij.openapi.fileEditor.FileEditor;
 import com.intellij.openapi.fileEditor.FileEditorManager;
-import com.intellij.openapi.fileEditor.OpenFileDescriptor;
 import com.intellij.openapi.fileEditor.TextEditor;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.ui.JBColor;
-import indi.bookmarkx.BookmarksManager;
 import indi.bookmarkx.action.BookmarkEditAction;
 import indi.bookmarkx.action.BookmarkRemoveAction;
 import indi.bookmarkx.common.MyIcons;
@@ -49,13 +47,25 @@ public class MyGutterIconRenderer extends GutterIconRenderer {
      *
      * @return
      */
-    @Override
-    public @NotNull ActionGroup getRightButtonClickAction() {
+    private ActionGroup createPopupMenuActions() {
         DefaultActionGroup actionGroup = new DefaultActionGroup();
         actionGroup.add(new BookmarkEditAction(model));
         actionGroup.add(new BookmarkRemoveAction(model));
         return actionGroup;
     }
+
+    @Override
+    public @Nullable ActionGroup getPopupMenuActions() {
+        // 兼容 2021.x / 2022.x
+        return createPopupMenuActions();
+    }
+
+    @Override
+    public @Nullable ActionGroup getRightButtonClickAction() {
+        // 兼容 2023.x+（官方推荐）
+        return createPopupMenuActions();
+    }
+
 
     @Override
     public @Nullable String getTooltipText() {

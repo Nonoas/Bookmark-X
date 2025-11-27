@@ -6,7 +6,7 @@ on:
     paths: ["src/**"]
 
   pull_request:
-    branches: [ "master" ]
+    branches: [ "master", "210"]
     paths: ["src/**"]
 
 permissions:
@@ -26,7 +26,15 @@ jobs:
         distribution: 'temurin'
 
     - name: Setup Gradle
-      uses: gradle/gradle-build-action@v2
+      uses: gradle/gradle-build-action@v3
+
+    - name: Cache IntelliJ sandbox
+      uses: actions/cache@v3
+      with:
+        path: ~/.cache/JetBrains
+        key: sandbox-${{ runner.os }}-${{ hashFiles('build.gradle*') }}
+        restore-keys: |
+          sandbox-${{ runner.os }}-
 
     - name: Grant execute permission for gradlew
       run: chmod +x gradlew
