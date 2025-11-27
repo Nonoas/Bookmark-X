@@ -12,6 +12,7 @@ import com.intellij.openapi.fileEditor.OpenFileDescriptor;
 import com.intellij.openapi.util.Ref;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.reference.SoftReference;
+import indi.bookmarkx.BookmarksManager;
 import indi.bookmarkx.common.Constants;
 import indi.bookmarkx.ui.MyGutterIconRenderer;
 import org.jetbrains.annotations.Nullable;
@@ -161,5 +162,28 @@ public class BookmarkNodeModel extends AbstractTreeNodeModel {
                     bkx.setGutterIconRenderer(new MyGutterIconRenderer(this));
                 });
 
+    }
+
+    public void updateBookmarkLine(int newLine, boolean doPersistentSave) {
+        if (this.line == newLine) {
+            return;
+        }
+        this.line = newLine;
+        OpenFileDescriptor oldDescriptor = getOpenFileDescriptor();
+        if (oldDescriptor != null) {
+            this.setOpenFileDescriptor(
+                    new OpenFileDescriptor(
+                            oldDescriptor.getProject(),
+                            oldDescriptor.getFile(),
+                            newLine,
+                            0
+                    )
+            );
+        }
+        this.release();
+        this.createLineMarker();
+        if (doPersistentSave) {
+            BookmarksManager.getInstance(oldDescriptor.getProject()).persistentSave();
+        }
     }
 }

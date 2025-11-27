@@ -274,25 +274,8 @@ public class BookmarkTree extends Tree implements BookmarkListener {
                     if (maxLine > 0) {
                         newLine = Math.min(newLine, maxLine - 1);// 从0开始
                     }
-                    model.setLine(newLine);
-
-                    OpenFileDescriptor oldDescriptor = model.getOpenFileDescriptor();
-                    if (oldDescriptor != null) {
-                        model.setOpenFileDescriptor(
-                                new OpenFileDescriptor(
-                                        oldDescriptor.getProject(),
-                                        oldDescriptor.getFile(),
-                                        newLine,
-                                        0
-                                )
-                        );
-                    }
-                    // 刷新UI
-                    model.release(); // 清除旧的标记
-                    model.createLineMarker(); // 创建新的标记
+                    model.updateBookmarkLine(newLine, false);
                 }
-
-                // 通知变更
                 BookmarksManager.getInstance(project).persistentSave();
             }
         });
