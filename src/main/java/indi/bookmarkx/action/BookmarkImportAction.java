@@ -51,6 +51,7 @@ public final class BookmarkImportAction extends AnAction {
             Gson gson = new Gson();
             BookmarkPO bookmarkPO = gson.fromJson(content, BookmarkPO.class);
             stateTranslate(bookmarkPO);
+
             MyPersistent persistent = MyPersistent.getInstance(project);
             persistent.setState(bookmarkPO);
             BookmarksManager.getInstance(project).reload();
