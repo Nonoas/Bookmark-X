@@ -37,19 +37,8 @@ public class MyGutterIconRenderer extends GutterIconRenderer {
         this.model = model;
     }
 
-    /**
-     * GutterIcon上的菜单
-     *
-     * <pre>
-     * 特别说明：
-     *   因为增加了拖拽功能，所以这里从 getPopupMenuActions 换成了 getRightButtonClickAction。
-     *   但在 idea version = 2021.2.2 时，鼠标左右键点击，都没菜单展示 (这应该是idea的bug！！)
-     *     在 idea version = 2023.3.6 时，鼠标右键点击，有菜单展示
-     * </pre>
-     *
-     * @return ActionGroup
-     */
-    private ActionGroup createPopupMenuActions() {
+    @Override
+    public @NotNull ActionGroup getPopupMenuActions() {
         DefaultActionGroup actionGroup = new DefaultActionGroup();
         actionGroup.add(new BookmarkEditAction(model));
         actionGroup.add(new BookmarkRemoveAction(model));
@@ -57,17 +46,14 @@ public class MyGutterIconRenderer extends GutterIconRenderer {
     }
 
     @Override
-    public @Nullable ActionGroup getPopupMenuActions() {
-        // 兼容 2021.x / 2022.x
-        return createPopupMenuActions();
+    public @Nullable AnAction getClickAction() {
+        return new AnAction() {
+            @Override
+            public void actionPerformed(@NotNull AnActionEvent e) {
+                // do nothing，覆盖默认弹菜单的逻辑
+            }
+        };
     }
-
-    @Override
-    public @Nullable ActionGroup getRightButtonClickAction() {
-        // 兼容 2023.x+（官方推荐）
-        return createPopupMenuActions();
-    }
-
 
     @Override
     public @Nullable String getTooltipText() {
