@@ -2,7 +2,7 @@ name: Build IntelliJ Plugin
 
 on:
   push:
-    branches: ["master","210"]
+    branches: ["master", "210", "build.gradle"]
     paths: ["src/**"]
   pull_request:
     branches: ["master", "210"]
