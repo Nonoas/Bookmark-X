@@ -1,6 +1,8 @@
 package indi.bookmarkx.ui;
 
 import com.intellij.openapi.actionSystem.ActionGroup;
+import com.intellij.openapi.actionSystem.AnAction;
+import com.intellij.openapi.actionSystem.AnActionEvent;
 import com.intellij.openapi.actionSystem.DefaultActionGroup;
 import com.intellij.openapi.editor.Editor;
 import com.intellij.openapi.editor.markup.GutterDraggableObject;
@@ -45,7 +47,7 @@ public class MyGutterIconRenderer extends GutterIconRenderer {
      *     在 idea version = 2023.3.6 时，鼠标右键点击，有菜单展示
      * </pre>
      *
-     * @return
+     * @return ActionGroup
      */
     private ActionGroup createPopupMenuActions() {
         DefaultActionGroup actionGroup = new DefaultActionGroup();
