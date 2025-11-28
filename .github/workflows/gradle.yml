@@ -2,10 +2,10 @@ name: Build IntelliJ Plugin
 
 on:
   push:
-    branches: [ "master" ]
+    branches: ["master","210"]
     paths: ["src/**"]
   pull_request:
-    branches: [ "master", "210" ]
+    branches: ["master", "210"]
     paths: ["src/**"]
 
 permissions:
@@ -24,10 +24,12 @@ jobs:
         with:
           distribution: 'temurin'
           java-version: '11'
-          cache: 'gradle'
+          cache: gradle   # Gradle 缓存自动处理，不要自定义路径
 
       - name: Setup Gradle
         uses: gradle/gradle-build-action@v3
+        with:
+          gradle-home-cache-cleanup: true   # 自动清理过期缓存，避免 400 Error
 
       - name: Cache IntelliJ Sandbox
         uses: actions/cache@v3
@@ -35,9 +37,9 @@ jobs:
           path: |
             ~/.cache/JetBrains/IntelliJIdea*
             ~/.local/share/JetBrains/IntelliJIdea*
-          key: intellij-${{ runner.os }}-${{ hashFiles('build.gradle*', 'gradle.properties') }}
+          key: intellij-sandbox-${{ runner.os }}-${{ hashFiles('build.gradle*', 'gradle.properties') }}
           restore-keys: |
-            intellij-${{ runner.os }}-
+            intellij-sandbox-${{ runner.os }}-
 
       - name: Grant execute permission for gradlew
         run: chmod +x gradlew
