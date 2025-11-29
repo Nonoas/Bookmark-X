@@ -9,11 +9,11 @@ version '2.3.2'
 
 repositories {
     mavenLocal()
-    maven { url "https://cache-redirector.jetbrains.com/intellij-repository/releases" }
-    maven { url "https://cache-redirector.jetbrains.com/intellij-repository/snapshots" }
     maven { url 'https://mirrors.huaweicloud.com/repository/maven/' }
     maven { url 'https://maven.aliyun.com/repository/central/' }  // 阿里云中央仓库镜像
     mavenCentral()
+    maven { url "https://cache-redirector.jetbrains.com/intellij-repository/releases" }
+    maven { url "https://cache-redirector.jetbrains.com/intellij-repository/snapshots" }
 }
 
 dependencies {
