@@ -5,7 +5,7 @@ plugins {
 
 group 'indi.bookmarkx'
 
-version '2.3.2'
+version '2.3.3'
 
 repositories {
     mavenLocal()
@@ -32,11 +32,12 @@ intellij {
 
 patchPluginXml {
     sinceBuild = '210.0'
-    untilBuild = "252.*"
+    untilBuild = "253.*"
 
     changeNotes = """
       <ul>
-        <li>书签行标记支持拖拽改变标记所在的行位置</li>
+        <li>导出书签支持指定目录</li>
+        <li>兼容2025.3版本</li>
       </ul>
     """
 }
