@@ -6,15 +6,15 @@
 </h1>
 
 <p align="center">
-  一个 IntelliJ 插件，用于扩展书签功能，可分组管理书签并快速跳转代码，使代码阅读更高效。
+  An IntelliJ plugin that extends bookmark functionality, allowing grouped management of bookmarks and quick navigation in code for more efficient reading.
 </p>
 
 <p align="center">
-  <a href="https://github.com/Nonoas/Bookmark-X/issues">报告 Bug</a>
+  <a href="https://github.com/Nonoas/Bookmark-X/issues">Report a Bug</a>
   ·
-  <a href="https://github.com/Nonoas/Bookmark-X/issues">提出新特性</a>
+  <a href="https://github.com/Nonoas/Bookmark-X/issues">Request a Feature</a>
   ·
-  <a href="https://github.com/Nonoas/Bookmark-X"><strong>查看文档 »</strong></a>
+  <a href="https://github.com/Nonoas/Bookmark-X"><strong>View Documentation »</strong></a>
 </p>
 
 <p align="center">
@@ -34,41 +34,41 @@
 
 ---
 
-## 目录
-- [功能简介](#功能简介)
-- [使用说明](#使用说明)
-- [贡献指南](#贡献指南)
-- [贡献者](#贡献者)
-- [许可](#许可)
-- [鸣谢](#鸣谢)
+## Table of Contents
+- [Features](#features)
+- [Usage](#usage)
+- [Contributing](#contributing)
+- [Contributors](#contributors)
+- [License](#license)
+- [Acknowledgements](#acknowledgements)
 
 ---
 
-## 功能简介
-Bookmark-X 是一个 IntelliJ 插件，提供以下功能：
+## Features
+Bookmark-X is an IntelliJ plugin with the following features:
 
-- 分组管理书签，支持快速切换代码位置  
-- 支持修改行号，拖拽 GutterIcon 快速定位  
-- 导出书签，可选择目录及文件名
-
----
-
-## 使用说明
-
-更多使用细节请参考官方文档：[https://www.nonoas.top/archives/bookmark-x](https://www.nonoas.top/archives/bookmark-x)
+- Grouped bookmark management for quick code navigation
+- Support for line number modification and drag-and-drop GutterIcon navigation
+- Export bookmarks with directory and filename selection
 
 ---
 
-## 贡献指南
+## Usage
 
-我们欢迎任何形式的贡献，包括 bug 修复、新功能或文档改进：
-
-1. 关于开发及PR提交规范请参阅文档：[开发者文档](https://github.com/Nonoas/Bookmark-X/wiki/%E5%BC%80%E5%8F%91%E8%80%85%E6%96%87%E6%A1%A3-Developer-documentation)
-2. 欢迎加入开发者交流QQ群：`519310777`
+For more detailed instructions, please refer to the official documentation: [https://www.nonoas.top/archives/bookmark-x](https://www.nonoas.top/archives/bookmark-x)
 
 ---
 
-## 贡献者
+## Contributing
+
+We welcome contributions of any kind, including bug fixes, new features, or documentation improvements:
+
+1. Please refer to the developer guide for development and PR submission guidelines: [Developer Documentation](https://github.com/Nonoas/Bookmark-X/wiki/%E5%BC%80%E5%8F%91%E8%80%85%E6%96%87%E6%A1%A3-Developer-documentation)
+2. Join our developer discussion QQ group: `519310777`
+
+---
+
+## Contributors
 
 <table>
 <tr>
@@ -98,12 +98,12 @@ Bookmark-X 是一个 IntelliJ 插件，提供以下功能：
 
 ---
 
-## 许可
+## License
 
-该项目遵循 **MPL 2.0 许可**，详情请查看 [LICENSE.txt](https://www.mozilla.org/en-US/MPL/2.0/)
+This project is licensed under **MPL 2.0**. See [LICENSE.txt](https://www.mozilla.org/en-US/MPL/2.0/) for details.
 
 ---
 
-## 鸣谢
+## Acknowledgements
 
-感谢所有为项目做出贡献的开发者以及 IntelliJ 社区提供的支持。
+Thanks to all the contributors and the IntelliJ community for their support.
