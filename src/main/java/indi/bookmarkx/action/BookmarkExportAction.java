@@ -7,9 +7,13 @@ import com.intellij.notification.NotificationType;
 import com.intellij.notification.Notifications;
 import com.intellij.openapi.actionSystem.AnAction;
 import com.intellij.openapi.actionSystem.AnActionEvent;
+import com.intellij.openapi.fileChooser.FileChooserFactory;
+import com.intellij.openapi.fileChooser.FileSaverDescriptor;
+import com.intellij.openapi.fileChooser.FileSaverDialog;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.util.io.FileUtil;
 import com.intellij.openapi.util.text.StringUtil;
+import com.intellij.openapi.vfs.VirtualFileWrapper;
 import com.intellij.openapi.wm.ToolWindowId;
 import indi.bookmarkx.common.I18N;
 import indi.bookmarkx.model.po.BookmarkPO;
@@ -22,6 +26,9 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.nio.file.Paths;
 import java.util.Objects;
+import java.nio.file.Path;
+import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
 
 import static indi.bookmarkx.utils.PersistenceUtil.deepCopy;
 
@@ -64,13 +71,30 @@ public final class BookmarkExportAction extends AnAction {
 
         BookmarkPO copy = deepCopy(state, BookmarkPO.class);
         stateTranslate(copy);
-        saveToJsonFile(copy);
+
+        // 创建文件保存对话框
+        FileSaverDescriptor descriptor = new FileSaverDescriptor(
+                I18N.get("bookmark.export.dialog.title"),
+                I18N.get("bookmark.export.dialog.description"),
+                "json"
+        );
+
+        String defaultFileName = "Bookmark_X_" + DateTimeFormatter.ofPattern("yyyyMMdd").format(LocalDate.now());
+        FileSaverDialog saveFileDialog = FileChooserFactory.getInstance().createSaveFileDialog(descriptor, project);
+
+        String basePath = project.getBasePath();
+        if (basePath == null) {
+            basePath = System.getProperty("user.home");
+        }
+        VirtualFileWrapper fileWrapper = saveFileDialog.save(Path.of(basePath), defaultFileName);
+        if (fileWrapper != null) {
+            File file = fileWrapper.getFile();
+            saveToJsonFile(copy, file.getAbsolutePath());
+        }
     }
 
-    public void saveToJsonFile(BookmarkPO state) {
+    public void saveToJsonFile(BookmarkPO state, String outputPath) {
         BookmarkPO copy = deepCopy(state, BookmarkPO.class);
-        String projectDir = Objects.requireNonNull(project.getBasePath());
-        String outputPath = Paths.get(projectDir, "Bookmark_X.json").toString();
         Gson gson = new Gson();
         try (FileWriter fw = new FileWriter(outputPath)) {
             gson.toJson(copy, fw);
