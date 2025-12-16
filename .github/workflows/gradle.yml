@@ -24,12 +24,10 @@ jobs:
         with:
           distribution: 'temurin'
           java-version: '11'
-          cache: gradle   # Gradle 缓存自动处理，不要自定义路径
+          cache: 'gradle'
 
       - name: Setup Gradle
-        uses: gradle/gradle-build-action@v3
-        with:
-          gradle-home-cache-cleanup: true   # 自动清理过期缓存，避免 400 Error
+        uses: gradle/actions/setup-gradle@v3
 
       - name: Cache IntelliJ Sandbox
         uses: actions/cache@v3
