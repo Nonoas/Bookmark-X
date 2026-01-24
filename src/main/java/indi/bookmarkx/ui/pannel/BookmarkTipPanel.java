@@ -1,5 +1,11 @@
 package indi.bookmarkx.ui.pannel;
 
+import com.intellij.icons.AllIcons;
+import com.intellij.openapi.actionSystem.ActionManager;
+import com.intellij.openapi.actionSystem.ActionToolbar;
+import com.intellij.openapi.actionSystem.AnAction;
+import com.intellij.openapi.actionSystem.AnActionEvent;
+import com.intellij.openapi.actionSystem.DefaultActionGroup;
 import com.intellij.openapi.ui.popup.Balloon;
 import com.intellij.openapi.ui.popup.BalloonBuilder;
 import com.intellij.openapi.ui.popup.JBPopupFactory;
@@ -12,6 +18,7 @@ import indi.bookmarkx.model.AbstractTreeNodeModel;
 import org.jetbrains.annotations.NotNull;
 
 import javax.swing.JComponent;
+import javax.swing.JPanel;
 import javax.swing.ScrollPaneConstants;
 import javax.swing.SwingConstants;
 import javax.swing.UIManager;
@@ -22,7 +29,11 @@ import java.awt.Dimension;
 
 public class BookmarkTipPanel extends JBPanel<BookmarkTipPanel> {
 
+    private Runnable onOpenInToolWindow;
+    private final AbstractTreeNodeModel model;
+
     public BookmarkTipPanel(@NotNull AbstractTreeNodeModel model) {
+        this.model = model;
         setLayout(new BorderLayout());
 
         // 使用 JBLabel + HTML 渲染
@@ -42,6 +53,24 @@ public class BookmarkTipPanel extends JBPanel<BookmarkTipPanel> {
         setBorder(JBUI.Borders.empty(8, 10));
         setBackground(JBColor.PanelBackground);
         setOpaque(true);
+    }
+
+    public BookmarkTipPanel(@NotNull AbstractTreeNodeModel model, Runnable onOpenInToolWindow) {
+        this.model = model;
+        this.onOpenInToolWindow = onOpenInToolWindow;
+        setLayout(new BorderLayout());
+
+        // 1. 内容区 (你的 HTML 内容)
+        JBLabel htmlLabel = createHtmlLabel(model);
+        JBScrollPane scrollPane = new JBScrollPane(htmlLabel);
+        scrollPane.setBorder(JBUI.Borders.empty());
+        add(scrollPane, BorderLayout.CENTER);
+
+        // 2. 底部工具栏 (仿 Document 弹窗)
+        add(createBottomPanel(), BorderLayout.SOUTH);
+
+        setPreferredSize(new Dimension(400, 300));
+        setBackground(JBColor.PanelBackground);
     }
 
     private static JBLabel createHtmlLabel(@NotNull AbstractTreeNodeModel model) {
@@ -68,6 +97,31 @@ public class BookmarkTipPanel extends JBPanel<BookmarkTipPanel> {
 
     private static String toHtmlColor(Color color) {
         return String.format("#%02x%02x%02x", color.getRed(), color.getGreen(), color.getBlue());
+    }
+
+    private JPanel createBottomPanel() {
+        // 创建 ActionGroup (三个点菜单里的内容)
+        DefaultActionGroup actionGroup = new DefaultActionGroup();
+        actionGroup.add(new AnAction("Open in Tool Window", "Move this content to tool window", AllIcons.Actions.More) {
+            @Override
+            public void actionPerformed(@NotNull AnActionEvent e) {
+                if (onOpenInToolWindow != null) {
+                    onOpenInToolWindow.run();
+                }
+            }
+        });
+
+        // 将 Group 变成“三个点”按钮
+        ActionToolbar toolbar = ActionManager.getInstance()
+                .createActionToolbar("BookmarkTipToolbar", actionGroup, true);
+        toolbar.setTargetComponent(this);
+        toolbar.getComponent().setOpaque(false);
+
+        JPanel panel = new JPanel(new BorderLayout());
+        panel.setOpaque(false);
+        panel.setBorder(JBUI.Borders.customLine(JBColor.border(), 1, 0, 0, 0)); // 顶部加一条细线
+        panel.add(toolbar.getComponent(), BorderLayout.EAST); // 靠右对齐
+        return panel;
     }
 
     /**

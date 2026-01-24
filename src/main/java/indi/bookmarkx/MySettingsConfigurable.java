@@ -7,7 +7,7 @@ import com.intellij.openapi.options.Configurable;
 import com.intellij.openapi.ui.Messages;
 import indi.bookmarkx.common.I18N;
 import indi.bookmarkx.persistence.MySettings;
-import indi.bookmarkx.ui.MySettingsPanel;
+import indi.bookmarkx.ui.pannel.MySettingsPanel;
 import org.jetbrains.annotations.Nls;
 import org.jetbrains.annotations.Nullable;
 
@@ -40,7 +40,9 @@ public class MySettingsConfigurable implements Configurable {
     @Override
     public boolean isModified() {
         MySettings settings = MySettings.getInstance();
-        return isLanguageChanged() || settingsComponent.getTipDelay() != settings.getTipDelay();
+        return isLanguageChanged()
+                || settingsComponent.getTipDelay() != settings.getTipDelay()
+                || settingsComponent.getDescShowType() != settings.getDescShowType();
     }
 
     private boolean isLanguageChanged() {
@@ -54,6 +56,7 @@ public class MySettingsConfigurable implements Configurable {
         MySettings settings = MySettings.getInstance();
         settings.setLanguage(settingsComponent.getLanguage());
         settings.setTipDelay(settingsComponent.getTipDelay());
+        settings.setDescShowType(settingsComponent.getDescShowType());
 
         if (languageChanged) {
             showRestartDialog();
@@ -62,8 +65,7 @@ public class MySettingsConfigurable implements Configurable {
 
     @Override
     public void reset() {
-        MySettings settings = MySettings.getInstance();
-        settingsComponent.setLanguage(settings.getLanguage());
+        settingsComponent.reset();
     }
 
     @Override
@@ -82,6 +84,30 @@ public class MySettingsConfigurable implements Configurable {
         if (response == Messages.YES) {
             ApplicationEx app = (ApplicationEx) ApplicationManager.getApplication();
             app.restart(true);
+        }
+    }
+
+    public enum DescShowType {
+        POPUP(0),
+        SPLIT_PANE(1);
+
+        private final int value;
+
+        DescShowType(int value) {
+            this.value = value;
+        }
+
+        public static DescShowType fromCode(int code) {
+            for (DescShowType descShowType : values()) {
+                if (code == descShowType.value) {
+                    return descShowType;
+                }
+            }
+            return POPUP;
+        }
+
+        public int getValue() {
+            return value;
         }
     }
 }

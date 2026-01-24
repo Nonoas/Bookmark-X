@@ -60,10 +60,20 @@ public final class MySettings implements PersistentStateComponent<MySettings.Sta
         state.tipDelay = tipDelay;
     }
 
+    public int getDescShowType() {
+        return state.descShowType;
+    }
+
+    public void setDescShowType(int descShowType) {
+        state.descShowType = descShowType;
+    }
+
+
     @XmlRootElement
     public static class State {
         public String language;
         public int tipDelay;
+        public int descShowType;
     }
 
 }
