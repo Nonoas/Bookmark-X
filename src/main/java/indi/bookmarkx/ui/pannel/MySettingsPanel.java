@@ -14,13 +14,9 @@ import indi.bookmarkx.common.I18NEnum;
 import indi.bookmarkx.persistence.MySettings;
 import org.apache.commons.lang.StringUtils;
 
-import javax.swing.Box;
-import javax.swing.JLabel;
 import javax.swing.JPanel;
 import java.awt.BorderLayout;
 import java.awt.FlowLayout;
-import java.awt.GridBagConstraints;
-import java.awt.GridBagLayout;
 import java.awt.GridLayout;
 import java.awt.event.ItemEvent;
 
@@ -77,6 +73,12 @@ public class MySettingsPanel extends JBPanel<MySettingsPanel> {
 
         // 设置容器可见性
         tipSettingsWrapper.setVisible(isPopup);
+        if (isPopup) {
+
+        } else {
+            jtfDelay.setText("0");
+            showTipCheckBox.setSelected(false);
+        }
 
         // 关键：通知 Swing 重新布局并重绘，否则界面可能会留白或不刷新
         revalidate();
@@ -116,7 +118,7 @@ public class MySettingsPanel extends JBPanel<MySettingsPanel> {
             jtfDelay.setEnabled(false);
         }
 
-        showTypeComboBox.setSelectedIndex(settings.getDescShowType());
+        showTypeComboBox.setSelectedIndex(settings.getDescShowType().getValue());
     }
 
     public I18NEnum getLanguage() {
@@ -142,10 +144,10 @@ public class MySettingsPanel extends JBPanel<MySettingsPanel> {
         return Integer.parseInt(delay);
     }
 
-    public int getDescShowType() {
+    public MySettingsConfigurable.DescShowType getDescShowType() {
         int selectedIndex = showTypeComboBox.getSelectedIndex();
         MySettingsConfigurable.DescShowType descShowType = MySettingsConfigurable.DescShowType.fromCode(selectedIndex);
-        return descShowType.getValue();
+        return descShowType;
     }
 
     public void reset() {
@@ -160,6 +162,6 @@ public class MySettingsPanel extends JBPanel<MySettingsPanel> {
             jtfDelay.setText("0");
             showTipCheckBox.setSelected(false);
         }
-        showTypeComboBox.setSelectedIndex(settings.getDescShowType());
+        showTypeComboBox.setSelectedIndex(settings.getDescShowType().getValue());
     }
 }

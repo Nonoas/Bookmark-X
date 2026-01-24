@@ -5,6 +5,7 @@ import com.intellij.openapi.components.PersistentStateComponent;
 import com.intellij.openapi.components.Service;
 import com.intellij.openapi.components.State;
 import com.intellij.openapi.components.Storage;
+import indi.bookmarkx.MySettingsConfigurable;
 import indi.bookmarkx.common.I18NEnum;
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
@@ -60,12 +61,12 @@ public final class MySettings implements PersistentStateComponent<MySettings.Sta
         state.tipDelay = tipDelay;
     }
 
-    public int getDescShowType() {
-        return state.descShowType;
+    public MySettingsConfigurable.DescShowType getDescShowType() {
+        return MySettingsConfigurable.DescShowType.fromCode(state.descShowType);
     }
 
-    public void setDescShowType(int descShowType) {
-        state.descShowType = descShowType;
+    public void setDescShowType(MySettingsConfigurable.DescShowType descShowType) {
+        state.descShowType = descShowType.getValue();
     }
 
 

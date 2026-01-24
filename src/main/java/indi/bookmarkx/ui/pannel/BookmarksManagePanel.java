@@ -7,19 +7,25 @@ import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.psi.PsiFile;
 import com.intellij.psi.PsiManager;
+import com.intellij.ui.IdeBorderFactory;
 import com.intellij.ui.JBColor;
+import com.intellij.ui.JBSplitter;
+import com.intellij.ui.SideBorder;
 import com.intellij.ui.components.JBScrollPane;
 import com.intellij.util.ui.JBUI;
 import indi.bookmarkx.BookmarksManager;
+import indi.bookmarkx.MySettingsConfigurable;
 import indi.bookmarkx.common.data.BookmarkArrayListTable;
 import indi.bookmarkx.global.FileMarksCache;
 import indi.bookmarkx.listener.BookmarkListener;
 import indi.bookmarkx.model.AbstractTreeNodeModel;
 import indi.bookmarkx.model.BookmarkNodeModel;
+import indi.bookmarkx.persistence.MySettings;
 import indi.bookmarkx.ui.tree.BookmarkTree;
 import indi.bookmarkx.ui.tree.BookmarkTreeNode;
 import org.jetbrains.annotations.NotNull;
 
+import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.event.TreeModelEvent;
 import javax.swing.event.TreeModelListener;
@@ -39,6 +45,8 @@ public class BookmarksManagePanel extends JPanel {
 
     private final BookmarkTree tree;
 
+    private JBScrollPane descScrollPane;
+
     /**
      * 标记 tree 是否已经从持久化文件加载完成
      */
@@ -50,11 +58,22 @@ public class BookmarksManagePanel extends JPanel {
 
         setLayout(new BorderLayout());
 
-        JBScrollPane scrollPane = new JBScrollPane(tree);
+        JBSplitter jbSplitter = new JBSplitter(false, 0.5f);
 
-        scrollPane.setBorder(JBUI.Borders.empty());
+        JBScrollPane treeScrollPane = new JBScrollPane(tree);
 
-        add(scrollPane, BorderLayout.CENTER);
+        treeScrollPane.setBorder(JBUI.Borders.empty());
+
+        jbSplitter.setFirstComponent(treeScrollPane);
+
+        MySettings settings = MySettings.getInstance();
+        if (settings.getDescShowType() == MySettingsConfigurable.DescShowType.SPLIT_PANE) {
+            descScrollPane = new JBScrollPane();
+            descScrollPane.setBorder(IdeBorderFactory.createBorder(SideBorder.LEFT));
+            jbSplitter.setSecondComponent(descScrollPane);
+        }
+
+        add(jbSplitter, BorderLayout.CENTER);
 
         // 设置边框样式
         setBorder(JBUI.Borders.empty(2));
