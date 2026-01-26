@@ -10,10 +10,10 @@ import com.intellij.ui.content.Content;
 import com.intellij.ui.content.ContentFactory;
 import indi.bookmarkx.action.BookmarkExportAction;
 import indi.bookmarkx.action.BookmarkImportAction;
+import indi.bookmarkx.listener.SettingsListener;
 import indi.bookmarkx.persistence.MySettings;
 import org.jetbrains.annotations.NotNull;
 
-import javax.swing.JLabel;
 import java.util.Arrays;
 
 
@@ -29,6 +29,16 @@ public class RootWindowFactory implements ToolWindowFactory, DumbAware {
         Content regularRetention = contentFactory.createContent(manager.getToolWindowRootPanel(), null, false);
         toolWindow.getContentManager().addContent(regularRetention);
 
+        initPosition(project, toolWindow);
+    }
+
+    private void initPosition(@NotNull Project project, @NotNull ToolWindow toolWindow) {
+        refreshToolWindowPosition(toolWindow);
+
+        project.getMessageBus().connect().subscribe(SettingsListener.TOPIC, () -> refreshToolWindowPosition(toolWindow));
+    }
+
+    private void refreshToolWindowPosition(@NotNull ToolWindow toolWindow) {
         MySettings settings = MySettings.getInstance();
         MySettingsConfigurable.DescShowType descShowType = settings.getDescShowType();
         switch (descShowType) {
@@ -41,7 +51,6 @@ public class RootWindowFactory implements ToolWindowFactory, DumbAware {
             default:
                 break;
         }
-
     }
 
     private void initTitleAction(ToolWindow toolWindow) {

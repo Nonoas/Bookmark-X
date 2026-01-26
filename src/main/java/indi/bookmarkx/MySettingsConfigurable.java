@@ -6,6 +6,7 @@ import com.intellij.openapi.application.ex.ApplicationEx;
 import com.intellij.openapi.options.Configurable;
 import com.intellij.openapi.ui.Messages;
 import indi.bookmarkx.common.I18N;
+import indi.bookmarkx.listener.SettingsListener;
 import indi.bookmarkx.persistence.MySettings;
 import indi.bookmarkx.ui.pannel.MySettingsPanel;
 import org.jetbrains.annotations.Nls;
@@ -60,7 +61,12 @@ public class MySettingsConfigurable implements Configurable {
 
         if (languageChanged) {
             showRestartDialog();
+            return;
         }
+
+        ApplicationManager.getApplication().getMessageBus()
+                .syncPublisher(SettingsListener.TOPIC)
+                .settingsUpdated();
     }
 
     @Override

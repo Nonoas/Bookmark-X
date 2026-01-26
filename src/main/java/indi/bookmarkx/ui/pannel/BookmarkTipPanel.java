@@ -76,6 +76,7 @@ public class BookmarkTipPanel extends JBPanel<BookmarkTipPanel> {
     private static JBLabel createHtmlLabel(@NotNull AbstractTreeNodeModel model) {
         String name = escapeHtml(model.getName());
         String desc = model.getDesc() != null && !model.getDesc().trim().isEmpty() ? model.getDesc() : "no description";
+        desc = escapeHtml(desc);
 
         String html = "<html>" +
                 "<body style='font-family:" + UIManager.getFont("Label.font").getFamily() + ";" +
@@ -92,7 +93,10 @@ public class BookmarkTipPanel extends JBPanel<BookmarkTipPanel> {
     }
 
     private static String escapeHtml(String s) {
-        return s.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;");
+        return s.replace("&", "&amp;")
+                .replace("<", "&lt;")
+                .replace(">", "&gt;")
+                .replace("\n", "<br/>");
     }
 
     private static String toHtmlColor(Color color) {
