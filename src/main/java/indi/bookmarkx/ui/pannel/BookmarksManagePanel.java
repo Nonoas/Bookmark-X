@@ -56,7 +56,10 @@ public class BookmarksManagePanel extends JPanel {
      */
     private volatile boolean treeLoaded = false;
 
+    private Project project;
+
     private BookmarksManagePanel(Project project) {
+        this.project = project;
         tree = new BookmarkTree(project);
         setLayout(new BorderLayout());
 
@@ -106,7 +109,7 @@ public class BookmarksManagePanel extends JPanel {
         Object userObject = selectedNode.getUserObject();
         if (userObject instanceof AbstractTreeNodeModel) {
             // 使用 setViewportView 是正确的，但可以考虑在这里加入策略模式切换布局
-            scrollPane.setViewportView(new BookmarkTipPanel((AbstractTreeNodeModel) userObject));
+            scrollPane.setViewportView(new BookmarkTipPanel(project, (AbstractTreeNodeModel) userObject));
         }
     }
 

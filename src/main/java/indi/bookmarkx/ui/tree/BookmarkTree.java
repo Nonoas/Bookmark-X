@@ -134,7 +134,7 @@ public class BookmarkTree extends Tree implements BookmarkListener {
             }
         });
 
-        addMouseMotionListener(new TreeMouseMotionAdapter(this));
+        addMouseMotionListener(new TreeMouseMotionAdapter(this, project));
 
         // 鼠标点击事件
         addMouseListener(new DoubleClickAdapter(this));
@@ -716,9 +716,11 @@ public class BookmarkTree extends Tree implements BookmarkListener {
         private final JTree tree;
         private JBPopup lastPopup;
         private AbstractTreeNodeModel lastAbstractTreeNodeModel;
+        private Project project;
 
-        public TreeMouseMotionAdapter(JTree tree) {
+        public TreeMouseMotionAdapter(JTree tree, Project project) {
             this.tree = tree;
+            this.project = project;
         }
 
         @Override
@@ -784,7 +786,7 @@ public class BookmarkTree extends Tree implements BookmarkListener {
             lastAbstractTreeNodeModel = abstractTreeNodeModel;
 
             JBPopupFactory popupFactory = JBPopupFactory.getInstance();
-            lastPopup = popupFactory.createComponentPopupBuilder(new BookmarkTipPanel(lastAbstractTreeNodeModel, null), null)
+            lastPopup = popupFactory.createComponentPopupBuilder(new BookmarkTipPanel(project, lastAbstractTreeNodeModel, null), null)
                     .setFocusable(true)
                     .setResizable(true)
                     .setRequestFocus(true)
