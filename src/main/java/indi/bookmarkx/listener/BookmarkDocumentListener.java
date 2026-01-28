@@ -1,4 +1,4 @@
-package indi.bookmarkx.global;
+package indi.bookmarkx.listener;
 
 import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.editor.Document;

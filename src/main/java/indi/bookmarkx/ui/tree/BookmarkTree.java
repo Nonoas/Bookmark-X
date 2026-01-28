@@ -1,5 +1,6 @@
 package indi.bookmarkx.ui.tree;
 
+import com.intellij.ide.DataManager;
 import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.fileEditor.OpenFileDescriptor;
 import com.intellij.openapi.project.Project;
@@ -37,6 +38,7 @@ import javax.swing.tree.TreeModel;
 import javax.swing.tree.TreeNode;
 import javax.swing.tree.TreePath;
 import javax.swing.tree.TreeSelectionModel;
+import java.awt.Component;
 import java.awt.Point;
 import java.awt.datatransfer.DataFlavor;
 import java.awt.datatransfer.Transferable;
@@ -132,7 +134,7 @@ public class BookmarkTree extends Tree implements BookmarkListener {
             }
         });
 
-        addMouseMotionListener(new TreeMouseMotionAdapter(this));
+        addMouseMotionListener(new TreeMouseMotionAdapter(this, project));
 
         // 鼠标点击事件
         addMouseListener(new DoubleClickAdapter(this));
@@ -714,9 +716,11 @@ public class BookmarkTree extends Tree implements BookmarkListener {
         private final JTree tree;
         private JBPopup lastPopup;
         private AbstractTreeNodeModel lastAbstractTreeNodeModel;
+        private Project project;
 
-        public TreeMouseMotionAdapter(JTree tree) {
+        public TreeMouseMotionAdapter(JTree tree, Project project) {
             this.tree = tree;
+            this.project = project;
         }
 
         @Override
@@ -782,14 +786,21 @@ public class BookmarkTree extends Tree implements BookmarkListener {
             lastAbstractTreeNodeModel = abstractTreeNodeModel;
 
             JBPopupFactory popupFactory = JBPopupFactory.getInstance();
-            lastPopup = popupFactory.createComponentPopupBuilder(new BookmarkTipPanel(lastAbstractTreeNodeModel), null)
+            lastPopup = popupFactory.createComponentPopupBuilder(new BookmarkTipPanel(project, lastAbstractTreeNodeModel, null), null)
                     .setFocusable(true)
                     .setResizable(true)
                     .setRequestFocus(true)
                     .createPopup();
 
-            Point adjustedLocation = new Point(e.getLocationOnScreen().x + 10, e.getLocationOnScreen().y + 10); // Adjust position
-            lastPopup.show(RelativePoint.fromScreen(adjustedLocation));
+            // 3. 智能显示
+            if (e.getSource() instanceof Component) {
+                // 这种方式会自动处理屏幕边界，如果右边放不下就往左边弹
+                Point point = e.getPoint();
+                point.translate(0, 6);
+                lastPopup.show(new RelativePoint((Component) e.getSource(), point));
+            } else {
+                lastPopup.showInBestPositionFor(DataManager.getInstance().getDataContext(e.getComponent()));
+            }
         }
 
     }
