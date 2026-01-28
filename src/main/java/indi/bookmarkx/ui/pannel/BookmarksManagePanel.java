@@ -77,7 +77,9 @@ public class BookmarksManagePanel extends JPanel {
         updateLayoutBasedOnSettings(jbSplitter, descScrollPane);
 
         // 4. 订阅设置变更
-        project.getMessageBus().connect().subscribe(SettingsListener.TOPIC, () -> ApplicationManager.getApplication().invokeLater(() -> updateLayoutBasedOnSettings(jbSplitter, descScrollPane)));
+        project.getMessageBus().connect().subscribe(SettingsListener.TOPIC,
+                () -> ApplicationManager.getApplication().invokeLater(() -> updateLayoutBasedOnSettings(jbSplitter, descScrollPane))
+        );
 
         // 5. 监听树选择（比鼠标点击体验更好，支持键盘）
         tree.addTreeSelectionListener(e -> {

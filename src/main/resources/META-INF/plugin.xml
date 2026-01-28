@@ -27,9 +27,9 @@
     <depends>com.intellij.modules.platform</depends>
 
     <extensions defaultExtensionNs="com.intellij">
-        <toolWindow id="Bookmark-X" anchor="left"
+        <toolWindow id="Bookmark-X"
                     icon="/icons/logo.svg"
-                    factoryClass="indi.bookmarkx.RootWindowFactory" secondary="true"/>
+                    factoryClass="indi.bookmarkx.RootWindowFactory"/>
 
         <projectService serviceImplementation="indi.bookmarkx.persistence.MyPersistent"/>    <depends>org.intellij.plugins.markdown</depends>
 

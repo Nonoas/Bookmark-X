@@ -46,14 +46,10 @@ public class MySettingsConfigurable implements Configurable {
                 || settingsComponent.getDescShowType() != settings.getDescShowType();
     }
 
-    private boolean isLanguageChanged() {
-        MySettings settings = MySettings.getInstance();
-        return !settingsComponent.getLanguage().equals(settings.getLanguage());
-    }
-
     @Override
     public void apply() {
         boolean languageChanged = isLanguageChanged();
+
         MySettings settings = MySettings.getInstance();
         settings.setLanguage(settingsComponent.getLanguage());
         settings.setTipDelay(settingsComponent.getTipDelay());
@@ -67,6 +63,16 @@ public class MySettingsConfigurable implements Configurable {
         ApplicationManager.getApplication().getMessageBus()
                 .syncPublisher(SettingsListener.TOPIC)
                 .settingsUpdated();
+    }
+
+    private boolean isLanguageChanged() {
+        MySettings settings = MySettings.getInstance();
+        return !settingsComponent.getLanguage().equals(settings.getLanguage());
+    }
+
+    private boolean idDescShowTypeChanged() {
+        MySettings settings = MySettings.getInstance();
+        return !(settingsComponent.getDescShowType() == settings.getDescShowType());
     }
 
     @Override
