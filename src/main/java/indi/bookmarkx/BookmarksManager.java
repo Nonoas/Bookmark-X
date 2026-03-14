@@ -25,7 +25,7 @@ import indi.bookmarkx.model.po.BookmarkPO;
 import indi.bookmarkx.persistence.MyPersistent;
 import indi.bookmarkx.ui.dialog.BookmarkCreatorDialog;
 import indi.bookmarkx.ui.painter.LineEndPainter;
-import indi.bookmarkx.ui.pannel.BookmarksManagePanel;
+import indi.bookmarkx.ui.panel.BookmarksManagePanel;
 import indi.bookmarkx.ui.tree.BookmarkTreeNode;
 import indi.bookmarkx.utils.FileLineCounter;
 import indi.bookmarkx.utils.PersistenceUtil;
@@ -34,31 +34,32 @@ import org.jetbrains.annotations.NotNull;
 
 import javax.swing.tree.DefaultTreeModel;
 import java.util.List;
-import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
+import java.util.function.Supplier;
 
 /**
- * 项目级别的管理器（命令模式）：用于管理所有「书签UI」的变化，发布书签变更的消息，是一切用户操作的入口，管理所有数据及 UI 的引用
+ * 项目级别的管理器（命令模式）：用于管理所有「书签UI」的变化，发布书签变更的消息，是一切用户操作的入口，管理所有数据及 UI 的引用,
+ * 只负责下达操作指令
  */
 @Service(Service.Level.PROJECT)
 public final class BookmarksManager {
 
-    private static final Logger LOG = Logger.getInstance(BookmarksManagePanel.class);
+    private static final Logger LOG = Logger.getInstance(BookmarksManager.class);
 
     public Project project;
 
     private final BookmarksManagePanel toolWindowRootPanel;
 
-    private final BookmarkArrayListTable bookmarkArrayListTable;
-
     private final FileMarksCache fileMarksCache = new FileMarksCache();
+
+    private final Supplier<BookmarkListener> bookmarkListener;
 
     public BookmarksManager(Project project) {
         this.project = project;
         this.toolWindowRootPanel = BookmarksManagePanel.create(project);
-        bookmarkArrayListTable = BookmarkArrayListTable.getInstance(project);
+        bookmarkListener = () -> getBookmarkPublisher(project);
         reload();
     }
 
@@ -93,74 +94,68 @@ public final class BookmarksManager {
         BookmarkNodeModel bookmarkNodeModel = LineEndPainter.findLine(BookmarkArrayListTable.getInstance(project).getOnlyIndex(file.getPath()), line);
         String defaultName = file.getName();
         String defaultDesc;
-        boolean add = true;
-        if (bookmarkNodeModel == null) {
-            // 获取选中文本
-            defaultDesc = Optional.ofNullable(descText).map(text -> (" " + text + " ")).orElse("");
-            String uuid = UUID.randomUUID().toString();
-            bookmarkNodeModel = new BookmarkNodeModel();
-            bookmarkNodeModel.setUuid(uuid);
-            bookmarkNodeModel.setLine(line);
-            bookmarkNodeModel.setIcon(file.getFileType().getIcon());
-            bookmarkNodeModel.setIcon(file.getFileType().getIcon());
-            bookmarkNodeModel.setOpenFileDescriptor(new OpenFileDescriptor(project, file, line, 0));
-        } else {
-            add = false;
-            defaultName = bookmarkNodeModel.getName();
-            defaultDesc = bookmarkNodeModel.getDesc();
+        // 如果当前行已经存在书签，则变为修改
+        if (bookmarkNodeModel != null) {
+            editBookRemark(bookmarkNodeModel);
+            return;
         }
-        final BookmarkNodeModel finalBookmarkNodeModel = bookmarkNodeModel;
-        final boolean addFlag = add;
-        new BookmarkCreatorDialog(project, I18N.get("bookmark.create.title"))
+        // 获取选中文本
+        defaultDesc = Optional.ofNullable(descText).map(text -> (" " + text + " ")).orElse("");
+        String uuid = UUID.randomUUID().toString();
+        bookmarkNodeModel = new BookmarkNodeModel();
+        bookmarkNodeModel.setUuid(uuid);
+        bookmarkNodeModel.setLine(line);
+        bookmarkNodeModel.setIcon(file.getFileType().getIcon());
+        bookmarkNodeModel.setIcon(file.getFileType().getIcon());
+        bookmarkNodeModel.setOpenFileDescriptor(new OpenFileDescriptor(project, file, line, 0));
+        BookmarkCreatorDialog.BookmarkDialogResult result = new BookmarkCreatorDialog(project, I18N.get("bookmark.create.title"))
                 .defaultName(defaultName)
                 .defaultDesc(defaultDesc)
-                .showAndCallback((name, desc, lineNumber) -> {
-                    finalBookmarkNodeModel.setName(name);
-                    finalBookmarkNodeModel.setDesc(desc);
-                    bookmarkArrayListTable.insert(finalBookmarkNodeModel);
-                    if (addFlag) {
-                        submitCreateBookRemark(finalBookmarkNodeModel);
-                    } else {
-                        if (Objects.nonNull(toolWindowRootPanel)) {
-                            toolWindowRootPanel.treeNodesChanged(finalBookmarkNodeModel);
-                        }
-                    }
+                .showAndGetResult();
+        if (result.isOk()) {
+            bookmarkNodeModel.setName(result.getName());
+            bookmarkNodeModel.setDesc(result.getDesc());
+            bookmarkListener.get().bookmarkAdded(bookmarkNodeModel);
 
-                });
+            MyPersistent persistent = MyPersistent.getInstance(project);
+            persistent.getState().getChildren().add(BookmarkConverter.convertToPO(bookmarkNodeModel));
+        }
+
     }
 
     public void editBookRemark(AbstractTreeNodeModel nodeModel) {
-        int lineNumber = -1;
-        int maxLineNumber = -1;
+
+
+        BookmarkCreatorDialog.BookmarkDialogResult result;
         if (nodeModel instanceof BookmarkNodeModel) {
             BookmarkNodeModel bookmarkModel = (BookmarkNodeModel) nodeModel;
-            lineNumber = bookmarkModel.getLine() + 1; // 界面显示从1开始
+            int lineNumber = bookmarkModel.getLine() + 1; // 界面显示从1开始
             OpenFileDescriptor descriptor = bookmarkModel.getOpenFileDescriptor();
-            maxLineNumber = FileLineCounter.getFileMaxLine(descriptor);
-            new BookmarkCreatorDialog(project, I18N.get("bookmark.create.title"), lineNumber, maxLineNumber)
+            int maxLineNumber = FileLineCounter.getFileMaxLine(descriptor);
+            result = new BookmarkCreatorDialog(project, I18N.get("bookmark.create.title"), lineNumber, maxLineNumber)
                     .defaultName(nodeModel.getName())
                     .defaultDesc(nodeModel.getDesc())
-                    .showAndCallback((name, desc, newLineNo) -> {
-                        nodeModel.setName(name);
-                        nodeModel.setDesc(desc);
+                    .showAndGetResult();
 
-                        // 如果是书签节点且行号有修改，更新行号
-                        if (newLineNo != null) {
-                            bookmarkModel.updateBookmarkLine(newLineNo, true);
-                        }
+            if (result.isOk()) {
+                bookmarkModel.setName(result.getName());
+                bookmarkModel.setDesc(result.getDesc());
+                bookmarkModel.setLine(result.getLine());
+            }
 
-                        getBookmarkPublisher(project).bookmarkChanged(nodeModel);
-                    });
         } else {
-            new BookmarkCreatorDialog(project, I18N.get("bookmark.create.title"))
+            result = new BookmarkCreatorDialog(project, I18N.get("bookmark.create.title"))
                     .defaultName(nodeModel.getName())
                     .defaultDesc(nodeModel.getDesc())
-                    .showAndCallback((name, desc, lineNo) -> {
-                        nodeModel.setName(name);
-                        nodeModel.setDesc(desc);
-                        getBookmarkPublisher(project).bookmarkChanged(nodeModel);
-                    });
+                    .showAndGetResult();
+            if (result.isOk()) {
+                nodeModel.setName(result.getName());
+                nodeModel.setDesc(result.getDesc());
+            }
         }
+
+        getBookmarkPublisher(project).bookmarkChanged(nodeModel);
+
     }
 
     /**
@@ -175,21 +170,6 @@ public final class BookmarksManager {
     @NotNull
     private BookmarkListener getBookmarkPublisher(Project project) {
         return project.getMessageBus().syncPublisher(BookmarkListener.TOPIC);
-    }
-
-    private void submitCreateBookRemark(BookmarkNodeModel bookmarkModel) {
-        //  The toolWindowRootPanel may be null the first time IDEA is opened
-        if (Objects.isNull(toolWindowRootPanel)) {
-            MyPersistent persistent = MyPersistent.getInstance(project);
-            persistent.getState().getChildren().add(BookmarkConverter.convertToPO(bookmarkModel));
-        } else {
-            afterCreateSubmit(bookmarkModel);
-        }
-
-    }
-
-    private void afterCreateSubmit(BookmarkNodeModel bookmarkModel) {
-        addToTree(bookmarkModel);
     }
 
     /**

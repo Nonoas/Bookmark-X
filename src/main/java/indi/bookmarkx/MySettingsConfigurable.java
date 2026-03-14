@@ -8,7 +8,7 @@ import com.intellij.openapi.ui.Messages;
 import indi.bookmarkx.common.I18N;
 import indi.bookmarkx.listener.SettingsListener;
 import indi.bookmarkx.persistence.MySettings;
-import indi.bookmarkx.ui.pannel.MySettingsPanel;
+import indi.bookmarkx.ui.panel.MySettingsPanel;
 import org.jetbrains.annotations.Nls;
 import org.jetbrains.annotations.Nullable;
 

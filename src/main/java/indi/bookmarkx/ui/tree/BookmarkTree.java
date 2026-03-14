@@ -21,7 +21,7 @@ import indi.bookmarkx.model.GroupNodeModel;
 import indi.bookmarkx.persistence.MySettings;
 import indi.bookmarkx.ui.dialog.BookmarkCreatorDialog;
 import indi.bookmarkx.ui.dialog.LineAdjustDialog;
-import indi.bookmarkx.ui.pannel.BookmarkTipPanel;
+import indi.bookmarkx.ui.panel.BookmarkTipPanel;
 import indi.bookmarkx.utils.FileLineCounter;
 import org.apache.commons.lang3.Validate;
 import org.jetbrains.annotations.NotNull;
@@ -210,18 +210,22 @@ public class BookmarkTree extends Tree implements BookmarkListener {
 
             final GroupNodeModel groupNodeModel = new GroupNodeModel();
 
-            new BookmarkCreatorDialog(project, I18N.get("group.create.title"))
-                    .showAndCallback((name, desc, line) -> {
-                        String uuid = UUID.randomUUID().toString();
-                        groupNodeModel.setUuid(uuid);
-                        groupNodeModel.setName(name);
-                        groupNodeModel.setDesc(desc);
+            BookmarkCreatorDialog.BookmarkDialogResult result = new BookmarkCreatorDialog(project, I18N.get("group.create.title"))
+                    .showAndGetResult();
+            if (!result.isOk()) {
+                return;
+            }
 
-                        // 新的分组节点
-                        BookmarkTreeNode groupNode = new BookmarkTreeNode(groupNodeModel);
-                        model.insertNodeInto(groupNode, parent, 0);
-                        BookmarkTree.this.model.nodeChanged(selectedNode);
-                    });
+            String uuid = UUID.randomUUID().toString();
+            groupNodeModel.setUuid(uuid);
+            groupNodeModel.setName(result.getName());
+            groupNodeModel.setDesc(result.getDesc());
+
+            // 新的分组节点
+            BookmarkTreeNode groupNode = new BookmarkTreeNode(groupNodeModel);
+            model.insertNodeInto(groupNode, parent, 0);
+            BookmarkTree.this.model.nodeChanged(selectedNode);
+
         };
 
         imAddGroup.addActionListener(addGroupListener);
@@ -421,6 +425,20 @@ public class BookmarkTree extends Tree implements BookmarkListener {
         } else {
             return null;
         }
+    }
+
+    @Override
+    public void bookmarkAdded(@NotNull AbstractTreeNodeModel model) {
+        if (model.isGroup()) {
+            return;
+        }
+        BookmarkTreeNode treeNode = new BookmarkTreeNode(model);
+        this.add(treeNode);
+
+        BookmarkNodeModel bookmarkNodeModel = (BookmarkNodeModel) model;
+        bookmarkNodeModel.setIndex(treeNode.getParent().getIndex(treeNode));
+        BookmarkTreeNode nodeByModel = getNodeByModel(bookmarkNodeModel);
+        this.model.nodeChanged(nodeByModel);
     }
 
     @Override

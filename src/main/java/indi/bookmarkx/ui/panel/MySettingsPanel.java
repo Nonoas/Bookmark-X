@@ -1,4 +1,4 @@
-package indi.bookmarkx.ui.pannel;
+package indi.bookmarkx.ui.panel;
 
 import com.intellij.openapi.ui.ComboBox;
 import com.intellij.ui.TitledSeparator;
