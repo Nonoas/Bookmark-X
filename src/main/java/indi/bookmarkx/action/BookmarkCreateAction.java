@@ -1,6 +1,5 @@
 package indi.bookmarkx.action;
 
-import com.intellij.icons.AllIcons;
 import com.intellij.openapi.actionSystem.AnAction;
 import com.intellij.openapi.actionSystem.AnActionEvent;
 import com.intellij.openapi.actionSystem.CommonDataKeys;
@@ -26,7 +25,6 @@ public class BookmarkCreateAction extends AnAction {
         if (project == null || editor == null || file == null)
             return;
 
-        BookmarksManager.getInstance(project)
-                .createBookRemark(project, editor, file);
+        BookmarksManager.getInstance(project).createBookRemark(editor, file);
     }
 }

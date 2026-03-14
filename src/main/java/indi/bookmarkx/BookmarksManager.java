@@ -41,7 +41,6 @@ import java.util.function.Supplier;
 
 /**
  * 项目级别的管理器（命令模式）：用于管理所有「书签UI」的变化，发布书签变更的消息，是一切用户操作的入口，管理所有数据及 UI 的引用,
- * 只负责下达操作指令
  */
 @Service(Service.Level.PROJECT)
 public final class BookmarksManager {
@@ -54,12 +53,12 @@ public final class BookmarksManager {
 
     private final FileMarksCache fileMarksCache = new FileMarksCache();
 
-    private final Supplier<BookmarkListener> bookmarkListener;
+    private final Supplier<BookmarkListener> bookmarkEventPublisher;
 
     public BookmarksManager(Project project) {
         this.project = project;
         this.toolWindowRootPanel = BookmarksManagePanel.create(project);
-        bookmarkListener = () -> getBookmarkPublisher(project);
+        bookmarkEventPublisher = () -> project.getMessageBus().syncPublisher(BookmarkListener.TOPIC);
         reload();
     }
 
@@ -70,27 +69,25 @@ public final class BookmarksManager {
     /**
      * 创建一个书签
      *
-     * @param project 项目
-     * @param editor  编辑器
-     * @param file    文件
+     * @param editor 编辑器
+     * @param file   文件
      */
-    public void createBookRemark(Project project, Editor editor, VirtualFile file) {
+    public void createBookRemark(Editor editor, VirtualFile file) {
         CaretModel caretModel = editor.getCaretModel();
         // 获取行号
         int line = caretModel.getLogicalPosition().line;
         String selectedText = caretModel.getCurrentCaret().getSelectedText();
-        createBookRemark(project, file, selectedText, line);
+        createBookRemark(file, selectedText, line);
     }
 
     /**
      * 创建书签
      *
-     * @param project  项目
      * @param file     添加标签的文件
      * @param descText 描述文本
      * @param line     文件行
      */
-    public void createBookRemark(Project project, VirtualFile file, String descText, int line) {
+    public void createBookRemark(VirtualFile file, String descText, int line) {
         BookmarkNodeModel bookmarkNodeModel = LineEndPainter.findLine(BookmarkArrayListTable.getInstance(project).getOnlyIndex(file.getPath()), line);
         String defaultName = file.getName();
         String defaultDesc;
@@ -115,7 +112,7 @@ public final class BookmarksManager {
         if (result.isOk()) {
             bookmarkNodeModel.setName(result.getName());
             bookmarkNodeModel.setDesc(result.getDesc());
-            bookmarkListener.get().bookmarkAdded(bookmarkNodeModel);
+            bookmarkEventPublisher.get().bookmarkAdded(bookmarkNodeModel);
 
             MyPersistent persistent = MyPersistent.getInstance(project);
             persistent.getState().getChildren().add(BookmarkConverter.convertToPO(bookmarkNodeModel));
@@ -124,7 +121,6 @@ public final class BookmarksManager {
     }
 
     public void editBookRemark(AbstractTreeNodeModel nodeModel) {
-
 
         BookmarkCreatorDialog.BookmarkDialogResult result;
         if (nodeModel instanceof BookmarkNodeModel) {
@@ -154,7 +150,7 @@ public final class BookmarksManager {
             }
         }
 
-        getBookmarkPublisher(project).bookmarkChanged(nodeModel);
+        bookmarkEventPublisher.get().bookmarkChanged(nodeModel);
 
     }
 
@@ -164,12 +160,7 @@ public final class BookmarksManager {
      * @param model 需要删除的书签
      */
     public void removeBookRemark(AbstractTreeNodeModel model) {
-        getBookmarkPublisher(project).bookmarkRemoved(model);
-    }
-
-    @NotNull
-    private BookmarkListener getBookmarkPublisher(Project project) {
-        return project.getMessageBus().syncPublisher(BookmarkListener.TOPIC);
+        bookmarkEventPublisher.get().bookmarkRemoved(model);
     }
 
     /**
@@ -177,11 +168,6 @@ public final class BookmarksManager {
      */
     public void persistentSave() {
         PersistenceUtil.persistentSave(project, toolWindowRootPanel.tree());
-    }
-
-    private void addToTree(BookmarkNodeModel bookmarkModel) {
-        toolWindowRootPanel.addAndGet(bookmarkModel);
-        getBookmarkPublisher(project).bookmarkAdded(bookmarkModel);
     }
 
     public void prev() {
@@ -269,7 +255,7 @@ public final class BookmarksManager {
         }
 
         public void registerFileGutterIconListener() {
-            MessageBusConnection connection = project.getMessageBus().connect();
+            MessageBusConnection connection = project.getMessageBus().connect(project);
             connection.subscribe(FileEditorManagerListener.FILE_EDITOR_MANAGER, new FileEditorManagerListener() {
                 @Override
                 public void fileOpened(@NotNull FileEditorManager source, @NotNull VirtualFile file) {

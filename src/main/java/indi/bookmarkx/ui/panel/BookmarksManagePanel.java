@@ -25,13 +25,13 @@ import indi.bookmarkx.ui.tree.BookmarkTree;
 import indi.bookmarkx.ui.tree.BookmarkTreeNode;
 import org.jetbrains.annotations.NotNull;
 
-import javax.swing.JPanel;
+import javax.swing.*;
 import javax.swing.event.TreeModelEvent;
 import javax.swing.event.TreeModelListener;
 import javax.swing.tree.DefaultTreeModel;
 import javax.swing.tree.TreeNode;
 import javax.swing.tree.TreePath;
-import java.awt.BorderLayout;
+import java.awt.*;
 
 /**
  * 标签树目录面板
@@ -50,7 +50,7 @@ public class BookmarksManagePanel extends JPanel {
      */
     private volatile boolean treeLoaded = false;
 
-    private Project project;
+    private final Project project;
 
     private BookmarksManagePanel(Project project) {
         this.project = project;
@@ -180,11 +180,6 @@ public class BookmarksManagePanel extends JPanel {
 
     public BookmarkTree tree() {
         return tree;
-    }
-
-    public void treeNodesChanged(BookmarkNodeModel model) {
-        BookmarkTreeNode nodeByModel = tree.getNodeByModel(model);
-        tree.getModel().nodeChanged(nodeByModel);
     }
 
     /**
