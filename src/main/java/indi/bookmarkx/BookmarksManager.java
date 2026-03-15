@@ -136,7 +136,11 @@ public final class BookmarksManager {
             if (result.isOk()) {
                 bookmarkModel.setName(result.getName());
                 bookmarkModel.setDesc(result.getDesc());
-                bookmarkModel.setLine(result.getLine());
+                // 行号发生变化时，调用 updateBookmarkLine 刷新行标签
+                int newLine = result.getLine();
+                if (bookmarkModel.getLine() != newLine) {
+                    bookmarkModel.updateBookmarkLine(newLine - 1, false);
+                }
             }
 
         } else {
