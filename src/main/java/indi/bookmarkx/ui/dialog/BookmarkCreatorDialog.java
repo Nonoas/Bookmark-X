@@ -14,6 +14,7 @@ import com.intellij.util.ui.HtmlPanel;
 import com.intellij.util.ui.JBUI;
 import com.intellij.util.ui.UIUtil;
 import indi.bookmarkx.common.I18N;
+import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -223,8 +224,8 @@ public class BookmarkCreatorDialog extends DialogWrapper {
                     }
                     if (line > maxLineNumber) {
                         return new ValidationInfo(
-                            I18N.get("bookmark.lineNumberTooLarge", String.valueOf(maxLineNumber)),
-                            tfLineNumber
+                                I18N.get("bookmark.lineNumberTooLarge", String.valueOf(maxLineNumber)),
+                                tfLineNumber
                         );
                     }
                 } catch (NumberFormatException e) {
@@ -318,7 +319,16 @@ public class BookmarkCreatorDialog extends DialogWrapper {
 
         String name = tfName.getText().trim();
         String desc = tfDesc.getText().trim();
-        int line = Integer.parseInt(tfLineNumber.getText().trim());
+        int line = 0;
+
+        String lineStr = tfLineNumber.getText().trim();
+        if (StringUtils.isNotBlank(lineStr)) {
+            try {
+                line = Integer.parseInt(lineStr);
+            } catch (NumberFormatException e) {
+                return BookmarkDialogResult.cancel();
+            }
+        }
 
         return BookmarkDialogResult.ok(name, desc, line);
     }

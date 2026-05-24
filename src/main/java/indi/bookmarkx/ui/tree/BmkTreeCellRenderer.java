@@ -7,11 +7,9 @@ import com.intellij.util.ui.UIUtil;
 import indi.bookmarkx.common.BaseColors;
 import indi.bookmarkx.model.BookmarkNodeModel;
 
-import javax.swing.Icon;
-import javax.swing.JTree;
+import javax.swing.*;
 import javax.swing.tree.DefaultTreeCellRenderer;
-import java.awt.Color;
-import java.awt.Component;
+import java.awt.*;
 
 /**
  * 标签树节点渲染
@@ -47,12 +45,12 @@ public class BmkTreeCellRenderer extends DefaultTreeCellRenderer {
             icon = AllIcons.Nodes.Module;
         } else if (row > 0) {
             icon = node.isBookmark()
-                    ? IconLoader.findIcon("icons/bookmark.svg")
+                    ? IconLoader.findIcon("icons/bookmark.svg", BmkTreeCellRenderer.class)
                     : AllIcons.Nodes.Folder;
             if (node.isBookmark()) {
                 BookmarkNodeModel model =  (BookmarkNodeModel) node.getUserObject();
                 if (null == model.getOpenFileDescriptor()) {
-                    icon = IconLoader.findIcon("icons/dissmiss.svg");
+                    icon = IconLoader.findIcon("icons/dissmiss.svg", BmkTreeCellRenderer.class);
                 }
             }
         }

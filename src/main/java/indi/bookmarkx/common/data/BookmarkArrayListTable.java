@@ -13,8 +13,7 @@ import indi.bookmarkx.ui.tree.BookmarkTreeNode;
 import indi.bookmarkx.utils.PersistenceUtil;
 import org.jetbrains.annotations.NotNull;
 
-import java.util.ArrayList;
-import java.util.List;
+import java.util.*;
 import java.util.function.Function;
 
 /**
@@ -66,6 +65,41 @@ public final class BookmarkArrayListTable extends ArrayListTable<BookmarkNodeMod
     public void initData(BookmarkTree bookmarkTree) {
         this.dataList = treeToList(bookmarkTree, new ArrayList<>());
         columnIndices.keySet().forEach(super::addColumIndex);
+    }
+
+    public List<BookmarkNodeModel> findByFilePath(String filePath) {
+        if (filePath == null) {
+            return List.of();
+        }
+        LinkedHashSet<BookmarkNodeModel> bookmarks = new LinkedHashSet<>();
+        for (BookmarkNodeModel model : dataList) {
+            if (model == null) {
+                continue;
+            }
+            if (Objects.equals(filePath, model.getFilePath().orElse(null))) {
+                bookmarks.add(model);
+            }
+        }
+        return new ArrayList<>(bookmarks);
+    }
+
+    public Optional<BookmarkNodeModel> findByUuid(String uuid) {
+        if (uuid == null) {
+            return Optional.empty();
+        }
+        for (BookmarkNodeModel model : dataList) {
+            if (model == null) {
+                continue;
+            }
+            if (uuid.equals(model.getUuid())) {
+                return Optional.of(model);
+            }
+        }
+        return Optional.empty();
+    }
+
+    public List<BookmarkNodeModel> listAll() {
+        return new ArrayList<>(new LinkedHashSet<>(dataList));
     }
 
     /**

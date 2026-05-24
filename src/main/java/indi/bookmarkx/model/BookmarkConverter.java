@@ -8,6 +8,8 @@ import com.intellij.openapi.vfs.LocalFileSystem;
 import com.intellij.openapi.vfs.VirtualFile;
 import indi.bookmarkx.model.po.BookmarkPO;
 
+import java.util.UUID;
+
 /**
  * @author Nonoas
  * @date 2023/6/5
@@ -41,6 +43,7 @@ public class BookmarkConverter {
             GroupNodeModel nodeModel = (GroupNodeModel) model;
 
             BookmarkPO po = new BookmarkPO();
+            po.setUuid(nodeModel.getUuid());
             po.setName(nodeModel.getName());
             po.setDesc(nodeModel.getDesc());
             po.setBookmark(false);
@@ -73,6 +76,7 @@ public class BookmarkConverter {
             return model;
         } else {
             GroupNodeModel model = new GroupNodeModel();
+            model.setUuid(po.getUuid() == null ? UUID.randomUUID().toString() : po.getUuid());
             model.setName(po.getName());
             model.setDesc(po.getDesc());
             return model;
