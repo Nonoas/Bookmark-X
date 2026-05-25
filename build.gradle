@@ -21,8 +21,6 @@ repositories {
 
 dependencies {
     implementation 'com.google.code.gson:gson:2.10.1'
-    implementation 'dev.langchain4j:langchain4j-open-ai:1.14.1'
-    implementation 'dev.langchain4j:langchain4j:1.14.1'
     implementation 'io.modelcontextprotocol.sdk:mcp-core:1.1.1'
     implementation 'io.modelcontextprotocol.sdk:mcp-json-jackson3:1.1.1'
     implementation 'org.eclipse.jetty:jetty-server:12.1.9'
@@ -48,7 +46,7 @@ patchPluginXml {
 
     changeNotes = """
       <ul>
-        <li>支持AI操作书签</li>
+        <li>支持通过外部AI工具通过MCP协议操作书签</li>
       </ul>
     """
 }
