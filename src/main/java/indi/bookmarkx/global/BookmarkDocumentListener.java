@@ -64,6 +64,10 @@ public class BookmarkDocumentListener implements DocumentListener {
         if (CollectionUtils.isEmpty(indexList)) {
             return;
         }
+        BranchSwitchService branchService = BranchSwitchService.getInstance(project);
+        if (branchService != null && branchService.isBranchSwitchInProgress()) {
+            return;
+        }
         BookmarkArrayListTable bookmarkArrayListTable = BookmarkArrayListTable.getInstance(project);
         BookmarksManager bookmarksManager = BookmarksManager.getInstance(project);
         List<BookmarkNodeModel> removeList = new ArrayList<>();

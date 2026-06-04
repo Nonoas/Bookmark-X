@@ -33,6 +33,8 @@ public class BookmarkNodeModel extends AbstractTreeNodeModel {
     private int index;
     private int line;
 
+    private String lineSignature;
+
     private Icon icon;
 
     /**
@@ -72,6 +74,14 @@ public class BookmarkNodeModel extends AbstractTreeNodeModel {
      */
     public void setLine(int newLine) {
         this.line = newLine;
+    }
+
+    public String getLineSignature() {
+        return lineSignature;
+    }
+
+    public void setLineSignature(String lineSignature) {
+        this.lineSignature = lineSignature;
     }
 
     public Icon getIcon() {

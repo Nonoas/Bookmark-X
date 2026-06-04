@@ -1,9 +1,12 @@
 package indi.bookmarkx.model;
 
 import com.intellij.openapi.diagnostic.Logger;
+import com.intellij.openapi.editor.Document;
+import com.intellij.openapi.fileEditor.FileDocumentManager;
 import com.intellij.openapi.fileEditor.OpenFileDescriptor;
 import com.intellij.openapi.fileTypes.FileType;
 import com.intellij.openapi.project.Project;
+import com.intellij.openapi.util.TextRange;
 import com.intellij.openapi.vfs.LocalFileSystem;
 import com.intellij.openapi.vfs.VirtualFile;
 import indi.bookmarkx.model.po.BookmarkPO;
@@ -33,8 +36,17 @@ public class BookmarkConverter {
             if (null != fileDescriptor) {
                 VirtualFile file = fileDescriptor.getFile();
                 po.setVirtualFilePath(file.getPath());
+                Document doc = FileDocumentManager.getInstance().getCachedDocument(file);
+                if (doc != null && nodeModel.getLine() < doc.getLineCount()) {
+                    int lineStart = doc.getLineStartOffset(nodeModel.getLine());
+                    int lineEnd = doc.getLineEndOffset(nodeModel.getLine());
+                    po.setLineSignature(doc.getText(new TextRange(lineStart, lineEnd)).trim());
+                } else {
+                    po.setLineSignature(nodeModel.getLineSignature());
+                }
             } else {
                 log.warn(String.format("%s指向的位置已不存在", nodeModel.getName()));
+                po.setLineSignature(nodeModel.getLineSignature());
             }
             return po;
         } else {
@@ -70,6 +82,7 @@ public class BookmarkConverter {
             FileType fileType = virtualFile.getFileType();
             model.setIcon(fileType.getIcon());
             model.setOpenFileDescriptor(new OpenFileDescriptor(project, virtualFile, po.getLine(), 0));
+            model.setLineSignature(po.getLineSignature());
             return model;
         } else {
             GroupNodeModel model = new GroupNodeModel();

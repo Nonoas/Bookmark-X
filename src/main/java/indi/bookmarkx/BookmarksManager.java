@@ -16,6 +16,7 @@ import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.util.messages.MessageBusConnection;
 import indi.bookmarkx.common.I18N;
 import indi.bookmarkx.common.data.BookmarkArrayListTable;
+import indi.bookmarkx.global.BranchSwitchService;
 import indi.bookmarkx.global.FileMarksCache;
 import indi.bookmarkx.listener.BookmarkListener;
 import indi.bookmarkx.model.AbstractTreeNodeModel;
@@ -59,6 +60,7 @@ public final class BookmarksManager {
         this.project = project;
         this.toolWindowRootPanel = BookmarksManagePanel.create(project);
         bookmarkArrayListTable = BookmarkArrayListTable.getInstance(project);
+        BranchSwitchService.getInstance(project);
         reload();
     }
 

@@ -72,4 +72,8 @@ public class ArrayListTable<T> implements DataPool {
         });
         this.dataList.remove(data);
     }
+
+    public List<T> getAll() {
+        return new ArrayList<>(dataList);
+    }
 }

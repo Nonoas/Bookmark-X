@@ -32,6 +32,7 @@
                     factoryClass="indi.bookmarkx.RootWindowFactory" secondary="true"/>
 
         <projectService serviceImplementation="indi.bookmarkx.persistence.MyPersistent"/>
+        <projectService serviceImplementation="indi.bookmarkx.global.BranchSwitchService"/>
 
         <editor.linePainter implementation="indi.bookmarkx.ui.painter.LineEndPainter"/>
 

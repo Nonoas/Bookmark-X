@@ -35,6 +35,8 @@ public class BookmarkPO {
      */
     private String virtualFilePath;
 
+    private String lineSignature;
+
     private List<BookmarkPO> children = new ArrayList<>();
 
     public BookmarkPO() {
@@ -123,6 +125,14 @@ public class BookmarkPO {
 
     public void setBookmark(boolean bookmark) {
         this.bookmark = bookmark;
+    }
+
+    public String getLineSignature() {
+        return lineSignature;
+    }
+
+    public void setLineSignature(String lineSignature) {
+        this.lineSignature = lineSignature;
     }
 
     @Override
