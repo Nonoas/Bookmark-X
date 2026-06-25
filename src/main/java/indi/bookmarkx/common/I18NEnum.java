@@ -10,7 +10,6 @@ import java.util.Locale;
 public enum I18NEnum {
     CHINESE("简体中文", Locale.CHINA),
     ENGLISH("English", Locale.ENGLISH),
-    FRENCH("En français", Locale.FRENCH),
     ;
 
     private String label;
