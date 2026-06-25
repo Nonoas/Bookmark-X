@@ -6,8 +6,9 @@ import com.intellij.openapi.application.ex.ApplicationEx;
 import com.intellij.openapi.options.Configurable;
 import com.intellij.openapi.ui.Messages;
 import indi.bookmarkx.common.I18N;
+import indi.bookmarkx.listener.SettingsListener;
 import indi.bookmarkx.persistence.MySettings;
-import indi.bookmarkx.ui.MySettingsPanel;
+import indi.bookmarkx.ui.pannel.MySettingsPanel;
 import org.jetbrains.annotations.Nls;
 import org.jetbrains.annotations.Nullable;
 
@@ -40,7 +41,28 @@ public class MySettingsConfigurable implements Configurable {
     @Override
     public boolean isModified() {
         MySettings settings = MySettings.getInstance();
-        return isLanguageChanged() || settingsComponent.getTipDelay() != settings.getTipDelay();
+        return isLanguageChanged()
+                || settingsComponent.getTipDelay() != settings.getTipDelay()
+                || settingsComponent.getDescShowType() != settings.getDescShowType();
+    }
+
+    @Override
+    public void apply() {
+        boolean languageChanged = isLanguageChanged();
+
+        MySettings settings = MySettings.getInstance();
+        settings.setLanguage(settingsComponent.getLanguage());
+        settings.setTipDelay(settingsComponent.getTipDelay());
+        settings.setDescShowType(settingsComponent.getDescShowType());
+
+        if (languageChanged) {
+            showRestartDialog();
+            return;
+        }
+
+        ApplicationManager.getApplication().getMessageBus()
+                .syncPublisher(SettingsListener.TOPIC)
+                .settingsUpdated();
     }
 
     private boolean isLanguageChanged() {
@@ -48,22 +70,14 @@ public class MySettingsConfigurable implements Configurable {
         return !settingsComponent.getLanguage().equals(settings.getLanguage());
     }
 
-    @Override
-    public void apply() {
-        boolean languageChanged = isLanguageChanged();
+    private boolean idDescShowTypeChanged() {
         MySettings settings = MySettings.getInstance();
-        settings.setLanguage(settingsComponent.getLanguage());
-        settings.setTipDelay(settingsComponent.getTipDelay());
-
-        if (languageChanged) {
-            showRestartDialog();
-        }
+        return !(settingsComponent.getDescShowType() == settings.getDescShowType());
     }
 
     @Override
     public void reset() {
-        MySettings settings = MySettings.getInstance();
-        settingsComponent.setLanguage(settings.getLanguage());
+        settingsComponent.reset();
     }
 
     @Override
@@ -82,6 +96,30 @@ public class MySettingsConfigurable implements Configurable {
         if (response == Messages.YES) {
             ApplicationEx app = (ApplicationEx) ApplicationManager.getApplication();
             app.restart(true);
+        }
+    }
+
+    public enum DescShowType {
+        POPUP(0),
+        SPLIT_PANE(1);
+
+        private final int value;
+
+        DescShowType(int value) {
+            this.value = value;
+        }
+
+        public static DescShowType fromCode(int code) {
+            for (DescShowType descShowType : values()) {
+                if (code == descShowType.value) {
+                    return descShowType;
+                }
+            }
+            return POPUP;
+        }
+
+        public int getValue() {
+            return value;
         }
     }
 }

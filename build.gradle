@@ -5,7 +5,7 @@ plugins {
 
 group 'indi.bookmarkx'
 
-version '2.3.3'
+version '2.3.4'
 
 repositories {
     mavenLocal()
@@ -36,8 +36,8 @@ patchPluginXml {
 
     changeNotes = """
       <ul>
-        <li>导出书签支持指定目录</li>
-        <li>兼容2025.3版本</li>
+        <li>支持设置书签描述的展示方式</li>
+        <li>优化书签描述展示格式</li>
       </ul>
     """
 }
