@@ -5,7 +5,7 @@ plugins {
 
 group 'indi.bookmarkx'
 
-version '2.3.4'
+version '2.3.5'
 
 repositories {
     mavenLocal()
@@ -28,16 +28,17 @@ intellij {
     version = '2021.2.2'
 //    version = '2023.3.6'
 //    version = '2024.3.7'
+    instrumentCode = false
 }
 
 patchPluginXml {
+
     sinceBuild = '210.0'
     untilBuild = "253.*"
 
     changeNotes = """
       <ul>
-        <li>支持设置书签描述的展示方式</li>
-        <li>优化书签描述展示格式</li>
+        <li></li>
       </ul>
     """
 }

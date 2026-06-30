@@ -42,7 +42,7 @@ public class BkGutterContextMenuAction extends AnAction {
         String lineText = document.getText().substring(document.getLineStartOffset(lineNum), document.getLineEndOffset(lineNum));
 
         BookmarksManager manager = BookmarksManager.getInstance(project);
-        manager.createBookRemark(project, file, StringUtils.trim(lineText), lineNum);
+        manager.createBookRemark(file, StringUtils.trim(lineText), lineNum);
 
         // 使文件标记失效并强制重新计算
         DaemonCodeAnalyzer daemonCodeAnalyzer = DaemonCodeAnalyzer.getInstance(project);

@@ -64,10 +64,25 @@ public class BookmarkCreatorDialog extends DialogWrapper {
     }
 
     // --- Fluent API ---
-    public BookmarkCreatorDialog defaultName(String name) { this.tfName.setText(name); return this; }
-    public BookmarkCreatorDialog defaultDesc(String desc) { this.tfDesc.setText(desc); return this; }
-    public BookmarkCreatorDialog namePrompt(String name) { this.tfName.setPlaceholder(name); return this; }
-    public BookmarkCreatorDialog descPrompt(String name) { this.tfDesc.setPlaceholder(name); return this; }
+    public BookmarkCreatorDialog defaultName(String name) {
+        this.tfName.setText(name);
+        return this;
+    }
+
+    public BookmarkCreatorDialog defaultDesc(String desc) {
+        this.tfDesc.setText(desc);
+        return this;
+    }
+
+    public BookmarkCreatorDialog namePrompt(String name) {
+        this.tfName.setPlaceholder(name);
+        return this;
+    }
+
+    public BookmarkCreatorDialog descPrompt(String name) {
+        this.tfDesc.setPlaceholder(name);
+        return this;
+    }
 
     @Override
     protected JComponent createCenterPanel() {
@@ -116,6 +131,7 @@ public class BookmarkCreatorDialog extends DialogWrapper {
                 // 放在右上角，避开边框
                 toggleBtn.setBounds(getWidth() - prefSize.width - 10, 8, prefSize.width, prefSize.height);
             }
+
             @Override
             public Dimension getPreferredSize() {
                 return new Dimension(500, 250);
@@ -132,25 +148,35 @@ public class BookmarkCreatorDialog extends DialogWrapper {
         gbc.insets = JBUI.insets(8);
 
         // Name
-        gbc.gridx = 0; gbc.gridy = 0; gbc.weightx = 0;
+        gbc.gridx = 0;
+        gbc.gridy = 0;
+        gbc.weightx = 0;
         panel.add(new JBLabel(I18N.get("bookmark.dialog.name")), gbc);
-        gbc.gridx = 1; gbc.weightx = 1;
+        gbc.gridx = 1;
+        gbc.weightx = 1;
         panel.add(tfName, gbc);
 
         int row = 1;
         if (isEditMode) {
-            gbc.gridx = 0; gbc.gridy = row++; gbc.weightx = 0;
+            gbc.gridx = 0;
+            gbc.gridy = row++;
+            gbc.weightx = 0;
             panel.add(new JBLabel(I18N.get("bookmark.dialog.lineNumber")), gbc);
-            gbc.gridx = 1; gbc.weightx = 1;
+            gbc.gridx = 1;
+            gbc.weightx = 1;
             panel.add(tfLineNumber, gbc);
         }
 
         // Desc
-        gbc.gridx = 0; gbc.gridy = row; gbc.weightx = 0;
+        gbc.gridx = 0;
+        gbc.gridy = row;
+        gbc.weightx = 0;
         gbc.anchor = GridBagConstraints.NORTHWEST;
         panel.add(new JBLabel(I18N.get("bookmark.dialog.desc")), gbc);
 
-        gbc.gridx = 1; gbc.weightx = 1; gbc.weighty = 1;
+        gbc.gridx = 1;
+        gbc.weightx = 1;
+        gbc.weighty = 1;
         panel.add(layeredPane, gbc);
 
         return panel;
@@ -169,6 +195,7 @@ public class BookmarkCreatorDialog extends DialogWrapper {
     }
 
     private void setupValidators() {
+        // Name validator
         new ComponentValidator(project).withValidator(() -> {
             if (tfName.getText().isBlank()) return new ValidationInfo(I18N.get("bookmarkNameNonNullMessage"), tfName);
             return null;
@@ -178,20 +205,77 @@ public class BookmarkCreatorDialog extends DialogWrapper {
             @Override
             public void documentChanged(@NotNull DocumentEvent event) {
                 ComponentValidator.getInstance(tfName).ifPresent(ComponentValidator::revalidate);
-                setOKActionEnabled(!tfName.getText().isBlank());
+                validateAndEnableOK();
             }
         });
+
+        // Line number validator (only in edit mode)
+        if (isEditMode) {
+            new ComponentValidator(project).withValidator(() -> {
+                String text = tfLineNumber.getText().trim();
+                if (text.isEmpty()) {
+                    return new ValidationInfo(I18N.get("bookmark.lineNumberInvalid"), tfLineNumber);
+                }
+                try {
+                    int line = Integer.parseInt(text);
+                    if (line < 1) {
+                        return new ValidationInfo(I18N.get("bookmark.lineNumberNegative"), tfLineNumber);
+                    }
+                    if (line > maxLineNumber) {
+                        return new ValidationInfo(
+                            I18N.get("bookmark.lineNumberTooLarge", String.valueOf(maxLineNumber)),
+                            tfLineNumber
+                        );
+                    }
+                } catch (NumberFormatException e) {
+                    return new ValidationInfo(I18N.get("bookmark.lineNumberInvalid"), tfLineNumber);
+                }
+                return null;
+            }).installOn(tfLineNumber);
+
+            tfLineNumber.getDocument().addDocumentListener(new DocumentListener() {
+                @Override
+                public void documentChanged(@NotNull DocumentEvent event) {
+                    ComponentValidator.getInstance(tfLineNumber).ifPresent(ComponentValidator::revalidate);
+                    validateAndEnableOK();
+                }
+            });
+        }
+    }
+
+    private void validateAndEnableOK() {
+        boolean nameValid = !tfName.getText().isBlank();
+        boolean lineValid = true;
+        if (isEditMode) {
+            lineValid = isValidLineNumber(tfLineNumber.getText().trim());
+        }
+        setOKActionEnabled(nameValid && lineValid);
+    }
+
+    private boolean isValidLineNumber(String text) {
+        if (text.isEmpty()) return false;
+        try {
+            int line = Integer.parseInt(text);
+            return line >= 1 && line <= maxLineNumber;
+        } catch (NumberFormatException e) {
+            return false;
+        }
     }
 
     @Override
-    public @Nullable JComponent getPreferredFocusedComponent() { return tfName; }
+    public @Nullable JComponent getPreferredFocusedComponent() {
+        return tfName;
+    }
 
     @Override
     protected void doOKAction() {
         if (oKAction != null) {
             Integer line = null;
             if (isEditMode) {
-                try { line = Integer.parseInt(tfLineNumber.getText().trim()) - 1; } catch (Exception ignored) {}
+                try {
+                    line = Integer.parseInt(tfLineNumber.getText().trim()) - 1;
+                } catch (Exception ignored) {
+                }
             }
             oKAction.onAction(tfName.getText(), tfDesc.getText(), line);
         }
@@ -208,7 +292,113 @@ public class BookmarkCreatorDialog extends DialogWrapper {
     }
 
     private static class DescriptionPreviewPanel extends HtmlPanel {
-        @Override protected @NotNull String getBody() { return ""; }
-        @Override public void setText(String text) { super.setText(text); }
+        @Override
+        protected @NotNull String getBody() {
+            return "";
+        }
+
+        @Override
+        public void setText(String text) {
+            super.setText(text);
+        }
+    }
+
+    /**
+     * Shows the dialog and returns the result.
+     * This is the preferred way to use the dialog in modern code.
+     *
+     * @return BookmarkDialogResult containing user input or cancellation status
+     */
+    @NotNull
+    public BookmarkDialogResult showAndGetResult() {
+        boolean ok = showAndGet();
+        if (!ok) {
+            return BookmarkDialogResult.cancel();
+        }
+
+        String name = tfName.getText().trim();
+        String desc = tfDesc.getText().trim();
+        int line = Integer.parseInt(tfLineNumber.getText().trim());
+
+        return BookmarkDialogResult.ok(name, desc, line);
+    }
+
+    /**
+     * Legacy callback-style method for backward compatibility.
+     * Consider migrating to {@link #showAndGetResult()}.
+     */
+    public void showAndGet(@NotNull BookmarkCallback callback) {
+        boolean ok = showAndGet();
+        if (ok) {
+            String name = tfName.getText().trim();
+            String desc = tfDesc.getText().trim();
+            Integer line = null;
+
+            line = Integer.parseInt(tfLineNumber.getText().trim());
+
+            callback.onConfirmed(name, desc, line);
+        }
+    }
+
+    @FunctionalInterface
+    public interface BookmarkCallback {
+        void onConfirmed(@NotNull String name, @NotNull String desc, @Nullable Integer line);
+    }
+
+    /**
+     * Represents the result of a bookmark creation/editing dialog.
+     */
+    public static class BookmarkDialogResult {
+
+        private final boolean ok;
+        private final String name;
+        private final String desc;
+        private final Integer line;
+
+        private BookmarkDialogResult(boolean ok, @Nullable String name,
+                                     @Nullable String desc, @Nullable Integer line) {
+            this.ok = ok;
+            this.name = name;
+            this.desc = desc;
+            this.line = line;
+        }
+
+        /**
+         * Creates a result indicating the dialog was cancelled.
+         */
+        public static BookmarkDialogResult cancel() {
+            return new BookmarkDialogResult(false, null, null, null);
+        }
+
+        /**
+         * Creates a result with the user input values.
+         */
+        public static BookmarkDialogResult ok(@NotNull String name,
+                                              @NotNull String desc,
+                                              @Nullable Integer line) {
+            return new BookmarkDialogResult(true, name, desc, line);
+        }
+
+        public boolean isOk() {
+            return ok;
+        }
+
+        public boolean isCancelled() {
+            return !ok;
+        }
+
+        @Nullable
+        public String getName() {
+            return name;
+        }
+
+        @Nullable
+        public String getDesc() {
+            return desc;
+        }
+
+        public Integer getLine() {
+            return line;
+        }
     }
 }
