@@ -24,7 +24,7 @@ public class RootWindowFactory implements ToolWindowFactory, DumbAware {
     public void createToolWindowContent(@NotNull Project project, @NotNull ToolWindow toolWindow) {
         initTitleAction(toolWindow);
         BookmarksManager manager = BookmarksManager.getInstance(project);
-        ContentFactory contentFactory = ContentFactory.SERVICE.getInstance();
+        ContentFactory contentFactory = ContentFactory.getInstance();
         Content regularRetention = contentFactory.createContent(manager.getToolWindowRootPanel(), null, false);
         toolWindow.getContentManager().addContent(regularRetention);
 

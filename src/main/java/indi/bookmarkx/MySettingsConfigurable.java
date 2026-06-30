@@ -4,6 +4,7 @@ package indi.bookmarkx;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.application.ex.ApplicationEx;
 import com.intellij.openapi.options.Configurable;
+import com.intellij.openapi.options.ConfigurationException;
 import com.intellij.openapi.ui.Messages;
 import indi.bookmarkx.common.I18N;
 import indi.bookmarkx.listener.SettingsListener;
@@ -12,7 +13,7 @@ import indi.bookmarkx.ui.panel.MySettingsPanel;
 import org.jetbrains.annotations.Nls;
 import org.jetbrains.annotations.Nullable;
 
-import javax.swing.JComponent;
+import javax.swing.*;
 
 import static indi.bookmarkx.common.Constants.PLUGIN_NAME;
 
@@ -43,26 +44,38 @@ public class MySettingsConfigurable implements Configurable {
         MySettings settings = MySettings.getInstance();
         return isLanguageChanged()
                 || settingsComponent.getTipDelay() != settings.getTipDelay()
-                || settingsComponent.getDescShowType() != settings.getDescShowType();
+                || settingsComponent.getDescShowType() != settings.getDescShowType()
+                || settingsComponent.isMcpEnabled() != settings.isMcpEnabled()
+                || !settingsComponent.getMcpPortText().equals(String.valueOf(settings.getMcpPort()))
+                || !settingsComponent.getMcpPassword().equals(settings.getMcpPassword());
     }
 
     @Override
-    public void apply() {
+    public void apply() throws ConfigurationException {
         boolean languageChanged = isLanguageChanged();
 
         MySettings settings = MySettings.getInstance();
+        int mcpPort;
+        try {
+            mcpPort = settingsComponent.getMcpPort();
+        } catch (IllegalArgumentException ex) {
+            throw new ConfigurationException(ex.getMessage());
+        }
+
         settings.setLanguage(settingsComponent.getLanguage());
         settings.setTipDelay(settingsComponent.getTipDelay());
         settings.setDescShowType(settingsComponent.getDescShowType());
-
-        if (languageChanged) {
-            showRestartDialog();
-            return;
-        }
+        settings.setMcpEnabled(settingsComponent.isMcpEnabled());
+        settings.setMcpPort(mcpPort);
+        settings.setMcpPassword(settingsComponent.getMcpPassword());
 
         ApplicationManager.getApplication().getMessageBus()
                 .syncPublisher(SettingsListener.TOPIC)
                 .settingsUpdated();
+
+        if (languageChanged) {
+            showRestartDialog();
+        }
     }
 
     private boolean isLanguageChanged() {

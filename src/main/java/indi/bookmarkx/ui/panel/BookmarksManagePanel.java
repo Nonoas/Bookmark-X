@@ -182,6 +182,10 @@ public class BookmarksManagePanel extends JPanel {
         return tree;
     }
 
+    public boolean isTreeLoaded() {
+        return treeLoaded;
+    }
+
     /**
      * 创建一个属于项目 project 的标签管理面板
      *

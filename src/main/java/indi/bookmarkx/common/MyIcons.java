@@ -2,7 +2,7 @@ package indi.bookmarkx.common;
 
 import com.intellij.openapi.util.IconLoader;
 
-import javax.swing.Icon;
+import javax.swing.*;
 import java.util.Objects;
 
 /**
@@ -15,6 +15,6 @@ public interface MyIcons {
     Icon BOOKMARK = getIcon("icons/bookmark.svg");
 
     static Icon getIcon(String path) {
-        return Objects.requireNonNull(IconLoader.findIcon(path));
+        return Objects.requireNonNull(IconLoader.findIcon(path, MyIcons.class));
     }
 }

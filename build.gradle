@@ -5,7 +5,10 @@ plugins {
 
 group 'indi.bookmarkx'
 
-version '2.3.5'
+version '3.0.0'
+
+sourceCompatibility = 17
+targetCompatibility = 17
 
 repositories {
     mavenLocal()
@@ -17,6 +20,11 @@ repositories {
 }
 
 dependencies {
+    implementation 'com.google.code.gson:gson:2.10.1'
+    implementation 'io.modelcontextprotocol.sdk:mcp-core:1.1.1'
+    implementation 'io.modelcontextprotocol.sdk:mcp-json-jackson3:1.1.1'
+    implementation 'org.eclipse.jetty:jetty-server:12.1.9'
+    implementation 'org.eclipse.jetty.ee10:jetty-ee10-servlet:12.1.9'
     testImplementation 'org.junit.jupiter:junit-jupiter-api:5.7.0'
     // https://mvnrepository.com/artifact/org.mockito/mockito-all
     testImplementation 'org.mockito:mockito-all:1.10.19'
@@ -25,7 +33,7 @@ dependencies {
 
 // See https://github.com/JetBrains/gradle-intellij-plugin/
 intellij {
-    version = '2021.2.2'
+    version = '2022.3.3'
 //    version = '2023.3.6'
 //    version = '2024.3.7'
     instrumentCode = false
@@ -33,12 +41,12 @@ intellij {
 
 patchPluginXml {
 
-    sinceBuild = '210.0'
+    sinceBuild = '223.0'
     untilBuild = "253.*"
 
     changeNotes = """
       <ul>
-        <li></li>
+        <li>支持通过外部AI工具通过MCP协议操作书签</li>
       </ul>
     """
 }
