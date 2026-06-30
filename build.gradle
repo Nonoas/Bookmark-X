@@ -42,11 +42,12 @@ intellij {
 patchPluginXml {
 
     sinceBuild = '223.0'
-    untilBuild = "253.*"
+    untilBuild = "261.*"
 
     changeNotes = """
       <ul>
-        <li>支持通过外部AI工具通过MCP协议操作书签</li>
+        <li>支持通过外部AI工具通过 MCP 协议操作书签</li>
+        <li>不再支持 2022.3 以下的版本</li>
       </ul>
     """
 }
