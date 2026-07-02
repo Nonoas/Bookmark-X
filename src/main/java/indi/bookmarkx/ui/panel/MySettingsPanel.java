@@ -1,23 +1,20 @@
-package indi.bookmarkx.ui.pannel;
+package indi.bookmarkx.ui.panel;
 
 import com.intellij.openapi.ui.ComboBox;
 import com.intellij.ui.TitledSeparator;
-import com.intellij.ui.components.JBCheckBox;
-import com.intellij.ui.components.JBLabel;
-import com.intellij.ui.components.JBPanel;
-import com.intellij.ui.components.JBTextField;
+import com.intellij.ui.components.*;
 import com.intellij.util.ui.FormBuilder;
 import com.intellij.util.ui.JBUI;
 import indi.bookmarkx.MySettingsConfigurable;
 import indi.bookmarkx.common.I18N;
 import indi.bookmarkx.common.I18NEnum;
+import indi.bookmarkx.mcp.BookmarkMcpConfig;
 import indi.bookmarkx.persistence.MySettings;
 import org.apache.commons.lang.StringUtils;
+import org.jetbrains.annotations.NotNull;
 
-import javax.swing.JPanel;
-import java.awt.BorderLayout;
-import java.awt.FlowLayout;
-import java.awt.GridLayout;
+import javax.swing.*;
+import java.awt.*;
 import java.awt.event.ItemEvent;
 
 /**
@@ -36,15 +33,22 @@ public class MySettingsPanel extends JBPanel<MySettingsPanel> {
     });
 
     private final JPanel tipSettingsWrapper = new JPanel(new BorderLayout());
+    private final JPanel mcpSettingsWrapper = new JPanel(new BorderLayout());
 
     private final JBCheckBox showTipCheckBox = new JBCheckBox(I18N.get("setting.tipToggle"), true);
     private final JBTextField jtfDelay = new JBTextField();
+    private final JBCheckBox enableMcpCheckBox = new JBCheckBox(I18N.get("setting.mcp.enable"), true);
+    private final JBTextField jtfMcpPort = new JBTextField();
+    private final JBPasswordField jpfMcpPassword = new JBPasswordField();
+    private final JBLabel mcpUrlValueLabel = new JBLabel();
 
     public MySettingsPanel() {
         initComponentState();
         setLayout(new BorderLayout());
 
         showTypeComboBox.addActionListener(e -> updateVisibility());
+        enableMcpCheckBox.addItemListener(e -> updateMcpControls());
+        jtfMcpPort.getDocument().addDocumentListener(new SimpleDocumentListener(this::refreshMcpUrlLabel));
 
         JPanel contentPanel = FormBuilder.createFormBuilder()
                 .addComponent(new TitledSeparator(I18N.get("setting.group.general")))
@@ -53,12 +57,19 @@ public class MySettingsPanel extends JBPanel<MySettingsPanel> {
                 .addComponent(new TitledSeparator(I18N.get("setting.group.desc")))
                 .addLabeledComponent(new JBLabel(I18N.get("setting.desc.showType")), showTypeComboBox)
                 .addComponent(tipSettingsWrapper)
+                .addVerticalGap(10)
+                .addComponent(new TitledSeparator(I18N.get("setting.group.mcp")))
+                .addComponent(enableMcpCheckBox)
+                .addComponent(mcpSettingsWrapper)
                 .addComponentFillVertically(new JPanel(), 0)
                 .getPanel();
 
         tipSettingsWrapper.add(createTwoColumnRow(), BorderLayout.CENTER);
+        mcpSettingsWrapper.add(createMcpSettingsPanel(), BorderLayout.CENTER);
         // 初始状态触发一次
         updateVisibility();
+        updateMcpControls();
+        refreshMcpUrlLabel();
 
         contentPanel.setBorder(JBUI.Borders.empty(10, 20));
         add(contentPanel, BorderLayout.CENTER);
@@ -102,6 +113,19 @@ public class MySettingsPanel extends JBPanel<MySettingsPanel> {
         return rowPanel;
     }
 
+    private JPanel createMcpSettingsPanel() {
+        JPanel panel = FormBuilder.createFormBuilder()
+                .addLabeledComponent(new JBLabel(I18N.get("setting.mcp.port")), jtfMcpPort)
+                .addLabeledComponent(new JBLabel(I18N.get("setting.mcp.password")), jpfMcpPassword)
+                .addLabeledComponent(new JBLabel(I18N.get("setting.mcp.url")), mcpUrlValueLabel)
+                .addComponent(new JBLabel(I18N.get("setting.mcp.password.tip")))
+                .getPanel();
+
+        jtfMcpPort.setColumns(6);
+        jpfMcpPassword.setColumns(20);
+        return panel;
+    }
+
     private void initComponentState() {
         MySettings settings = MySettings.getInstance();
 
@@ -119,6 +143,9 @@ public class MySettingsPanel extends JBPanel<MySettingsPanel> {
         }
 
         showTypeComboBox.setSelectedIndex(settings.getDescShowType().getValue());
+        enableMcpCheckBox.setSelected(settings.isMcpEnabled());
+        jtfMcpPort.setText(String.valueOf(settings.getMcpPort()));
+        jpfMcpPassword.setText(settings.getMcpPassword());
     }
 
     public I18NEnum getLanguage() {
@@ -150,6 +177,34 @@ public class MySettingsPanel extends JBPanel<MySettingsPanel> {
         return descShowType;
     }
 
+    public boolean isMcpEnabled() {
+        return enableMcpCheckBox.isSelected();
+    }
+
+    public String getMcpPortText() {
+        return StringUtils.defaultString(jtfMcpPort.getText()).trim();
+    }
+
+    public int getMcpPort() {
+        String text = getMcpPortText();
+        if (StringUtils.isBlank(text)) {
+            return BookmarkMcpConfig.DEFAULT_PORT;
+        }
+        try {
+            int port = Integer.parseInt(text);
+            if (port < 1 || port > 65535) {
+                throw new IllegalArgumentException(I18N.get("setting.mcp.port.invalid"));
+            }
+            return port;
+        } catch (NumberFormatException ex) {
+            throw new IllegalArgumentException(I18N.get("setting.mcp.port.invalid"));
+        }
+    }
+
+    public String getMcpPassword() {
+        return new String(jpfMcpPassword.getPassword()).trim();
+    }
+
     public void reset() {
         MySettings settings = MySettings.getInstance();
         setLanguage(settings.getLanguage());
@@ -163,5 +218,67 @@ public class MySettingsPanel extends JBPanel<MySettingsPanel> {
             showTipCheckBox.setSelected(false);
         }
         showTypeComboBox.setSelectedIndex(settings.getDescShowType().getValue());
+        enableMcpCheckBox.setSelected(settings.isMcpEnabled());
+        jtfMcpPort.setText(String.valueOf(settings.getMcpPort()));
+        jpfMcpPassword.setText(settings.getMcpPassword());
+        updateMcpControls();
+        refreshMcpUrlLabel();
+    }
+
+    private void updateMcpControls() {
+        boolean enabled = enableMcpCheckBox.isSelected();
+        jtfMcpPort.setEnabled(enabled);
+        jpfMcpPassword.setEnabled(enabled);
+        refreshMcpUrlLabel();
+        revalidate();
+        repaint();
+    }
+
+    private void refreshMcpUrlLabel() {
+        if (!enableMcpCheckBox.isSelected()) {
+            mcpUrlValueLabel.setText(I18N.get("setting.mcp.disabled"));
+            return;
+        }
+        String portText = getMcpPortText();
+        if (StringUtils.isBlank(portText)) {
+            portText = String.valueOf(BookmarkMcpConfig.DEFAULT_PORT);
+        }
+        try {
+            int port = Integer.parseInt(portText);
+            if (port < 1 || port > 65535) {
+                mcpUrlValueLabel.setText(I18N.get("setting.mcp.port.invalid"));
+                return;
+            }
+            mcpUrlValueLabel.setText(BookmarkMcpConfig.endpointUrl(port));
+        } catch (NumberFormatException ex) {
+            mcpUrlValueLabel.setText(I18N.get("setting.mcp.port.invalid"));
+        }
+    }
+
+    private interface DocumentChangeAction {
+        void run();
+    }
+
+    private static final class SimpleDocumentListener implements javax.swing.event.DocumentListener {
+        private final DocumentChangeAction action;
+
+        private SimpleDocumentListener(@NotNull DocumentChangeAction action) {
+            this.action = action;
+        }
+
+        @Override
+        public void insertUpdate(javax.swing.event.DocumentEvent e) {
+            action.run();
+        }
+
+        @Override
+        public void removeUpdate(javax.swing.event.DocumentEvent e) {
+            action.run();
+        }
+
+        @Override
+        public void changedUpdate(javax.swing.event.DocumentEvent e) {
+            action.run();
+        }
     }
 }

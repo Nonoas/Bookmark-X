@@ -21,25 +21,15 @@ import indi.bookmarkx.model.GroupNodeModel;
 import indi.bookmarkx.persistence.MySettings;
 import indi.bookmarkx.ui.dialog.BookmarkCreatorDialog;
 import indi.bookmarkx.ui.dialog.LineAdjustDialog;
-import indi.bookmarkx.ui.pannel.BookmarkTipPanel;
+import indi.bookmarkx.ui.panel.BookmarkTipPanel;
 import indi.bookmarkx.utils.FileLineCounter;
 import org.apache.commons.lang3.Validate;
 import org.jetbrains.annotations.NotNull;
 
-import javax.swing.DropMode;
-import javax.swing.JComponent;
-import javax.swing.JPopupMenu;
-import javax.swing.JTree;
-import javax.swing.SwingUtilities;
+import javax.swing.*;
 import javax.swing.Timer;
-import javax.swing.TransferHandler;
-import javax.swing.tree.DefaultTreeModel;
-import javax.swing.tree.TreeModel;
-import javax.swing.tree.TreeNode;
-import javax.swing.tree.TreePath;
-import javax.swing.tree.TreeSelectionModel;
-import java.awt.Component;
-import java.awt.Point;
+import javax.swing.tree.*;
+import java.awt.*;
 import java.awt.datatransfer.DataFlavor;
 import java.awt.datatransfer.Transferable;
 import java.awt.datatransfer.UnsupportedFlavorException;
@@ -47,13 +37,8 @@ import java.awt.event.ActionListener;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseMotionAdapter;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.HashMap;
+import java.util.*;
 import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.UUID;
 import java.util.stream.Collectors;
 
 /**
@@ -210,18 +195,22 @@ public class BookmarkTree extends Tree implements BookmarkListener {
 
             final GroupNodeModel groupNodeModel = new GroupNodeModel();
 
-            new BookmarkCreatorDialog(project, I18N.get("group.create.title"))
-                    .showAndCallback((name, desc, line) -> {
-                        String uuid = UUID.randomUUID().toString();
-                        groupNodeModel.setUuid(uuid);
-                        groupNodeModel.setName(name);
-                        groupNodeModel.setDesc(desc);
+            BookmarkCreatorDialog.BookmarkDialogResult result = new BookmarkCreatorDialog(project, I18N.get("group.create.title"))
+                    .showAndGetResult();
+            if (!result.isOk()) {
+                return;
+            }
 
-                        // 新的分组节点
-                        BookmarkTreeNode groupNode = new BookmarkTreeNode(groupNodeModel);
-                        model.insertNodeInto(groupNode, parent, 0);
-                        BookmarkTree.this.model.nodeChanged(selectedNode);
-                    });
+            String uuid = UUID.randomUUID().toString();
+            groupNodeModel.setUuid(uuid);
+            groupNodeModel.setName(result.getName());
+            groupNodeModel.setDesc(result.getDesc());
+
+            // 新的分组节点
+            BookmarkTreeNode groupNode = new BookmarkTreeNode(groupNodeModel);
+            model.insertNodeInto(groupNode, parent, 0);
+            BookmarkTree.this.model.nodeChanged(selectedNode);
+
         };
 
         imAddGroup.addActionListener(addGroupListener);
@@ -371,7 +360,62 @@ public class BookmarkTree extends Tree implements BookmarkListener {
 
     private void addToCache(BookmarkTreeNode node) {
         AbstractTreeNodeModel userObject = (AbstractTreeNodeModel) node.getUserObject();
-        nodeCache.put(userObject.getUuid(), node);
+        if (userObject.getUuid() != null) {
+            nodeCache.put(userObject.getUuid(), node);
+        }
+    }
+
+    private void removeFromCache(BookmarkTreeNode node) {
+        if (node == null) {
+            return;
+        }
+        Object userObject = node.getUserObject();
+        if (!(userObject instanceof AbstractTreeNodeModel)) {
+            return;
+        }
+        String uuid = ((AbstractTreeNodeModel) userObject).getUuid();
+        if (uuid != null) {
+            nodeCache.remove(uuid);
+        }
+    }
+
+    public void insertNodeInto(BookmarkTreeNode node, BookmarkTreeNode parent, int index) {
+        model.insertNodeInto(node, parent, index);
+        if (node.isBookmark()) {
+            addToCache(node);
+        }
+    }
+
+    public void moveNode(BookmarkTreeNode node, BookmarkTreeNode parent, int index) {
+        if (node == null || parent == null) {
+            return;
+        }
+        if (node.getParent() != null) {
+            model.removeNodeFromParent(node);
+        }
+        model.insertNodeInto(node, parent, index);
+        if (node.isBookmark()) {
+            addToCache(node);
+        }
+    }
+
+    public void removeNodeFromParent(BookmarkTreeNode node) {
+        if (node == null || node.getParent() == null) {
+            return;
+        }
+        removeNodeCacheRecursive(node);
+        model.removeNodeFromParent(node);
+    }
+
+    private void removeNodeCacheRecursive(BookmarkTreeNode node) {
+        if (node.isBookmark()) {
+            removeFromCache(node);
+            return;
+        }
+        int childCount = node.getChildCount();
+        for (int i = 0; i < childCount; i++) {
+            removeNodeCacheRecursive((BookmarkTreeNode) node.getChildAt(i));
+        }
     }
 
     @Override
@@ -424,12 +468,33 @@ public class BookmarkTree extends Tree implements BookmarkListener {
     }
 
     @Override
+    public void bookmarkAdded(@NotNull AbstractTreeNodeModel model) {
+        if (model.isGroup()) {
+            return;
+        }
+        BookmarkTreeNode treeNode = new BookmarkTreeNode(model);
+        if (nodeCache.containsKey(model.getUuid())) {
+            this.model.nodeChanged(nodeCache.get(model.getUuid()));
+            return;
+        }
+        this.add(treeNode);
+
+        BookmarkNodeModel bookmarkNodeModel = (BookmarkNodeModel) model;
+        bookmarkNodeModel.setIndex(treeNode.getParent().getIndex(treeNode));
+        BookmarkTreeNode nodeByModel = getNodeByModel(bookmarkNodeModel);
+        this.model.nodeChanged(nodeByModel);
+    }
+
+    @Override
     public void bookmarkChanged(@NotNull AbstractTreeNodeModel model) {
         if (model.isGroup()) {
             return;
         }
         BookmarkNodeModel bookmarkNodeModel = (BookmarkNodeModel) model;
         BookmarkTreeNode node = nodeCache.get(bookmarkNodeModel.getUuid());
+        if (node == null) {
+            return;
+        }
         this.model.nodeChanged(node);
     }
 
@@ -440,6 +505,9 @@ public class BookmarkTree extends Tree implements BookmarkListener {
         }
         BookmarkNodeModel bookmarkNodeModel = (BookmarkNodeModel) model;
         BookmarkTreeNode node = nodeCache.remove(bookmarkNodeModel.getUuid());
+        if (node == null || node.getParent() == null) {
+            return;
+        }
         this.model.removeNodeFromParent(node);
     }
 

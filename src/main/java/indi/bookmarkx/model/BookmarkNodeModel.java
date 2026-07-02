@@ -68,9 +68,11 @@ public class BookmarkNodeModel extends AbstractTreeNodeModel {
     }
 
     /**
-     * 设置当前值时，会同步更新 {@link BookmarkNodeModel#openFileDescriptor}
+     * 设置行号值。
+     * 注意：此方法仅更新行号字段，如需同步更新行标记（Gutter Icon）和 openFileDescriptor，
+     * 请使用 {@link #updateBookmarkLine(int, boolean)}
      *
-     * @param newLine 新值
+     * @param newLine 新行号值（从0开始）
      */
     public void setLine(int newLine) {
         this.line = newLine;
@@ -178,18 +180,21 @@ public class BookmarkNodeModel extends AbstractTreeNodeModel {
         if (this.line == newLine) {
             return;
         }
-        this.line = newLine;
         OpenFileDescriptor oldDescriptor = getOpenFileDescriptor();
-        if (oldDescriptor != null) {
-            this.setOpenFileDescriptor(
-                    new OpenFileDescriptor(
-                            oldDescriptor.getProject(),
-                            oldDescriptor.getFile(),
-                            newLine,
-                            0
-                    )
-            );
+        if (oldDescriptor == null) {
+            // openFileDescriptor 为 null 时，只更新行号，不操作行标记
+            this.line = newLine;
+            return;
         }
+        this.line = newLine;
+        this.setOpenFileDescriptor(
+                new OpenFileDescriptor(
+                        oldDescriptor.getProject(),
+                        oldDescriptor.getFile(),
+                        newLine,
+                        0
+                )
+        );
         this.release();
         this.createLineMarker();
         if (doPersistentSave) {

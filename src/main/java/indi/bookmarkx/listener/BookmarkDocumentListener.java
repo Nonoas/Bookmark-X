@@ -12,7 +12,6 @@ import com.intellij.openapi.fileEditor.OpenFileDescriptor;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vfs.VirtualFile;
 import indi.bookmarkx.BookmarksManager;
-import indi.bookmarkx.persistence.MyPersistent;
 import indi.bookmarkx.common.data.BookmarkArrayListTable;
 import indi.bookmarkx.model.BookmarkNodeModel;
 import org.apache.commons.collections.CollectionUtils;
@@ -28,7 +27,7 @@ import java.util.List;
  */
 public class BookmarkDocumentListener implements DocumentListener {
 
-    private static final Logger LOG = Logger.getInstance(MyPersistent.class);
+    private static final Logger LOG = Logger.getInstance(BookmarkDocumentListener.class);
 
     @Override
     public void documentChanged(@NotNull DocumentEvent event) {

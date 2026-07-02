@@ -2,11 +2,7 @@ package indi.bookmarkx.common.data;
 
 import indi.bookmarkx.common.data.index.SimpleColumnIndex;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 import java.util.function.Function;
 
 /**
@@ -49,7 +45,9 @@ public class ArrayListTable<T> implements DataPool {
 
     public void insert(T data) {
         columnIndices.forEach((function, index) -> saveHunt(data, function, index));
-        this.dataList.add(data);
+        if (!this.dataList.contains(data)) {
+            this.dataList.add(data);
+        }
     }
 
     private void saveHunt(T data, Function<T, String> function, SimpleColumnIndex<Set<T>> index) {
