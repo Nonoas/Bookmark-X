@@ -105,7 +105,7 @@ public final class BookmarksManager {
         bookmarkNodeModel.setIcon(file.getFileType().getIcon());
         bookmarkNodeModel.setIcon(file.getFileType().getIcon());
         bookmarkNodeModel.setOpenFileDescriptor(new OpenFileDescriptor(project, file, line, 0));
-        BookmarkCreatorDialog.BookmarkDialogResult result = new BookmarkCreatorDialog(project, I18N.get("bookmark.create.title"))
+        BookmarkCreatorDialog.BookmarkDialogResult result = BookmarkCreatorDialog.createBookmarkDialog(project, I18N.get("bookmark.create.title"))
                 .defaultName(defaultName)
                 .defaultDesc(defaultDesc)
                 .showAndGetResult();
