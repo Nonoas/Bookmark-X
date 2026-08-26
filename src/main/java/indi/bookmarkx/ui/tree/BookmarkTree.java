@@ -458,6 +458,28 @@ public class BookmarkTree extends Tree implements BookmarkListener {
         return this.navigator;
     }
 
+    public String getActivatedGroupName() {
+        BookmarkTreeNode group = navigator.ensureActivatedGroup();
+        AbstractTreeNodeModel nodeModel = (AbstractTreeNodeModel) group.getUserObject();
+        return nodeModel.getName();
+    }
+
+    public String getActivatedGroupPath() {
+        BookmarkTreeNode group = navigator.ensureActivatedGroup();
+        List<String> names = new ArrayList<>();
+        for (TreeNode node : group.getPath()) {
+            if (!(node instanceof BookmarkTreeNode)) {
+                continue;
+            }
+            AbstractTreeNodeModel nodeModel = (AbstractTreeNodeModel) ((BookmarkTreeNode) node).getUserObject();
+            String name = nodeModel.getName();
+            if (name != null && !name.trim().isEmpty()) {
+                names.add(name);
+            }
+        }
+        return String.join(" / ", names);
+    }
+
     public BookmarkTreeNode getNodeForRow(int row) {
         TreePath path = getPathForRow(row);
         if (path != null) {

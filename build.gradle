@@ -5,7 +5,7 @@ plugins {
 
 group 'indi.bookmarkx'
 
-version '3.0.0'
+version '3.0.2'
 
 sourceCompatibility = 17
 targetCompatibility = 17
@@ -42,12 +42,11 @@ intellij {
 patchPluginXml {
 
     sinceBuild = '223.0'
-    untilBuild = "261.*"
+    untilBuild = "262.*"
 
     changeNotes = """
       <ul>
-        <li>支持通过外部AI工具通过 MCP 协议操作书签</li>
-        <li>不再支持 2022.3 以下的版本</li>
+        <li>版本支持到 2026.2.*</li>
       </ul>
     """
 }

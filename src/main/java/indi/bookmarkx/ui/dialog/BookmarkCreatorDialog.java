@@ -10,9 +10,11 @@ import com.intellij.openapi.ui.ValidationInfo;
 import com.intellij.ui.EditorTextField;
 import com.intellij.ui.components.JBLabel;
 import com.intellij.ui.components.JBScrollPane;
+import com.intellij.ui.components.JBTextField;
 import com.intellij.util.ui.HtmlPanel;
 import com.intellij.util.ui.JBUI;
 import com.intellij.util.ui.UIUtil;
+import indi.bookmarkx.BookmarksManager;
 import indi.bookmarkx.common.I18N;
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
@@ -32,6 +34,7 @@ public class BookmarkCreatorDialog extends DialogWrapper {
     private final EditorTextField tfName = new EditorTextField();
     private final EditorTextField tfDesc = new EditorTextField();
     private final EditorTextField tfLineNumber = new EditorTextField();
+    private final JBTextField tfGroup = new JBTextField();
     private final HtmlPanel previewPanel = new DescriptionPreviewPanel();
 
     private final CardLayout cardLayout = new CardLayout();
@@ -41,6 +44,8 @@ public class BookmarkCreatorDialog extends DialogWrapper {
     private boolean isPreviewMode = false;
 
     private boolean isEditMode = false;
+    private boolean showGroup = false;
+    private boolean showCurrentGroup = false;
     private int maxLineNumber = 0;
     private OnOKAction oKAction;
     private Project project;
@@ -50,12 +55,22 @@ public class BookmarkCreatorDialog extends DialogWrapper {
         initSelf(project, title);
     }
 
+    private BookmarkCreatorDialog(Project project, String title, boolean showCurrentGroup) {
+        super(true);
+        this.showCurrentGroup = showCurrentGroup;
+        initSelf(project, title);
+    }
+
     public BookmarkCreatorDialog(Project project, String title, int lineNumber, int maxLineNumber) {
         super(true);
         this.isEditMode = true;
         this.tfLineNumber.setText(String.valueOf(lineNumber));
         this.maxLineNumber = maxLineNumber;
         initSelf(project, title);
+    }
+
+    public static BookmarkCreatorDialog createBookmarkDialog(Project project, String title) {
+        return new BookmarkCreatorDialog(project, title, true);
     }
 
     private void initSelf(Project project, String title) {
@@ -85,9 +100,28 @@ public class BookmarkCreatorDialog extends DialogWrapper {
         return this;
     }
 
+    private void setGroup(String groupName) {
+        if (StringUtils.isBlank(groupName)) {
+            return;
+        }
+        this.showGroup = true;
+        this.tfGroup.setText(groupName);
+        this.tfGroup.setEditable(false);
+        this.tfGroup.setFocusable(false);
+    }
+
+    private void resolveCurrentGroup() {
+        if (!showCurrentGroup) {
+            return;
+        }
+        String groupPath = BookmarksManager.getInstance(project).getToolWindowRootPanel().tree().getActivatedGroupPath();
+        setGroup(groupPath);
+    }
+
     @Override
     protected JComponent createCenterPanel() {
         setupValidators();
+        resolveCurrentGroup();
 
         // 1. 编辑器与预览面板
         tfDesc.setOneLineMode(false);
@@ -148,16 +182,26 @@ public class BookmarkCreatorDialog extends DialogWrapper {
         gbc.fill = GridBagConstraints.BOTH;
         gbc.insets = JBUI.insets(8);
 
+        int row = 0;
         // Name
         gbc.gridx = 0;
-        gbc.gridy = 0;
+        gbc.gridy = row++;
         gbc.weightx = 0;
         panel.add(new JBLabel(I18N.get("bookmark.dialog.name")), gbc);
         gbc.gridx = 1;
         gbc.weightx = 1;
         panel.add(tfName, gbc);
 
-        int row = 1;
+        if (showGroup) {
+            gbc.gridx = 0;
+            gbc.gridy = row++;
+            gbc.weightx = 0;
+            panel.add(new JBLabel(I18N.get("bookmark.dialog.group")), gbc);
+            gbc.gridx = 1;
+            gbc.weightx = 1;
+            panel.add(tfGroup, gbc);
+        }
+
         if (isEditMode) {
             gbc.gridx = 0;
             gbc.gridy = row++;
@@ -344,7 +388,9 @@ public class BookmarkCreatorDialog extends DialogWrapper {
             String desc = tfDesc.getText().trim();
             Integer line = null;
 
-            line = Integer.parseInt(tfLineNumber.getText().trim());
+            if (isEditMode) {
+                line = Integer.parseInt(tfLineNumber.getText().trim());
+            }
 
             callback.onConfirmed(name, desc, line);
         }
