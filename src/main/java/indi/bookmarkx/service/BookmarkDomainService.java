@@ -15,6 +15,7 @@ import indi.bookmarkx.listener.BookmarkListener;
 import indi.bookmarkx.model.AbstractTreeNodeModel;
 import indi.bookmarkx.model.BookmarkNodeModel;
 import indi.bookmarkx.model.GroupNodeModel;
+import indi.bookmarkx.service.relocation.BookmarkRelocationService;
 import indi.bookmarkx.service.dto.BookmarkDraft;
 import indi.bookmarkx.service.dto.BookmarkTreeItemView;
 import indi.bookmarkx.service.dto.BookmarkView;
@@ -180,6 +181,7 @@ public final class BookmarkDomainService {
         bookmarkNodeModel.setLine(resolved.internalLine);
         bookmarkNodeModel.setIcon(resolved.file.getFileType().getIcon());
         bookmarkNodeModel.setOpenFileDescriptor(new OpenFileDescriptor(project, resolved.file, resolved.internalLine, 0));
+        BookmarkRelocationService.getInstance(project).refreshFileAnchorsAsync(resolved.file, List.of(bookmarkNodeModel));
 
         BookmarkTreeNode treeNode = new BookmarkTreeNode(bookmarkNodeModel);
         context.tree.insertNodeInto(treeNode, groupNode, groupNode.getChildCount());
@@ -212,6 +214,7 @@ public final class BookmarkDomainService {
                 throw new IllegalArgumentException("Another bookmark already exists at the requested file and line");
             }
             bookmark.updateBookmarkLine(newInternalLine, false);
+            BookmarkRelocationService.getInstance(project).refreshBookmarkAnchorAsync(bookmark);
         }
 
         List<String> requestedGroupPath = draft.getGroupPath() == null ? null : normalizeGroupPath(draft.getGroupPath());

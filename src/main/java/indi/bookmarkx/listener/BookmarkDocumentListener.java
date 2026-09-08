@@ -52,14 +52,14 @@ public class BookmarkDocumentListener implements DocumentListener {
                 return;
             }
 
-            perceivedLineChange(project, indexList);
+            perceivedLineChange(project, virtualFile, indexList);
         } catch (Exception e) {
             LOG.info("perceivedLineChange error", e);
         }
     }
 
 
-    private void perceivedLineChange(Project project, List<BookmarkNodeModel> indexList) {
+    private void perceivedLineChange(Project project, VirtualFile virtualFile, List<BookmarkNodeModel> indexList) {
         if (CollectionUtils.isEmpty(indexList)) {
             return;
         }

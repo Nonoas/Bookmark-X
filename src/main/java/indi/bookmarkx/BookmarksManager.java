@@ -23,6 +23,7 @@ import indi.bookmarkx.model.BookmarkConverter;
 import indi.bookmarkx.model.BookmarkNodeModel;
 import indi.bookmarkx.model.po.BookmarkPO;
 import indi.bookmarkx.persistence.MyPersistent;
+import indi.bookmarkx.service.relocation.BookmarkRelocationService;
 import indi.bookmarkx.ui.dialog.BookmarkCreatorDialog;
 import indi.bookmarkx.ui.painter.LineEndPainter;
 import indi.bookmarkx.ui.panel.BookmarksManagePanel;
@@ -113,6 +114,7 @@ public final class BookmarksManager {
             bookmarkNodeModel.setName(result.getName());
             bookmarkNodeModel.setDesc(result.getDesc());
             bookmarkEventPublisher.get().bookmarkAdded(bookmarkNodeModel);
+            BookmarkRelocationService.getInstance(project).refreshFileAnchorsAsync(file, List.of(bookmarkNodeModel));
 
             MyPersistent persistent = MyPersistent.getInstance(project);
             persistent.getState().getChildren().add(BookmarkConverter.convertToPO(bookmarkNodeModel));
@@ -141,6 +143,7 @@ public final class BookmarksManager {
                 if (bookmarkModel.getLine() != newLine) {
                     bookmarkModel.updateBookmarkLine(newLine - 1, false);
                 }
+                BookmarkRelocationService.getInstance(project).refreshBookmarkAnchorAsync(bookmarkModel);
             }
 
         } else {
@@ -252,10 +255,11 @@ public final class BookmarksManager {
             for (VirtualFile file : openFiles) {
                 Set<BookmarkNodeModel> models = bookmarksManager.fileMarksCache.getBookmarks(file.getPath());
                 if (CollectionUtils.isEmpty(models)) {
-                    return;
+                    continue;
                 }
                 models.forEach(BookmarkNodeModel::createLineMarker);
             }
+            BookmarkRelocationService.getInstance(project).checkBookmarksAsync();
         }
 
         public void registerFileGutterIconListener() {
@@ -293,6 +297,7 @@ public final class BookmarksManager {
                         return;
                     }
                     BookmarkNodeModel bookmarkNodeModel = (BookmarkNodeModel) model;
+                    BookmarkRelocationService.getInstance(project).refreshBookmarkAnchorAsync(bookmarkNodeModel);
                     bookmarkNodeModel.createLineMarker();
                 }
 

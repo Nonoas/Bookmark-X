@@ -10,6 +10,7 @@ import com.intellij.ui.content.Content;
 import com.intellij.ui.content.ContentFactory;
 import indi.bookmarkx.action.BookmarkExportAction;
 import indi.bookmarkx.action.BookmarkImportAction;
+import indi.bookmarkx.action.BookmarkRelocateAction;
 import indi.bookmarkx.persistence.MySettings;
 import org.jetbrains.annotations.NotNull;
 
@@ -50,8 +51,9 @@ public class RootWindowFactory implements ToolWindowFactory, DumbAware {
     private void initTitleAction(ToolWindow toolWindow) {
         BookmarkExportAction exportAction = new BookmarkExportAction();
         BookmarkImportAction importAction = new BookmarkImportAction();
+        BookmarkRelocateAction relocateAction = new BookmarkRelocateAction();
 
         // 在 ToolWindow 的标题栏中添加自定义动作按钮
-        toolWindow.setTitleActions(Arrays.asList(importAction, exportAction));
+        toolWindow.setTitleActions(Arrays.asList(relocateAction, importAction, exportAction));
     }
 }
