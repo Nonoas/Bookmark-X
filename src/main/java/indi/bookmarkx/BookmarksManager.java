@@ -23,6 +23,7 @@ import indi.bookmarkx.model.BookmarkConverter;
 import indi.bookmarkx.model.BookmarkNodeModel;
 import indi.bookmarkx.model.po.BookmarkPO;
 import indi.bookmarkx.persistence.MyPersistent;
+import indi.bookmarkx.service.branch.BookmarkBranchSnapshotService;
 import indi.bookmarkx.service.relocation.BookmarkRelocationService;
 import indi.bookmarkx.ui.dialog.BookmarkCreatorDialog;
 import indi.bookmarkx.ui.painter.LineEndPainter;
@@ -55,6 +56,8 @@ public final class BookmarksManager {
     private final FileMarksCache fileMarksCache = new FileMarksCache();
 
     private final Supplier<BookmarkListener> bookmarkEventPublisher;
+
+    private volatile boolean fileGutterIconListenerRegistered;
 
     public BookmarksManager(Project project) {
         this.project = project;
@@ -175,6 +178,15 @@ public final class BookmarksManager {
      */
     public void persistentSave() {
         PersistenceUtil.persistentSave(project, toolWindowRootPanel.tree());
+        BookmarkBranchSnapshotService.getInstance(project).scheduleCurrentSnapshotSave();
+    }
+
+    public BookmarkPO getCurrentBookmarkState() {
+        return PersistenceUtil.getPersistenceObject(toolWindowRootPanel.tree());
+    }
+
+    public void replaceBookmarkState(BookmarkPO rootPO) {
+        loadBookmarkState(rootPO, true, false);
     }
 
     public void prev() {
@@ -189,7 +201,7 @@ public final class BookmarksManager {
      * 重新加载标签树
      */
     public void reload() {
-        ProgressManager.getInstance().run(new TreeLoadTask(project, this));
+        loadBookmarkState(null, false, true);
     }
 
     public FileMarksCache getFileMarksCache() {
@@ -200,74 +212,44 @@ public final class BookmarksManager {
         return toolWindowRootPanel;
     }
 
-    /**
-     * 数据加载任务
-     */
-    static class TreeLoadTask extends Task.Backgroundable {
+    private void loadBookmarkState(BookmarkPO rootPO, boolean replacePersistentState, boolean checkRelocation) {
+        ProgressManager.getInstance().run(new TreeLoadTask(project, this, rootPO, replacePersistentState, checkRelocation));
+    }
 
-        private final Project project;
-        private DefaultTreeModel treeModel;
-        private final BookmarksManager bookmarksManager;
-
-        public TreeLoadTask(Project project, BookmarksManager bookmarksManager) {
-            super(project, "Loading Tree Data");
-            this.project = project;
-            this.bookmarksManager = bookmarksManager;
-        }
-
-        @Override
-        public void run(@NotNull ProgressIndicator indicator) {
-            try {
-                MyPersistent persistent = MyPersistent.getInstance(project);
-                BookmarkPO rootPO = persistent.getState();
-                BookmarkTreeNode root = PersistenceUtil.generateTreeNode(rootPO, project);
-                treeModel = new DefaultTreeModel(root);
-
-                // 初始化文件到标签签行缓存
-                reIntiFileMarksCache(root);
-                registerFileGutterIconListener();
-            } catch (Exception e) {
-                // 错误处理
-                LOG.error("初始化标签树失败", e);
-            }
-            LOG.info("初始化标签树成功");
-        }
-
-        private void reIntiFileMarksCache(BookmarkTreeNode root) {
-            List<BookmarkNodeModel> bookmarkNodeModels = PersistenceUtil.treeToList(root);
-            FileMarksCache fileMarksCache = bookmarksManager.getFileMarksCache();
-            fileMarksCache.clear();
-            for (BookmarkNodeModel model : bookmarkNodeModels) {
-                OpenFileDescriptor openFileDescriptor = model.getOpenFileDescriptor();
-                if (openFileDescriptor == null) {
-                    continue;
-                }
-                fileMarksCache.addBookMark(model);
+    private void releaseCurrentLineMarkers() {
+        List<BookmarkNodeModel> currentBookmarks = BookmarkArrayListTable.getInstance(project).listAll();
+        for (BookmarkNodeModel bookmark : currentBookmarks) {
+            if (bookmark != null) {
+                bookmark.release();
             }
         }
+    }
 
-        @Override
-        public void onSuccess() {
-            bookmarksManager.getToolWindowRootPanel().reInit(treeModel, project);
-            // 获取当前打开的文件
-            FileEditorManager fileEditorManager = FileEditorManager.getInstance(project);
-            VirtualFile[] openFiles = fileEditorManager.getOpenFiles();
-            for (VirtualFile file : openFiles) {
-                Set<BookmarkNodeModel> models = bookmarksManager.fileMarksCache.getBookmarks(file.getPath());
-                if (CollectionUtils.isEmpty(models)) {
-                    continue;
-                }
-                models.forEach(BookmarkNodeModel::createLineMarker);
+    private void createOpenFileLineMarkers() {
+        FileEditorManager fileEditorManager = FileEditorManager.getInstance(project);
+        VirtualFile[] openFiles = fileEditorManager.getOpenFiles();
+        for (VirtualFile file : openFiles) {
+            Set<BookmarkNodeModel> models = fileMarksCache.getBookmarks(file.getPath());
+            if (CollectionUtils.isEmpty(models)) {
+                continue;
             }
-            BookmarkRelocationService.getInstance(project).checkBookmarksAsync();
+            models.forEach(BookmarkNodeModel::createLineMarker);
         }
+    }
 
-        public void registerFileGutterIconListener() {
+    private void registerFileGutterIconListener() {
+        if (fileGutterIconListenerRegistered) {
+            return;
+        }
+        synchronized (this) {
+            if (fileGutterIconListenerRegistered) {
+                return;
+            }
             MessageBusConnection connection = project.getMessageBus().connect(project);
             connection.subscribe(FileEditorManagerListener.FILE_EDITOR_MANAGER, new FileEditorManagerListener() {
                 @Override
                 public void fileOpened(@NotNull FileEditorManager source, @NotNull VirtualFile file) {
-                    Set<BookmarkNodeModel> models = bookmarksManager.fileMarksCache.getBookmarks(file.getPath());
+                    Set<BookmarkNodeModel> models = fileMarksCache.getBookmarks(file.getPath());
                     if (CollectionUtils.isEmpty(models)) {
                         return;
                     }
@@ -281,7 +263,7 @@ public final class BookmarksManager {
                         return;
                     }
                     String path = file.getPath();
-                    Set<BookmarkNodeModel> models = bookmarksManager.fileMarksCache.getBookmarks(path);
+                    Set<BookmarkNodeModel> models = fileMarksCache.getBookmarks(path);
                     if (CollectionUtils.isEmpty(models)) {
                         return;
                     }
@@ -310,6 +292,84 @@ public final class BookmarksManager {
                     bookmarkNodeModel.release();
                 }
             });
+            fileGutterIconListenerRegistered = true;
+        }
+    }
+
+    /**
+     * 数据加载任务
+     */
+    static class TreeLoadTask extends Task.Backgroundable {
+
+        private final Project project;
+        private DefaultTreeModel treeModel;
+        private final BookmarksManager bookmarksManager;
+        private final BookmarkPO rootPO;
+        private final boolean replacePersistentState;
+        private final boolean checkRelocation;
+
+        public TreeLoadTask(Project project,
+                            BookmarksManager bookmarksManager,
+                            BookmarkPO rootPO,
+                            boolean replacePersistentState,
+                            boolean checkRelocation) {
+            super(project, "Loading Tree Data");
+            this.project = project;
+            this.bookmarksManager = bookmarksManager;
+            this.rootPO = rootPO;
+            this.replacePersistentState = replacePersistentState;
+            this.checkRelocation = checkRelocation;
+        }
+
+        @Override
+        public void run(@NotNull ProgressIndicator indicator) {
+            try {
+                MyPersistent persistent = MyPersistent.getInstance(project);
+                BookmarkPO source = rootPO == null ? persistent.getState() : rootPO;
+                BookmarkPO state = PersistenceUtil.deepCopy(source, BookmarkPO.class);
+                if (state == null) {
+                    state = new BookmarkPO();
+                    state.setBookmark(false);
+                }
+                state.setName(project.getName());
+                state.setBookmark(false);
+                if (replacePersistentState) {
+                    persistent.setState(state);
+                }
+                BookmarkTreeNode root = PersistenceUtil.generateTreeNode(state, project);
+                treeModel = new DefaultTreeModel(root);
+
+                // 初始化文件到标签签行缓存
+                reIntiFileMarksCache(root);
+                bookmarksManager.registerFileGutterIconListener();
+            } catch (Exception e) {
+                // 错误处理
+                LOG.error("初始化标签树失败", e);
+            }
+            LOG.info("初始化标签树成功");
+        }
+
+        private void reIntiFileMarksCache(BookmarkTreeNode root) {
+            List<BookmarkNodeModel> bookmarkNodeModels = PersistenceUtil.treeToList(root);
+            FileMarksCache fileMarksCache = bookmarksManager.getFileMarksCache();
+            fileMarksCache.clear();
+            for (BookmarkNodeModel model : bookmarkNodeModels) {
+                OpenFileDescriptor openFileDescriptor = model.getOpenFileDescriptor();
+                if (openFileDescriptor == null) {
+                    continue;
+                }
+                fileMarksCache.addBookMark(model);
+            }
+        }
+
+        @Override
+        public void onSuccess() {
+            bookmarksManager.releaseCurrentLineMarkers();
+            bookmarksManager.getToolWindowRootPanel().reInit(treeModel, project);
+            bookmarksManager.createOpenFileLineMarkers();
+            if (checkRelocation) {
+                BookmarkRelocationService.getInstance(project).checkBookmarksAsync();
+            }
         }
     }
 }

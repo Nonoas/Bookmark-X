@@ -42,6 +42,7 @@
         <applicationConfigurable instance="indi.bookmarkx.MySettingsConfigurable"/>
 
         <postStartupActivity implementation="indi.bookmarkx.mcp.BookmarkMcpStartupActivity"/>
+        <postStartupActivity implementation="indi.bookmarkx.service.branch.BookmarkBranchSnapshotStartupActivity"/>
 
 
     </extensions>
