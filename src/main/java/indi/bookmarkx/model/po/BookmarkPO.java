@@ -66,7 +66,7 @@ public class BookmarkPO {
 
 
     public List<BookmarkPO> getChildren() {
-        List<BookmarkPO> list = children.stream().distinct().collect(Collectors.toList());
+        List<BookmarkPO> list = children.stream().distinct().toList();
         children.clear();
         children.addAll(list);
         return children;

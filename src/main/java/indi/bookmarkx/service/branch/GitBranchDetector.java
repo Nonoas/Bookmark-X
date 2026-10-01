@@ -7,18 +7,22 @@ import com.intellij.openapi.vcs.ProjectLevelVcsManager;
 import com.intellij.openapi.vcs.VcsRoot;
 import com.intellij.openapi.vfs.VirtualFile;
 
+import java.io.BufferedReader;
 import java.io.File;
 import java.io.IOException;
+import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Comparator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 public final class GitBranchDetector {
@@ -27,6 +31,7 @@ public final class GitBranchDetector {
     private static final String GITDIR_PREFIX = "gitdir:";
     private static final String HEAD_REF_PREFIX = "ref:";
     private static final String HEAD_BRANCH_PREFIX = "refs/heads/";
+    private static final long GIT_TIMEOUT_SECONDS = 5L;
 
     private GitBranchDetector() {
     }
@@ -71,6 +76,23 @@ public final class GitBranchDetector {
                 .map(branch -> normalizePath(branch.getRoot()) + "@" + branch.getKeyIdentity())
                 .collect(Collectors.joining("\n"));
         return Optional.of(new GitBranchContext(sortedRoots, sha256(rawKey), buildDisplayName(sortedRoots)));
+    }
+
+    static Optional<List<String>> listLocalBranches(File root) {
+        if (root == null) {
+            return Optional.empty();
+        }
+        try {
+            String output = runGit(normalizeFile(root), "for-each-ref", "--format=%(refname:short)", "refs/heads");
+            List<String> branches = output.lines()
+                    .map(String::trim)
+                    .filter(line -> !line.isEmpty())
+                    .sorted()
+                    .collect(Collectors.toList());
+            return Optional.of(branches);
+        } catch (Exception e) {
+            return Optional.empty();
+        }
     }
 
     private static List<File> detectConfiguredGitRoots(Project project) {
@@ -179,6 +201,32 @@ public final class GitBranchDetector {
     private static String firstLine(File file) throws IOException {
         List<String> lines = Files.readAllLines(file.toPath(), StandardCharsets.UTF_8);
         return lines.isEmpty() ? "" : lines.get(0).trim();
+    }
+
+    private static String runGit(File root, String... args) throws Exception {
+        List<String> command = new ArrayList<>();
+        command.add("git");
+        command.add("-C");
+        command.add(root.getPath());
+        Collections.addAll(command, args);
+        Process process = new ProcessBuilder(command)
+                .redirectErrorStream(true)
+                .start();
+        StringBuilder output = new StringBuilder();
+        try (BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream(), StandardCharsets.UTF_8))) {
+            String line;
+            while ((line = reader.readLine()) != null) {
+                output.append(line).append('\n');
+            }
+        }
+        if (!process.waitFor(GIT_TIMEOUT_SECONDS, TimeUnit.SECONDS)) {
+            process.destroyForcibly();
+            throw new IllegalStateException("git command timed out");
+        }
+        if (process.exitValue() != 0) {
+            throw new IllegalStateException(output.toString());
+        }
+        return output.toString();
     }
 
     private static String buildDisplayName(List<GitBranchContext.RootBranch> roots) {

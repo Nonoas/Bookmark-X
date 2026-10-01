@@ -20,8 +20,7 @@ public class BookmarkConverter {
 
     public static BookmarkPO convertToPO(AbstractTreeNodeModel model) {
 
-        if (model instanceof BookmarkNodeModel && model.isBookmark()) {
-            BookmarkNodeModel nodeModel = (BookmarkNodeModel) model;
+        if (model instanceof BookmarkNodeModel nodeModel && model.isBookmark()) {
 
             BookmarkPO po = new BookmarkPO();
             po.setUuid(nodeModel.getUuid());

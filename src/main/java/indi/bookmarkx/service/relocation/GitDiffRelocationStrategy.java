@@ -9,6 +9,7 @@ import java.io.File;
 import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.TimeUnit;
@@ -92,9 +93,7 @@ public final class GitDiffRelocationStrategy implements BookmarkRelocationStrate
         command.add("git");
         command.add("-C");
         command.add(gitRoot);
-        for (String arg : args) {
-            command.add(arg);
-        }
+        Collections.addAll(command, args);
         Process process = new ProcessBuilder(command)
                 .redirectErrorStream(true)
                 .start();

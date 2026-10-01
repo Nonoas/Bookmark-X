@@ -14,6 +14,8 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Optional;
 import java.util.zip.GZIPInputStream;
 import java.util.zip.GZIPOutputStream;
@@ -52,6 +54,33 @@ public final class BookmarkBranchSnapshotStore {
         if (!snapshotFile.isFile()) {
             return Optional.empty();
         }
+        return readSnapshotFile(snapshotFile);
+    }
+
+    public List<BranchBookmarkSnapshot> listSnapshots() {
+        File[] files = projectDir().listFiles((dir, name) -> name.endsWith(".json.gz"));
+        if (files == null || files.length == 0) {
+            return List.of();
+        }
+        List<BranchBookmarkSnapshot> snapshots = new ArrayList<>();
+        for (File file : files) {
+            readSnapshotFile(file).ifPresent(snapshots::add);
+        }
+        return snapshots;
+    }
+
+    public boolean delete(String branchKey) {
+        if (StringUtils.isBlank(branchKey)) {
+            return false;
+        }
+        try {
+            return Files.deleteIfExists(snapshotFile(branchKey).toPath());
+        } catch (IOException e) {
+            return false;
+        }
+    }
+
+    private Optional<BranchBookmarkSnapshot> readSnapshotFile(File snapshotFile) {
         try (GZIPInputStream in = new GZIPInputStream(Files.newInputStream(snapshotFile.toPath()));
              ByteArrayOutputStream out = new ByteArrayOutputStream()) {
             byte[] buffer = new byte[8192];
@@ -74,10 +103,17 @@ public final class BookmarkBranchSnapshotStore {
         if (context == null) {
             return Optional.empty();
         }
-        return write(context.getBranchKey(), context.getDisplayName(), root);
+        return write(context.getBranchKey(), context.getDisplayName(), BranchBookmarkSnapshot.rootsFrom(context), root);
     }
 
     Optional<BranchBookmarkSnapshot> write(String branchKey, String branchDisplayName, BookmarkPO root) {
+        return write(branchKey, branchDisplayName, null, root);
+    }
+
+    Optional<BranchBookmarkSnapshot> write(String branchKey,
+                                           String branchDisplayName,
+                                           List<BranchBookmarkSnapshot.RootSnapshot> roots,
+                                           BookmarkPO root) {
         if (StringUtils.isBlank(branchKey) || root == null) {
             return Optional.empty();
         }
@@ -87,6 +123,7 @@ public final class BookmarkBranchSnapshotStore {
                 branchKey,
                 branchDisplayName,
                 System.currentTimeMillis(),
+                roots,
                 copy
         );
         File snapshotFile = snapshotFile(branchKey);
@@ -102,6 +139,10 @@ public final class BookmarkBranchSnapshotStore {
     }
 
     File snapshotFile(String branchKey) {
-        return new File(new File(baseDir, projectHash), branchKey + ".json.gz");
+        return new File(projectDir(), branchKey + ".json.gz");
+    }
+
+    private File projectDir() {
+        return new File(baseDir, projectHash);
     }
 }

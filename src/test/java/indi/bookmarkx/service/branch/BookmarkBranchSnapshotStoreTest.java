@@ -9,8 +9,10 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.zip.GZIPOutputStream;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -45,9 +47,46 @@ class BookmarkBranchSnapshotStoreTest {
         assertEquals(1, snapshot.getVersion());
         assertEquals(context.getBranchKey(), snapshot.getBranchKey());
         assertEquals("main", snapshot.getBranchDisplayName());
+        assertEquals(1, snapshot.getRoots().size());
+        assertEquals("main", snapshot.getRoots().get(0).getBranchName());
         assertEquals("root", snapshot.getRoot().getName());
         assertEquals("Solution.java", snapshot.getRoot().getChildren().get(0).getName());
         assertEquals(14, snapshot.getRoot().getChildren().get(0).getLine());
+    }
+
+    @Test
+    void listsAndDeletesSnapshots() throws Exception {
+        Path root = createRepo("main");
+        GitBranchContext context = GitBranchDetector.detect(root.toFile()).orElseThrow();
+        BookmarkBranchSnapshotStore store = new BookmarkBranchSnapshotStore(tempDir.resolve("snapshots").toFile(), "project");
+
+        store.write(context, createBookmarkRoot());
+
+        assertEquals(1, store.listSnapshots().size());
+        assertTrue(store.delete(context.getBranchKey()));
+        assertFalse(store.exists(context.getBranchKey()));
+        assertTrue(store.listSnapshots().isEmpty());
+    }
+
+    @Test
+    void readsLegacySnapshotWithoutRootMetadata() throws Exception {
+        BookmarkBranchSnapshotStore store = new BookmarkBranchSnapshotStore(tempDir.resolve("snapshots").toFile(), "project");
+        String legacyJson = "{"
+                + "\"version\":1,"
+                + "\"branchKey\":\"legacy\","
+                + "\"branchDisplayName\":\"legacy\","
+                + "\"createdAt\":1,"
+                + "\"root\":{\"name\":\"root\",\"bookmark\":false,\"children\":[]}"
+                + "}";
+        Files.createDirectories(store.snapshotFile("legacy").toPath().getParent());
+        try (GZIPOutputStream out = new GZIPOutputStream(Files.newOutputStream(store.snapshotFile("legacy").toPath()))) {
+            out.write(legacyJson.getBytes(StandardCharsets.UTF_8));
+        }
+
+        BranchBookmarkSnapshot snapshot = store.read("legacy").orElseThrow();
+
+        assertEquals("legacy", snapshot.getBranchKey());
+        assertTrue(snapshot.getRoots().isEmpty());
     }
 
     private Path createRepo(String branch) throws Exception {

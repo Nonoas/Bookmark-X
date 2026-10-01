@@ -30,6 +30,7 @@ public final class BookmarkBranchSnapshotService {
 
     private final Project project;
     private final BookmarkBranchSnapshotStore snapshotStore;
+    private final BookmarkBranchSnapshotPruner snapshotPruner;
     private final BookmarkBranchState branchState;
     private final Alarm saveAlarm;
     private final Alarm workAlarm;
@@ -40,6 +41,7 @@ public final class BookmarkBranchSnapshotService {
     public BookmarkBranchSnapshotService(Project project) {
         this.project = project;
         this.snapshotStore = BookmarkBranchSnapshotStore.getInstance(project);
+        this.snapshotPruner = new BookmarkBranchSnapshotPruner(snapshotStore);
         this.branchState = BookmarkBranchState.getInstance(project);
         this.saveAlarm = new Alarm(Alarm.ThreadToUse.POOLED_THREAD, project);
         this.workAlarm = new Alarm(Alarm.ThreadToUse.POOLED_THREAD, project);
@@ -62,11 +64,17 @@ public final class BookmarkBranchSnapshotService {
             @Override
             public void branchHasChanged(String branchName) {
                 workAlarm.cancelAllRequests();
-                workAlarm.addRequest(BookmarkBranchSnapshotService.this::restoreOrCreateCurrentBranchSnapshot,
+                workAlarm.addRequest(() -> {
+                            pruneDeletedBranchSnapshots();
+                            restoreOrCreateCurrentBranchSnapshot();
+                        },
                         BRANCH_CHANGE_DELAY_MS);
             }
         });
-        workAlarm.addRequest(this::initializeCurrentBranch, BRANCH_CHANGE_DELAY_MS);
+        workAlarm.addRequest(() -> {
+            pruneDeletedBranchSnapshots();
+            initializeCurrentBranch();
+        }, BRANCH_CHANGE_DELAY_MS);
     }
 
     public void scheduleCurrentSnapshotSave() {
@@ -107,7 +115,9 @@ public final class BookmarkBranchSnapshotService {
     }
 
     private void saveDetectedBranchSnapshot() {
+        pruneDeletedBranchSnapshots();
         GitBranchDetector.detect(project).ifPresent(this::saveSnapshot);
+        pruneDeletedBranchSnapshots();
     }
 
     private Optional<BranchBookmarkSnapshot> saveSnapshot(GitBranchContext context) {
@@ -134,6 +144,17 @@ public final class BookmarkBranchSnapshotService {
             snapshot.ifPresent(ignored -> branchState.setActiveBranch(context));
         }
         return snapshot;
+    }
+
+    private void pruneDeletedBranchSnapshots() {
+        if (project.isDisposed()) {
+            return;
+        }
+        try {
+            snapshotPruner.pruneDeletedBranches();
+        } catch (Exception e) {
+            LOG.debug("Failed to prune deleted branch snapshots", e);
+        }
     }
 
     private void restoreOrCreateCurrentBranchSnapshot() {
