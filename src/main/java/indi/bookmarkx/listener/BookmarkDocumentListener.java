@@ -14,7 +14,6 @@ import com.intellij.openapi.vfs.VirtualFile;
 import indi.bookmarkx.BookmarksManager;
 import indi.bookmarkx.common.data.BookmarkArrayListTable;
 import indi.bookmarkx.model.BookmarkNodeModel;
-import org.apache.commons.collections.CollectionUtils;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.ArrayList;
@@ -48,7 +47,7 @@ public class BookmarkDocumentListener implements DocumentListener {
             BookmarkArrayListTable bookmarkArrayListTable = BookmarkArrayListTable.getInstance(project);
             List<BookmarkNodeModel> indexList = bookmarkArrayListTable.getOnlyIndex(virtualFile.getPath());
             // 空的直接返回
-            if (CollectionUtils.isEmpty(indexList)) {
+            if (indexList == null || indexList.isEmpty()) {
                 return;
             }
 
@@ -60,7 +59,7 @@ public class BookmarkDocumentListener implements DocumentListener {
 
 
     private void perceivedLineChange(Project project, List<BookmarkNodeModel> indexList) {
-        if (CollectionUtils.isEmpty(indexList)) {
+        if (indexList == null || indexList.isEmpty()) {
             return;
         }
         BookmarkArrayListTable bookmarkArrayListTable = BookmarkArrayListTable.getInstance(project);

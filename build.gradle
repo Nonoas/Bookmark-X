@@ -1,11 +1,11 @@
 plugins {
     id 'java'
-    id 'org.jetbrains.intellij' version '1.13.3'
+    id 'org.jetbrains.intellij' version '1.17.4'
 }
 
 group 'indi.bookmarkx'
 
-version '3.0.1'
+version '3.0.1-fix1'
 
 sourceCompatibility = 17
 targetCompatibility = 17
@@ -46,14 +46,10 @@ patchPluginXml {
 
     changeNotes = """
       <ul>
-        <li>版本支持到 2026.2</li>
+        <li>修复 IDEA 2026.2 加载书签时缺少 Commons Collections 类的问题</li>
         <li>新增书签时，显示当前所属的分组</li>
       </ul>
     """
-}
-
-tasks.named('initializeIntelliJPlugin') {
-    enabled = false
 }
 
 // 禁止过期方法的校验
