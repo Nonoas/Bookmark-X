@@ -10,7 +10,7 @@ import indi.bookmarkx.common.I18N;
 import indi.bookmarkx.common.I18NEnum;
 import indi.bookmarkx.mcp.BookmarkMcpConfig;
 import indi.bookmarkx.persistence.MySettings;
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 
 import javax.swing.*;

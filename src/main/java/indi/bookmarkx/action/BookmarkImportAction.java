@@ -14,7 +14,6 @@ import indi.bookmarkx.BookmarksManager;
 import indi.bookmarkx.persistence.MyPersistent;
 import indi.bookmarkx.common.I18N;
 import indi.bookmarkx.model.po.BookmarkPO;
-import org.apache.commons.collections.CollectionUtils;
 import org.jetbrains.annotations.NotNull;
 
 import java.io.IOException;
@@ -74,7 +73,7 @@ public final class BookmarkImportAction extends AnAction {
         if (StringUtil.isNotEmpty(virtualFilePath)) {
             po.setVirtualFilePath(virtualFilePath.replace("$PROJECT_DIR$", dir));
         }
-        if (CollectionUtils.isNotEmpty(po.getChildren())) {
+        if (po.getChildren() != null && !po.getChildren().isEmpty()) {
             for (BookmarkPO child : po.getChildren()) {
                 stateTranslate(child, dir);
             }
