@@ -1,6 +1,5 @@
 package indi.bookmarkx.model;
 
-import com.intellij.codeInsight.daemon.GutterMark;
 import com.intellij.openapi.editor.Document;
 import com.intellij.openapi.editor.ex.MarkupModelEx;
 import com.intellij.openapi.editor.ex.RangeHighlighterEx;
@@ -9,7 +8,6 @@ import com.intellij.openapi.editor.markup.HighlighterLayer;
 import com.intellij.openapi.editor.markup.RangeHighlighter;
 import com.intellij.openapi.fileEditor.FileDocumentManager;
 import com.intellij.openapi.fileEditor.OpenFileDescriptor;
-import com.intellij.openapi.util.Ref;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.reference.SoftReference;
 import indi.bookmarkx.BookmarksManager;
@@ -189,47 +187,35 @@ public class BookmarkNodeModel extends AbstractTreeNodeModel {
         Document document = getCachedDocument();
         if (document == null) return null;
         RangeHighlighter result = SoftReference.dereference(refHighlighter);
-        if (result != null) {
+        if (BookmarkLineMarkers.belongsTo(result, this)) {
             return result;
         }
-        MarkupModelEx markup = (MarkupModelEx) DocumentMarkupModel.forDocument(document, openFileDescriptor.getProject(), true);
-        final Document markupDocument = markup.getDocument();
-        final int startOffset = 0;
-        final int endOffset = markupDocument.getTextLength();
-
-        final Ref<RangeHighlighterEx> found = new Ref<>();
-        markup.processRangeHighlightersOverlappingWith(startOffset, endOffset, highlighter -> {
-            GutterMark renderer = highlighter.getGutterIconRenderer();
-            if (renderer instanceof MyGutterIconRenderer && ((MyGutterIconRenderer) renderer).getModel() == this) {
-                found.set(highlighter);
-                return false;
-            }
-            return true;
-        });
-        result = found.get();
+        MarkupModelEx markup = (MarkupModelEx) DocumentMarkupModel.forDocument(document, openFileDescriptor.getProject(), false);
+        result = markup == null ? null : BookmarkLineMarkers.findForModel(markup.getAllHighlighters(), this);
         refHighlighter = result == null ? null : new WeakReference<>(result);
         return result;
     }
 
     @Nullable
     public Document getCachedDocument() {
-        return FileDocumentManager.getInstance().getCachedDocument(openFileDescriptor.getFile());
+        OpenFileDescriptor descriptor = openFileDescriptor;
+        if (descriptor == null) {
+            return null;
+        }
+        return FileDocumentManager.getInstance().getCachedDocument(descriptor.getFile());
     }
 
     public void release() {
-        int line = getLine();
-        if (line < 0) {
-            return;
+        RangeHighlighter cached = SoftReference.dereference(refHighlighter);
+        refHighlighter = null;
+        if (BookmarkLineMarkers.belongsTo(cached, this)) {
+            cached.dispose();
         }
         final Document document = getCachedDocument();
         if (document == null) return;
-        MarkupModelEx markup = (MarkupModelEx) DocumentMarkupModel.forDocument(document, openFileDescriptor.getProject(), true);
-        final Document markupDocument = markup.getDocument();
-        if (markupDocument.getLineCount() <= line) return;
-        RangeHighlighter highlighter = findMyHighlighter();
-        if (highlighter != null) {
-            refHighlighter = null;
-            highlighter.dispose();
+        MarkupModelEx markup = (MarkupModelEx) DocumentMarkupModel.forDocument(document, openFileDescriptor.getProject(), false);
+        if (markup != null) {
+            BookmarkLineMarkers.disposeForModel(markup.getAllHighlighters(), this);
         }
     }
 

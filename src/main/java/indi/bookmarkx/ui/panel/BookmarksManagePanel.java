@@ -74,7 +74,7 @@ public class BookmarksManagePanel extends JPanel {
 
         // 4. 订阅设置变更
         project.getMessageBus().connect().subscribe(SettingsListener.TOPIC,
-                () -> ApplicationManager.getApplication().invokeLater(() -> updateLayoutBasedOnSettings(jbSplitter, descScrollPane))
+                (SettingsListener) () -> ApplicationManager.getApplication().invokeLater(() -> updateLayoutBasedOnSettings(jbSplitter, descScrollPane))
         );
 
         // 5. 监听树选择（比鼠标点击体验更好，支持键盘）
@@ -151,17 +151,16 @@ public class BookmarksManagePanel extends JPanel {
 
         });
 
-        ApplicationManager.getApplication().invokeLater(() -> {
-            tree.setModel(treeModel);
-            if (!treeDataListenerRegistered) {
-                project.getMessageBus().connect(project).subscribe(TreeDataChangeListener.TOPIC, new TreeDataChangeListener(project));
-                treeDataListenerRegistered = true;
-            }
-            treeModel.nodeStructureChanged((TreeNode) treeModel.getRoot());
-            BookmarkArrayListTable bookmarkArrayListTable = BookmarkArrayListTable.getInstance(project);
-            bookmarkArrayListTable.initData(tree);
-            treeLoaded = true;
-        });
+        ApplicationManager.getApplication().assertIsDispatchThread();
+        tree.setModel(treeModel);
+        if (!treeDataListenerRegistered) {
+            project.getMessageBus().connect(project).subscribe(TreeDataChangeListener.TOPIC, new TreeDataChangeListener(project));
+            treeDataListenerRegistered = true;
+        }
+        treeModel.nodeStructureChanged((TreeNode) treeModel.getRoot());
+        BookmarkArrayListTable bookmarkArrayListTable = BookmarkArrayListTable.getInstance(project);
+        bookmarkArrayListTable.initData(tree);
+        treeLoaded = true;
     }
 
     public void prev() {

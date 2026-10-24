@@ -3,7 +3,11 @@ package indi.bookmarkx;
 import com.intellij.openapi.components.Service;
 import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.editor.CaretModel;
+import com.intellij.openapi.editor.Document;
 import com.intellij.openapi.editor.Editor;
+import com.intellij.openapi.editor.ex.MarkupModelEx;
+import com.intellij.openapi.editor.impl.DocumentMarkupModel;
+import com.intellij.openapi.fileEditor.FileDocumentManager;
 import com.intellij.openapi.fileEditor.FileEditorManager;
 import com.intellij.openapi.fileEditor.FileEditorManagerEvent;
 import com.intellij.openapi.fileEditor.FileEditorManagerListener;
@@ -20,6 +24,7 @@ import indi.bookmarkx.global.FileMarksCache;
 import indi.bookmarkx.listener.BookmarkListener;
 import indi.bookmarkx.model.AbstractTreeNodeModel;
 import indi.bookmarkx.model.BookmarkConverter;
+import indi.bookmarkx.model.BookmarkLineMarkers;
 import indi.bookmarkx.model.BookmarkNodeModel;
 import indi.bookmarkx.model.po.BookmarkPO;
 import indi.bookmarkx.persistence.MyPersistent;
@@ -35,6 +40,8 @@ import indi.bookmarkx.utils.PersistenceUtil;
 import org.jetbrains.annotations.NotNull;
 
 import javax.swing.tree.DefaultTreeModel;
+import java.util.Collections;
+import java.util.IdentityHashMap;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
@@ -218,9 +225,27 @@ public final class BookmarksManager {
 
     private void releaseCurrentLineMarkers() {
         List<BookmarkNodeModel> currentBookmarks = BookmarkArrayListTable.getInstance(project).listAll();
+        Set<Document> documents = Collections.newSetFromMap(new IdentityHashMap<>());
         for (BookmarkNodeModel bookmark : currentBookmarks) {
             if (bookmark != null) {
+                Document document = bookmark.getCachedDocument();
+                if (document != null) {
+                    documents.add(document);
+                }
                 bookmark.release();
+            }
+        }
+        FileDocumentManager documentManager = FileDocumentManager.getInstance();
+        for (VirtualFile file : FileEditorManager.getInstance(project).getOpenFiles()) {
+            Document document = documentManager.getCachedDocument(file);
+            if (document != null) {
+                documents.add(document);
+            }
+        }
+        for (Document document : documents) {
+            MarkupModelEx markup = (MarkupModelEx) DocumentMarkupModel.forDocument(document, project, false);
+            if (markup != null) {
+                BookmarkLineMarkers.disposeAll(markup.getAllHighlighters());
             }
         }
     }
@@ -231,7 +256,7 @@ public final class BookmarksManager {
         for (VirtualFile file : openFiles) {
             Set<BookmarkNodeModel> models = fileMarksCache.getBookmarks(file.getPath());
             if (CollectionUtil.isEmpty(models)) {
-                return;
+                continue;
             }
             models.forEach(BookmarkNodeModel::createLineMarker);
         }
@@ -338,10 +363,6 @@ public final class BookmarksManager {
                 }
                 BookmarkTreeNode root = PersistenceUtil.generateTreeNode(state, project);
                 treeModel = new DefaultTreeModel(root);
-
-                // 初始化文件到标签签行缓存
-                reIntiFileMarksCache(root);
-                bookmarksManager.registerFileGutterIconListener();
             } catch (Exception e) {
                 // 错误处理
                 LOG.error("初始化标签树失败", e);
@@ -364,7 +385,12 @@ public final class BookmarksManager {
 
         @Override
         public void onSuccess() {
+            if (treeModel == null) {
+                return;
+            }
             bookmarksManager.releaseCurrentLineMarkers();
+            reIntiFileMarksCache((BookmarkTreeNode) treeModel.getRoot());
+            bookmarksManager.registerFileGutterIconListener();
             bookmarksManager.getToolWindowRootPanel().reInit(treeModel, project);
             bookmarksManager.createOpenFileLineMarkers();
             if (checkRelocation) {
