@@ -50,6 +50,8 @@ public class BookmarksManagePanel extends JPanel {
      */
     private volatile boolean treeLoaded = false;
 
+    private volatile boolean treeDataListenerRegistered = false;
+
     private final Project project;
 
     private BookmarksManagePanel(Project project) {
@@ -151,7 +153,10 @@ public class BookmarksManagePanel extends JPanel {
 
         ApplicationManager.getApplication().invokeLater(() -> {
             tree.setModel(treeModel);
-            project.getMessageBus().connect(project).subscribe(TreeDataChangeListener.TOPIC, new TreeDataChangeListener(project));
+            if (!treeDataListenerRegistered) {
+                project.getMessageBus().connect(project).subscribe(TreeDataChangeListener.TOPIC, new TreeDataChangeListener(project));
+                treeDataListenerRegistered = true;
+            }
             treeModel.nodeStructureChanged((TreeNode) treeModel.getRoot());
             BookmarkArrayListTable bookmarkArrayListTable = BookmarkArrayListTable.getInstance(project);
             bookmarkArrayListTable.initData(tree);

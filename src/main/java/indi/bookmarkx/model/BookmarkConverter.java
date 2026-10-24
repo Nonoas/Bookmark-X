@@ -20,8 +20,7 @@ public class BookmarkConverter {
 
     public static BookmarkPO convertToPO(AbstractTreeNodeModel model) {
 
-        if (model instanceof BookmarkNodeModel && model.isBookmark()) {
-            BookmarkNodeModel nodeModel = (BookmarkNodeModel) model;
+        if (model instanceof BookmarkNodeModel nodeModel && model.isBookmark()) {
 
             BookmarkPO po = new BookmarkPO();
             po.setUuid(nodeModel.getUuid());
@@ -30,6 +29,15 @@ public class BookmarkConverter {
             po.setName(model.getName());
             po.setDesc(nodeModel.getDesc());
             po.setBookmark(true);
+            po.setAnchorLineText(nodeModel.getAnchorLineText());
+            po.setAnchorLineHash(nodeModel.getAnchorLineHash());
+            po.setBeforeContextHash(nodeModel.getBeforeContextHash());
+            po.setAfterContextHash(nodeModel.getAfterContextHash());
+            po.setSnapshotId(nodeModel.getSnapshotId());
+            po.setBaseContentHash(nodeModel.getBaseContentHash());
+            po.setGitRootPath(nodeModel.getGitRootPath());
+            po.setGitRelativePath(nodeModel.getGitRelativePath());
+            po.setGitCommit(nodeModel.getGitCommit());
 
             OpenFileDescriptor fileDescriptor = nodeModel.getOpenFileDescriptor();
             if (null != fileDescriptor) {
@@ -62,6 +70,15 @@ public class BookmarkConverter {
             model.setLine(po.getLine());
             model.setName(po.getName());
             model.setDesc(po.getDesc());
+            model.setAnchorLineText(po.getAnchorLineText());
+            model.setAnchorLineHash(po.getAnchorLineHash());
+            model.setBeforeContextHash(po.getBeforeContextHash());
+            model.setAfterContextHash(po.getAfterContextHash());
+            model.setSnapshotId(po.getSnapshotId());
+            model.setBaseContentHash(po.getBaseContentHash());
+            model.setGitRootPath(po.getGitRootPath());
+            model.setGitRelativePath(po.getGitRelativePath());
+            model.setGitCommit(po.getGitCommit());
 
             if (po.getVirtualFilePath() == null) {
                 return model;

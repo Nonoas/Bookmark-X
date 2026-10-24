@@ -70,6 +70,7 @@ We welcome contributions of any kind, including bug fixes, new features, or docu
 
 ## Contributors
 
+<!-- readme: collaborators,contributors -start -->
 <table>
 <tr>
     <td align="center">
@@ -95,6 +96,7 @@ We welcome contributions of any kind, including bug fixes, new features, or docu
     </td>
 </tr>
 </table>
+<!-- readme: collaborators,contributors -end -->
 
 ---
 

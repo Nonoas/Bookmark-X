@@ -23,6 +23,8 @@ import indi.bookmarkx.model.BookmarkConverter;
 import indi.bookmarkx.model.BookmarkNodeModel;
 import indi.bookmarkx.model.po.BookmarkPO;
 import indi.bookmarkx.persistence.MyPersistent;
+import indi.bookmarkx.service.branch.BookmarkBranchSnapshotService;
+import indi.bookmarkx.service.relocation.BookmarkRelocationService;
 import indi.bookmarkx.ui.dialog.BookmarkCreatorDialog;
 import indi.bookmarkx.ui.painter.LineEndPainter;
 import indi.bookmarkx.ui.panel.BookmarksManagePanel;
@@ -53,6 +55,8 @@ public final class BookmarksManager {
     private final FileMarksCache fileMarksCache = new FileMarksCache();
 
     private final Supplier<BookmarkListener> bookmarkEventPublisher;
+
+    private volatile boolean fileGutterIconListenerRegistered;
 
     public BookmarksManager(Project project) {
         this.project = project;
@@ -112,6 +116,7 @@ public final class BookmarksManager {
             bookmarkNodeModel.setName(result.getName());
             bookmarkNodeModel.setDesc(result.getDesc());
             bookmarkEventPublisher.get().bookmarkAdded(bookmarkNodeModel);
+            BookmarkRelocationService.getInstance(project).refreshFileAnchorsAsync(file, List.of(bookmarkNodeModel));
 
             MyPersistent persistent = MyPersistent.getInstance(project);
             persistent.getState().getChildren().add(BookmarkConverter.convertToPO(bookmarkNodeModel));
@@ -140,6 +145,7 @@ public final class BookmarksManager {
                 if (bookmarkModel.getLine() != newLine) {
                     bookmarkModel.updateBookmarkLine(newLine - 1, false);
                 }
+                BookmarkRelocationService.getInstance(project).refreshBookmarkAnchorAsync(bookmarkModel);
             }
 
         } else {
@@ -171,6 +177,15 @@ public final class BookmarksManager {
      */
     public void persistentSave() {
         PersistenceUtil.persistentSave(project, toolWindowRootPanel.tree());
+        BookmarkBranchSnapshotService.getInstance(project).scheduleCurrentSnapshotSave();
+    }
+
+    public BookmarkPO getCurrentBookmarkState() {
+        return PersistenceUtil.getPersistenceObject(toolWindowRootPanel.tree());
+    }
+
+    public void replaceBookmarkState(BookmarkPO rootPO) {
+        loadBookmarkState(rootPO, true, false);
     }
 
     public void prev() {
@@ -185,7 +200,7 @@ public final class BookmarksManager {
      * 重新加载标签树
      */
     public void reload() {
-        ProgressManager.getInstance().run(new TreeLoadTask(project, this));
+        loadBookmarkState(null, false, true);
     }
 
     public FileMarksCache getFileMarksCache() {
@@ -196,6 +211,90 @@ public final class BookmarksManager {
         return toolWindowRootPanel;
     }
 
+    private void loadBookmarkState(BookmarkPO rootPO, boolean replacePersistentState, boolean checkRelocation) {
+        ProgressManager.getInstance().run(new TreeLoadTask(project, this, rootPO, replacePersistentState, checkRelocation));
+    }
+
+    private void releaseCurrentLineMarkers() {
+        List<BookmarkNodeModel> currentBookmarks = BookmarkArrayListTable.getInstance(project).listAll();
+        for (BookmarkNodeModel bookmark : currentBookmarks) {
+            if (bookmark != null) {
+                bookmark.release();
+            }
+        }
+    }
+
+    private void createOpenFileLineMarkers() {
+        FileEditorManager fileEditorManager = FileEditorManager.getInstance(project);
+        VirtualFile[] openFiles = fileEditorManager.getOpenFiles();
+        for (VirtualFile file : openFiles) {
+            Set<BookmarkNodeModel> models = fileMarksCache.getBookmarks(file.getPath());
+            if (models == null || models.isEmpty()) {
+                return;
+            }
+            models.forEach(BookmarkNodeModel::createLineMarker);
+        }
+    }
+
+    private void registerFileGutterIconListener() {
+        if (fileGutterIconListenerRegistered) {
+            return;
+        }
+        synchronized (this) {
+            if (fileGutterIconListenerRegistered) {
+                return;
+            }
+            MessageBusConnection connection = project.getMessageBus().connect(project);
+            connection.subscribe(FileEditorManagerListener.FILE_EDITOR_MANAGER, new FileEditorManagerListener() {
+                @Override
+                public void fileOpened(@NotNull FileEditorManager source, @NotNull VirtualFile file) {
+                    Set<BookmarkNodeModel> models = fileMarksCache.getBookmarks(file.getPath());
+                    if (models == null || models.isEmpty()) {
+                        return;
+                    }
+                    models.forEach(BookmarkNodeModel::createLineMarker);
+                }
+
+                @Override
+                public void selectionChanged(@NotNull FileEditorManagerEvent event) {
+                    VirtualFile file = event.getNewFile();
+                    if (null == file) {
+                        return;
+                    }
+                    String path = file.getPath();
+                    Set<BookmarkNodeModel> models = fileMarksCache.getBookmarks(path);
+                    if (models == null || models.isEmpty()) {
+                        return;
+                    }
+                    models.forEach(BookmarkNodeModel::createLineMarker);
+                }
+            });
+
+            // 监听书签用来控制GutterIcon
+            connection.subscribe(BookmarkListener.TOPIC, new BookmarkListener() {
+                @Override
+                public void bookmarkAdded(@NotNull AbstractTreeNodeModel model) {
+                    if (!model.isBookmark()) {
+                        return;
+                    }
+                    BookmarkNodeModel bookmarkNodeModel = (BookmarkNodeModel) model;
+                    BookmarkRelocationService.getInstance(project).refreshBookmarkAnchorAsync(bookmarkNodeModel);
+                    bookmarkNodeModel.createLineMarker();
+                }
+
+                @Override
+                public void bookmarkRemoved(@NotNull AbstractTreeNodeModel model) {
+                    if (!model.isBookmark()) {
+                        return;
+                    }
+                    BookmarkNodeModel bookmarkNodeModel = (BookmarkNodeModel) model;
+                    bookmarkNodeModel.release();
+                }
+            });
+            fileGutterIconListenerRegistered = true;
+        }
+    }
+
     /**
      * 数据加载任务
      */
@@ -204,24 +303,44 @@ public final class BookmarksManager {
         private final Project project;
         private DefaultTreeModel treeModel;
         private final BookmarksManager bookmarksManager;
+        private final BookmarkPO rootPO;
+        private final boolean replacePersistentState;
+        private final boolean checkRelocation;
 
-        public TreeLoadTask(Project project, BookmarksManager bookmarksManager) {
+        public TreeLoadTask(Project project,
+                            BookmarksManager bookmarksManager,
+                            BookmarkPO rootPO,
+                            boolean replacePersistentState,
+                            boolean checkRelocation) {
             super(project, "Loading Tree Data");
             this.project = project;
             this.bookmarksManager = bookmarksManager;
+            this.rootPO = rootPO;
+            this.replacePersistentState = replacePersistentState;
+            this.checkRelocation = checkRelocation;
         }
 
         @Override
         public void run(@NotNull ProgressIndicator indicator) {
             try {
                 MyPersistent persistent = MyPersistent.getInstance(project);
-                BookmarkPO rootPO = persistent.getState();
-                BookmarkTreeNode root = PersistenceUtil.generateTreeNode(rootPO, project);
+                BookmarkPO source = rootPO == null ? persistent.getState() : rootPO;
+                BookmarkPO state = PersistenceUtil.deepCopy(source, BookmarkPO.class);
+                if (state == null) {
+                    state = new BookmarkPO();
+                    state.setBookmark(false);
+                }
+                state.setName(project.getName());
+                state.setBookmark(false);
+                if (replacePersistentState) {
+                    persistent.setState(state);
+                }
+                BookmarkTreeNode root = PersistenceUtil.generateTreeNode(state, project);
                 treeModel = new DefaultTreeModel(root);
 
                 // 初始化文件到标签签行缓存
                 reIntiFileMarksCache(root);
-                registerFileGutterIconListener();
+                bookmarksManager.registerFileGutterIconListener();
             } catch (Exception e) {
                 // 错误处理
                 LOG.error("初始化标签树失败", e);
@@ -244,66 +363,12 @@ public final class BookmarksManager {
 
         @Override
         public void onSuccess() {
+            bookmarksManager.releaseCurrentLineMarkers();
             bookmarksManager.getToolWindowRootPanel().reInit(treeModel, project);
-            // 获取当前打开的文件
-            FileEditorManager fileEditorManager = FileEditorManager.getInstance(project);
-            VirtualFile[] openFiles = fileEditorManager.getOpenFiles();
-            for (VirtualFile file : openFiles) {
-                Set<BookmarkNodeModel> models = bookmarksManager.fileMarksCache.getBookmarks(file.getPath());
-                if (models == null || models.isEmpty()) {
-                    return;
-                }
-                models.forEach(BookmarkNodeModel::createLineMarker);
+            bookmarksManager.createOpenFileLineMarkers();
+            if (checkRelocation) {
+                BookmarkRelocationService.getInstance(project).checkBookmarksAsync();
             }
-        }
-
-        public void registerFileGutterIconListener() {
-            MessageBusConnection connection = project.getMessageBus().connect(project);
-            connection.subscribe(FileEditorManagerListener.FILE_EDITOR_MANAGER, new FileEditorManagerListener() {
-                @Override
-                public void fileOpened(@NotNull FileEditorManager source, @NotNull VirtualFile file) {
-                    Set<BookmarkNodeModel> models = bookmarksManager.fileMarksCache.getBookmarks(file.getPath());
-                    if (models == null || models.isEmpty()) {
-                        return;
-                    }
-                    models.forEach(BookmarkNodeModel::createLineMarker);
-                }
-
-                @Override
-                public void selectionChanged(@NotNull FileEditorManagerEvent event) {
-                    VirtualFile file = event.getNewFile();
-                    if (null == file) {
-                        return;
-                    }
-                    String path = file.getPath();
-                    Set<BookmarkNodeModel> models = bookmarksManager.fileMarksCache.getBookmarks(path);
-                    if (models == null || models.isEmpty()) {
-                        return;
-                    }
-                    models.forEach(BookmarkNodeModel::createLineMarker);
-                }
-            });
-
-            // 监听书签用来控制GutterIcon
-            connection.subscribe(BookmarkListener.TOPIC, new BookmarkListener() {
-                @Override
-                public void bookmarkAdded(@NotNull AbstractTreeNodeModel model) {
-                    if (!model.isBookmark()) {
-                        return;
-                    }
-                    BookmarkNodeModel bookmarkNodeModel = (BookmarkNodeModel) model;
-                    bookmarkNodeModel.createLineMarker();
-                }
-
-                @Override
-                public void bookmarkRemoved(@NotNull AbstractTreeNodeModel model) {
-                    if (!model.isBookmark()) {
-                        return;
-                    }
-                    BookmarkNodeModel bookmarkNodeModel = (BookmarkNodeModel) model;
-                    bookmarkNodeModel.release();
-                }
-            });
         }
     }
 }

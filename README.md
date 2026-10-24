@@ -70,6 +70,7 @@ Bookmark-X 是一个 IntelliJ 插件，提供以下功能：
 
 ## 贡献者
 
+<!-- readme: collaborators,contributors -start -->
 <table>
 <tr>
     <td align="center">
@@ -95,6 +96,7 @@ Bookmark-X 是一个 IntelliJ 插件，提供以下功能：
     </td>
 </tr>
 </table>
+<!-- readme: collaborators,contributors -end -->
 
 ---
 

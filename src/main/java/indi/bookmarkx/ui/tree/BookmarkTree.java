@@ -941,8 +941,8 @@ public class BookmarkTree extends Tree implements BookmarkListener {
                 if (distance < DOUBLE_CLICK_DISTANCE_THRESHOLD) {
 
                     // *** 手动识别为双击！ ***
-                    log.info("【手动识别】进入鼠标双击逻辑");
-                    log.info("【手动识别】识别为双击");
+                    log.debug("【手动识别】进入鼠标双击逻辑");
+                    log.debug("【手动识别】识别为双击");
 
                     // 执行双击动作
                     performDoubleClickAction(e);
@@ -969,7 +969,7 @@ public class BookmarkTree extends Tree implements BookmarkListener {
             TreePath path = tree.getClosestPathForLocation(e.getX(), e.getY());
 
             if (Objects.isNull(path)) {
-                log.info("【手动识别】退出鼠标双击逻辑：path 为空");
+                log.debug("【手动识别】退出鼠标双击逻辑：path 为空");
                 return;
             }
 
@@ -982,12 +982,12 @@ public class BookmarkTree extends Tree implements BookmarkListener {
 
                 OpenFileDescriptor fileDescriptor = bookmark.getOpenFileDescriptor();
                 if (null == fileDescriptor) {
-                    log.info("【手动识别】退出鼠标双击逻辑：fileDescriptor为空");
+                    log.debug("【手动识别】退出鼠标双击逻辑：fileDescriptor为空");
                     return;
                 }
                 fileDescriptor.navigate(true);
             }
-            log.info("【手动识别】退出鼠标双击逻辑，导航成功");
+            log.debug("【手动识别】退出鼠标双击逻辑，导航成功");
         }
     }
 
