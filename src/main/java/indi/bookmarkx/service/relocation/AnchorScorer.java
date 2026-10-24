@@ -1,6 +1,7 @@
 package indi.bookmarkx.service.relocation;
 
 import indi.bookmarkx.model.BookmarkNodeModel;
+import indi.bookmarkx.utils.CollectionUtil;
 
 import java.util.List;
 
@@ -36,7 +37,7 @@ final class AnchorScorer {
     }
 
     static int findBestAnchorLine(BookmarkNodeModel bookmark, List<String> lines, int preferredLine) {
-        if (bookmark == null || lines == null || lines.isEmpty() || bookmark.getAnchorLineHash() == null) {
+        if (bookmark == null || CollectionUtil.isEmpty(lines) || bookmark.getAnchorLineHash() == null) {
             return preferredLine;
         }
         int bestLine = preferredLine;
@@ -52,7 +53,7 @@ final class AnchorScorer {
     }
 
     static int findBestAnchorLineNear(BookmarkNodeModel bookmark, List<String> lines, int preferredLine, int maxDistance) {
-        if (bookmark == null || lines == null || lines.isEmpty() || bookmark.getAnchorLineHash() == null) {
+        if (bookmark == null || CollectionUtil.isEmpty(lines) || bookmark.getAnchorLineHash() == null) {
             return preferredLine;
         }
         int safePreferredLine = Math.max(0, Math.min(preferredLine, lines.size() - 1));

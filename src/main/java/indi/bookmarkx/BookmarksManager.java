@@ -29,6 +29,7 @@ import indi.bookmarkx.ui.dialog.BookmarkCreatorDialog;
 import indi.bookmarkx.ui.painter.LineEndPainter;
 import indi.bookmarkx.ui.panel.BookmarksManagePanel;
 import indi.bookmarkx.ui.tree.BookmarkTreeNode;
+import indi.bookmarkx.utils.CollectionUtil;
 import indi.bookmarkx.utils.FileLineCounter;
 import indi.bookmarkx.utils.PersistenceUtil;
 import org.jetbrains.annotations.NotNull;
@@ -229,7 +230,7 @@ public final class BookmarksManager {
         VirtualFile[] openFiles = fileEditorManager.getOpenFiles();
         for (VirtualFile file : openFiles) {
             Set<BookmarkNodeModel> models = fileMarksCache.getBookmarks(file.getPath());
-            if (models == null || models.isEmpty()) {
+            if (CollectionUtil.isEmpty(models)) {
                 return;
             }
             models.forEach(BookmarkNodeModel::createLineMarker);
@@ -249,7 +250,7 @@ public final class BookmarksManager {
                 @Override
                 public void fileOpened(@NotNull FileEditorManager source, @NotNull VirtualFile file) {
                     Set<BookmarkNodeModel> models = fileMarksCache.getBookmarks(file.getPath());
-                    if (models == null || models.isEmpty()) {
+                    if (CollectionUtil.isEmpty(models)) {
                         return;
                     }
                     models.forEach(BookmarkNodeModel::createLineMarker);
@@ -263,7 +264,7 @@ public final class BookmarksManager {
                     }
                     String path = file.getPath();
                     Set<BookmarkNodeModel> models = fileMarksCache.getBookmarks(path);
-                    if (models == null || models.isEmpty()) {
+                    if (CollectionUtil.isEmpty(models)) {
                         return;
                     }
                     models.forEach(BookmarkNodeModel::createLineMarker);

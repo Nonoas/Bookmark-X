@@ -6,6 +6,7 @@ import com.intellij.openapi.vcs.AbstractVcs;
 import com.intellij.openapi.vcs.ProjectLevelVcsManager;
 import com.intellij.openapi.vcs.VcsRoot;
 import com.intellij.openapi.vfs.VirtualFile;
+import indi.bookmarkx.utils.CollectionUtil;
 
 import java.io.BufferedReader;
 import java.io.File;
@@ -59,7 +60,7 @@ public final class GitBranchDetector {
     }
 
     static Optional<GitBranchContext> detectRoots(List<File> candidateRoots) {
-        if (candidateRoots == null || candidateRoots.isEmpty()) {
+        if (CollectionUtil.isEmpty(candidateRoots)) {
             return Optional.empty();
         }
         Map<String, GitBranchContext.RootBranch> branches = new LinkedHashMap<>();

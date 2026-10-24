@@ -17,10 +17,11 @@ import com.intellij.openapi.vfs.VfsUtilCore;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.openapi.wm.ToolWindowId;
 import indi.bookmarkx.BookmarksManager;
+import indi.bookmarkx.common.I18N;
 import indi.bookmarkx.common.data.BookmarkArrayListTable;
 import indi.bookmarkx.listener.BookmarkListener;
 import indi.bookmarkx.model.BookmarkNodeModel;
-import org.apache.commons.collections.CollectionUtils;
+import indi.bookmarkx.utils.CollectionUtil;
 import org.jetbrains.annotations.NotNull;
 
 import java.io.File;
@@ -52,7 +53,7 @@ public final class BookmarkRelocationService {
     }
 
     public void refreshFileAnchorsAsync(VirtualFile file, List<BookmarkNodeModel> bookmarks) {
-        if (file == null || CollectionUtils.isEmpty(bookmarks) || !isTextFile(file)) {
+        if (file == null || CollectionUtil.isEmpty(bookmarks) || !isTextFile(file)) {
             return;
         }
         List<BookmarkNodeModel> bookmarkCopy = new ArrayList<>(bookmarks);
@@ -123,7 +124,7 @@ public final class BookmarkRelocationService {
     }
 
     private List<RelocationPlan> computeRelocationPlans(List<BookmarkNodeModel> bookmarks) {
-        if (CollectionUtils.isEmpty(bookmarks)) {
+        if (CollectionUtil.isEmpty(bookmarks)) {
             return List.of();
         }
         List<RelocationPlan> plans = new ArrayList<>();
@@ -170,7 +171,7 @@ public final class BookmarkRelocationService {
     }
 
     private List<AnchorUpdate> computeAnchorUpdates(VirtualFile file, List<BookmarkNodeModel> bookmarks) {
-        if (file == null || CollectionUtils.isEmpty(bookmarks) || !isTextFile(file)) {
+        if (file == null || CollectionUtil.isEmpty(bookmarks) || !isTextFile(file)) {
             return List.of();
         }
         try {
@@ -194,7 +195,7 @@ public final class BookmarkRelocationService {
                                                      List<String> lines,
                                                      Optional<BookmarkSnapshotStore.Snapshot> snapshot,
                                                      Optional<GitDiffRelocationStrategy.GitInfo> gitInfo) {
-        if (bookmark == null || lines == null || lines.isEmpty()) {
+        if (bookmark == null || CollectionUtil.isEmpty(lines)) {
             return Optional.empty();
         }
         int line = Math.max(0, Math.min(bookmark.getLine(), lines.size() - 1));
@@ -272,7 +273,7 @@ public final class BookmarkRelocationService {
         Notifications.Bus.notify(new Notification(
                 ToolWindowId.PROJECT_VIEW,
                 "Bookmark-X",
-                "No bookmark relocation is needed.",
+                I18N.get("bookmark.relocate.notNeeded"),
                 NotificationType.INFORMATION
         ), project);
     }

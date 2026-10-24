@@ -1,5 +1,7 @@
 package indi.bookmarkx.service.relocation;
 
+import indi.bookmarkx.utils.CollectionUtil;
+
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
@@ -33,7 +35,7 @@ final class TextLineUtil {
     }
 
     static String hashContext(List<String> lines, int fromInclusive, int toExclusive) {
-        if (lines == null || lines.isEmpty()) {
+        if (CollectionUtil.isEmpty(lines)) {
             return sha256("");
         }
         StringBuilder builder = new StringBuilder();

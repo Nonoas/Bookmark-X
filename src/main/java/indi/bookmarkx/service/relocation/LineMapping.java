@@ -1,5 +1,7 @@
 package indi.bookmarkx.service.relocation;
 
+import indi.bookmarkx.utils.CollectionUtil;
+
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -22,7 +24,7 @@ final class LineMapping {
     }
 
     static LineMapping fromLines(List<String> oldLines, List<String> newLines) {
-        if (oldLines == null || oldLines.isEmpty() || newLines == null || newLines.isEmpty()) {
+        if (CollectionUtil.isEmpty(oldLines) || CollectionUtil.isEmpty(newLines)) {
             return new LineMapping(Collections.emptyList());
         }
         if ((long) oldLines.size() * (long) newLines.size() > 4_000_000L) {

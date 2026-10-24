@@ -10,6 +10,7 @@ import com.intellij.ui.JBColor;
 import indi.bookmarkx.persistence.MyPersistent;
 import indi.bookmarkx.common.data.BookmarkArrayListTable;
 import indi.bookmarkx.model.BookmarkNodeModel;
+import indi.bookmarkx.utils.CollectionUtil;
 
 import java.awt.*;
 import java.util.ArrayList;
@@ -59,7 +60,7 @@ public class LineEndPainter extends EditorLinePainter {
      * @return
      */
     public static BookmarkNodeModel findLine(List<BookmarkNodeModel> list, int i) {
-        if (list == null || list.isEmpty()){
+        if (CollectionUtil.isEmpty(list)) {
             return null;
         }
         Optional<BookmarkNodeModel> bookmarkNodeModel1 = list.stream()

@@ -53,7 +53,7 @@ patchPluginXml {
 }
 
 tasks.named('initializeIntelliJPlugin') {
-    enabled = false
+    enabled = true
 }
 
 // 禁止过期方法的校验

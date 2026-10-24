@@ -64,7 +64,7 @@ public class PersistenceUtil {
         BookmarkTreeNode node = new BookmarkTreeNode(model);
 
         List<BookmarkPO> children = po.getChildren();
-        if (children == null || children.isEmpty()) {
+        if (CollectionUtil.isEmpty(children)) {
             return node;
         }
         for (BookmarkPO child : children) {

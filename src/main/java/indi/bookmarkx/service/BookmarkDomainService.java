@@ -22,6 +22,7 @@ import indi.bookmarkx.service.dto.BookmarkView;
 import indi.bookmarkx.ui.panel.BookmarksManagePanel;
 import indi.bookmarkx.ui.tree.BookmarkTree;
 import indi.bookmarkx.ui.tree.BookmarkTreeNode;
+import indi.bookmarkx.utils.CollectionUtil;
 
 import java.io.File;
 import java.util.*;
@@ -499,7 +500,7 @@ public final class BookmarkDomainService {
         }
         VirtualFile file = resolveFile(draft.getFilePath());
         int internalLine = normalizeLine(file, requireLine(draft));
-        List<String> groupPath = draft.getGroupPath() == null || draft.getGroupPath().isEmpty()
+        List<String> groupPath = CollectionUtil.isEmpty(draft.getGroupPath())
                 ? normalizeGroupPath(defaultGroupPath)
                 : normalizeGroupPath(draft.getGroupPath());
         String name = StringUtil.isEmptyOrSpaces(draft.getName()) ? file.getName() : draft.getName().trim();
