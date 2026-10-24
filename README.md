@@ -93,8 +93,7 @@ Bookmark-X 是一个 IntelliJ 插件，提供以下功能：
             <br />
             <sub><b>Codeleep</b></sub>
         </a>
-    </td>
-</tr>
+    </td></tr>
 </table>
 <!-- readme: collaborators,contributors -end -->
 
