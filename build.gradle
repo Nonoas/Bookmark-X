@@ -54,6 +54,7 @@ patchPluginXml {
 
 tasks.named('initializeIntelliJPlugin') {
     enabled = true
+    selfUpdateCheck.set(false)
 }
 
 // 禁止过期方法的校验
