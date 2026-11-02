@@ -11,7 +11,10 @@ import com.intellij.ui.IdeBorderFactory;
 import com.intellij.ui.JBSplitter;
 import com.intellij.ui.SideBorder;
 import com.intellij.ui.components.JBScrollPane;
+import com.intellij.ui.components.breadcrumbs.Breadcrumbs;
+import com.intellij.ui.components.breadcrumbs.Crumb;
 import com.intellij.util.ui.JBUI;
+import com.intellij.util.ui.UIUtil;
 import indi.bookmarkx.BookmarksManager;
 import indi.bookmarkx.MySettingsConfigurable;
 import indi.bookmarkx.common.data.BookmarkArrayListTable;
@@ -32,6 +35,8 @@ import javax.swing.tree.DefaultTreeModel;
 import javax.swing.tree.TreeNode;
 import javax.swing.tree.TreePath;
 import java.awt.*;
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * 标签树目录面板
@@ -44,6 +49,8 @@ public class BookmarksManagePanel extends JPanel {
     private static final Logger LOG = Logger.getInstance(BookmarksManagePanel.class);
 
     private final BookmarkTree tree;
+
+    private final Breadcrumbs groupBreadcrumbs = new Breadcrumbs();
 
     /**
      * 标记 tree 是否已经从持久化文件加载完成
@@ -79,13 +86,48 @@ public class BookmarksManagePanel extends JPanel {
 
         // 5. 监听树选择（比鼠标点击体验更好，支持键盘）
         tree.addTreeSelectionListener(e -> {
+            refreshGroupBreadcrumbs(e.getNewLeadSelectionPath());
             if (MySettings.getInstance().getDescShowType() == MySettingsConfigurable.DescShowType.SPLIT_PANE) {
                 refreshDescription(e.getPath(), descScrollPane);
             }
         });
 
+        groupBreadcrumbs.setBorder(JBUI.Borders.empty(2, 4));
+        groupBreadcrumbs.setForeground(UIUtil.getContextHelpForeground());
+        groupBreadcrumbs.onSelect((crumb, event) -> {
+            if (!(crumb instanceof GroupCrumb)) {
+                return;
+            }
+            BookmarkTreeNode group = ((GroupCrumb) crumb).group;
+            TreePath path = new TreePath(group.getPath());
+            tree.setSelectionPath(path);
+            tree.scrollPathToVisible(path);
+        });
+        refreshGroupBreadcrumbs(new TreePath(((BookmarkTreeNode) tree.getModel().getRoot()).getPath()));
+        add(groupBreadcrumbs, BorderLayout.SOUTH);
         add(jbSplitter, BorderLayout.CENTER);
         setBorder(JBUI.Borders.empty(2));
+    }
+
+    private void refreshGroupBreadcrumbs(TreePath path) {
+        BookmarkTreeNode group = null;
+        if (path != null && path.getLastPathComponent() instanceof BookmarkTreeNode) {
+            BookmarkTreeNode selectedNode = (BookmarkTreeNode) path.getLastPathComponent();
+            group = selectedNode.isGroup()
+                    ? selectedNode
+                    : (BookmarkTreeNode) selectedNode.getParent();
+        }
+        if (group == null) {
+            group = tree.getActivatedGroupNode();
+        }
+        List<Crumb> crumbs = new ArrayList<>();
+        TreeNode[] groupPath = group.getPath();
+        for (TreeNode node : groupPath) {
+            BookmarkTreeNode groupNode = (BookmarkTreeNode) node;
+            AbstractTreeNodeModel nodeModel = (AbstractTreeNodeModel) groupNode.getUserObject();
+            crumbs.add(new GroupCrumb(groupNode, nodeModel.getName(), tree.getGroupPath(groupNode)));
+        }
+        groupBreadcrumbs.setCrumbs(crumbs);
     }
 
     private void updateLayoutBasedOnSettings(JBSplitter splitter, JBScrollPane descPane) {
@@ -122,6 +164,7 @@ public class BookmarksManagePanel extends JPanel {
         treeModel.addTreeModelListener(new TreeModelListener() {
             @Override
             public void treeNodesChanged(TreeModelEvent e) {
+                refreshGroupBreadcrumbs(tree.getSelectionPath());
                 persistenceSave();
             }
 
@@ -153,6 +196,7 @@ public class BookmarksManagePanel extends JPanel {
 
         ApplicationManager.getApplication().assertIsDispatchThread();
         tree.setModel(treeModel);
+        refreshGroupBreadcrumbs(new TreePath(((BookmarkTreeNode) treeModel.getRoot()).getPath()));
         if (!treeDataListenerRegistered) {
             project.getMessageBus().connect(project).subscribe(TreeDataChangeListener.TOPIC, new TreeDataChangeListener(project));
             treeDataListenerRegistered = true;
@@ -198,6 +242,28 @@ public class BookmarksManagePanel extends JPanel {
      */
     public static BookmarksManagePanel create(Project project) {
         return new BookmarksManagePanel(project);
+    }
+
+    private static class GroupCrumb implements Crumb {
+        private final BookmarkTreeNode group;
+        private final String text;
+        private final String tooltip;
+
+        private GroupCrumb(BookmarkTreeNode group, String text, String tooltip) {
+            this.group = group;
+            this.text = text;
+            this.tooltip = tooltip;
+        }
+
+        @Override
+        public String getText() {
+            return text;
+        }
+
+        @Override
+        public String getTooltip() {
+            return tooltip;
+        }
     }
 
     public static class TreeDataChangeListener implements BookmarkListener {

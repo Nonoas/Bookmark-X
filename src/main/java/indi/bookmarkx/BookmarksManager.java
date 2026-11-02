@@ -33,6 +33,7 @@ import indi.bookmarkx.service.relocation.BookmarkRelocationService;
 import indi.bookmarkx.ui.dialog.BookmarkCreatorDialog;
 import indi.bookmarkx.ui.painter.LineEndPainter;
 import indi.bookmarkx.ui.panel.BookmarksManagePanel;
+import indi.bookmarkx.ui.tree.BookmarkTree;
 import indi.bookmarkx.ui.tree.BookmarkTreeNode;
 import indi.bookmarkx.utils.CollectionUtil;
 import indi.bookmarkx.utils.FileLineCounter;
@@ -124,10 +125,13 @@ public final class BookmarksManager {
             bookmarkNodeModel.setName(result.getName());
             bookmarkNodeModel.setDesc(result.getDesc());
             bookmarkEventPublisher.get().bookmarkAdded(bookmarkNodeModel);
+            BookmarkTree tree = toolWindowRootPanel.tree();
+            tree.moveBookmarkToGroup(bookmarkNodeModel, result.getGroup());
             BookmarkRelocationService.getInstance(project).refreshFileAnchorsAsync(file, List.of(bookmarkNodeModel));
-
-            MyPersistent persistent = MyPersistent.getInstance(project);
-            persistent.getState().getChildren().add(BookmarkConverter.convertToPO(bookmarkNodeModel));
+            if (!toolWindowRootPanel.isTreeLoaded()) {
+                MyPersistent persistent = MyPersistent.getInstance(project);
+                persistent.getState().getChildren().add(BookmarkConverter.convertToPO(bookmarkNodeModel));
+            }
         }
 
     }
@@ -140,9 +144,11 @@ public final class BookmarksManager {
             int lineNumber = bookmarkModel.getLine() + 1; // 界面显示从1开始
             OpenFileDescriptor descriptor = bookmarkModel.getOpenFileDescriptor();
             int maxLineNumber = FileLineCounter.getFileMaxLine(descriptor);
+            BookmarkTree tree = toolWindowRootPanel.tree();
             result = new BookmarkCreatorDialog(project, I18N.get("bookmark.create.title"), lineNumber, maxLineNumber)
                     .defaultName(nodeModel.getName())
                     .defaultDesc(nodeModel.getDesc())
+                    .defaultGroup(tree.getGroupForBookmark(bookmarkModel))
                     .showAndGetResult();
 
             if (result.isOk()) {
@@ -153,6 +159,7 @@ public final class BookmarksManager {
                 if (bookmarkModel.getLine() != newLine) {
                     bookmarkModel.updateBookmarkLine(newLine - 1, false);
                 }
+                tree.moveBookmarkToGroup(bookmarkModel, result.getGroup());
                 BookmarkRelocationService.getInstance(project).refreshBookmarkAnchorAsync(bookmarkModel);
             }
 

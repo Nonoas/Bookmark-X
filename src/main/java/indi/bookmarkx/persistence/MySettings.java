@@ -101,7 +101,7 @@ public final class MySettings implements PersistentStateComponent<MySettings.Sta
     @XmlRootElement
     public static class State {
         public String language;
-        public int tipDelay;
+        public int tipDelay = 500;
         public int descShowType;
         public boolean mcpEnabled = true;
         public int mcpPort = BookmarkMcpConfig.DEFAULT_PORT;
