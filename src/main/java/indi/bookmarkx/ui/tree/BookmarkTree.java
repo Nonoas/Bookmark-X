@@ -310,14 +310,6 @@ public class BookmarkTree extends Tree implements BookmarkListener {
         return true;
     }
 
-
-    public BookmarkTreeNode getEventSourceNode(MouseEvent event) {
-        int row = getRowForLocation(event.getX(), event.getY());
-        return row >= 0
-                ? (BookmarkTreeNode) getPathForRow(row).getLastPathComponent()
-                : null;
-    }
-
     /**
      * 向当前激活的分组添加指定节点，并刷新树结构
      *
@@ -458,14 +450,36 @@ public class BookmarkTree extends Tree implements BookmarkListener {
         return this.navigator;
     }
 
-    public String getActivatedGroupName() {
-        BookmarkTreeNode group = navigator.ensureActivatedGroup();
-        AbstractTreeNodeModel nodeModel = (AbstractTreeNodeModel) group.getUserObject();
-        return nodeModel.getName();
+    public BookmarkTreeNode getActivatedGroupNode() {
+        return navigator.ensureActivatedGroup();
     }
 
-    public String getActivatedGroupPath() {
-        BookmarkTreeNode group = navigator.ensureActivatedGroup();
+    public BookmarkTreeNode getGroupForBookmark(BookmarkNodeModel bookmark) {
+        BookmarkTreeNode node = getNodeByModel(bookmark);
+        if (node == null || !(node.getParent() instanceof BookmarkTreeNode)) {
+            return null;
+        }
+        BookmarkTreeNode parent = (BookmarkTreeNode) node.getParent();
+        return parent.isGroup() ? parent : null;
+    }
+
+    public List<BookmarkTreeNode> getGroupNodes() {
+        List<BookmarkTreeNode> groups = new ArrayList<>();
+        BookmarkTreeNode root = (BookmarkTreeNode) model.getRoot();
+        Enumeration<TreeNode> nodes = root.preorderEnumeration();
+        while (nodes.hasMoreElements()) {
+            TreeNode node = nodes.nextElement();
+            if (node instanceof BookmarkTreeNode && ((BookmarkTreeNode) node).isGroup()) {
+                groups.add((BookmarkTreeNode) node);
+            }
+        }
+        return groups;
+    }
+
+    public String getGroupPath(BookmarkTreeNode group) {
+        if (group == null || !group.isGroup()) {
+            return "";
+        }
         List<String> names = new ArrayList<>();
         for (TreeNode node : group.getPath()) {
             if (!(node instanceof BookmarkTreeNode)) {
@@ -478,6 +492,36 @@ public class BookmarkTree extends Tree implements BookmarkListener {
             }
         }
         return String.join(" / ", names);
+    }
+
+    public boolean moveBookmarkToGroup(BookmarkNodeModel bookmark, BookmarkTreeNode targetGroup) {
+        BookmarkTreeNode bookmarkNode = getNodeByModel(bookmark);
+        if (bookmarkNode == null || targetGroup == null || !targetGroup.isGroup()) {
+            return false;
+        }
+        if (targetGroup.getRoot() != model.getRoot()) {
+            return false;
+        }
+        BookmarkTreeNode currentGroup = (BookmarkTreeNode) bookmarkNode.getParent();
+        if (currentGroup == targetGroup) {
+            return false;
+        }
+        moveNode(bookmarkNode, targetGroup, targetGroup.getChildCount());
+        refreshBookmarkIndices(currentGroup);
+        refreshBookmarkIndices(targetGroup);
+        return true;
+    }
+
+    private void refreshBookmarkIndices(BookmarkTreeNode group) {
+        if (group == null) {
+            return;
+        }
+        for (int i = 0; i < group.getChildCount(); i++) {
+            BookmarkTreeNode child = (BookmarkTreeNode) group.getChildAt(i);
+            if (child.isBookmark()) {
+                ((BookmarkNodeModel) child.getUserObject()).setIndex(group.getIndex(child));
+            }
+        }
     }
 
     public BookmarkTreeNode getNodeForRow(int row) {

@@ -53,7 +53,7 @@ public final class BookmarkRelocationService {
     }
 
     public void refreshFileAnchorsAsync(VirtualFile file, List<BookmarkNodeModel> bookmarks) {
-        if (file == null || CollectionUtil.isEmpty(bookmarks) || !isTextFile(file)) {
+        if (file == null || CollectionUtil.isEmpty(bookmarks) || nonTextFile(file)) {
             return;
         }
         List<BookmarkNodeModel> bookmarkCopy = new ArrayList<>(bookmarks);
@@ -133,7 +133,7 @@ public final class BookmarkRelocationService {
         List<RelocationPlan> plans = new ArrayList<>();
         for (Map.Entry<VirtualFile, List<BookmarkNodeModel>> entry : groupByFile(bookmarks).entrySet()) {
             VirtualFile file = entry.getKey();
-            if (!isTextFile(file)) {
+            if (nonTextFile(file)) {
                 continue;
             }
             try {
@@ -174,7 +174,7 @@ public final class BookmarkRelocationService {
     }
 
     private List<AnchorUpdate> computeAnchorUpdates(VirtualFile file, List<BookmarkNodeModel> bookmarks) {
-        if (file == null || CollectionUtil.isEmpty(bookmarks) || !isTextFile(file)) {
+        if (file == null || CollectionUtil.isEmpty(bookmarks) || nonTextFile(file)) {
             return List.of();
         }
         try {
@@ -288,9 +288,7 @@ public final class BookmarkRelocationService {
                 continue;
             }
             VirtualFile file = bookmark.getOpenFileDescriptor().getFile();
-            if (file != null) {
-                result.computeIfAbsent(file, ignored -> new ArrayList<>()).add(bookmark);
-            }
+            result.computeIfAbsent(file, ignored -> new ArrayList<>()).add(bookmark);
         }
         return result;
     }
@@ -303,8 +301,8 @@ public final class BookmarkRelocationService {
         return GitDiffRelocationStrategy.inspectCleanTrackedFile(new File(basePath), new File(file.getPath()));
     }
 
-    private boolean isTextFile(VirtualFile file) {
-        return file != null && !file.getFileType().isBinary();
+    private boolean nonTextFile(VirtualFile file) {
+        return file == null || file.getFileType().isBinary();
     }
 
     private String readTextInReadAction(VirtualFile file) {

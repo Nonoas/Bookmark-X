@@ -4,18 +4,20 @@ import com.intellij.icons.AllIcons;
 import com.intellij.openapi.editor.event.DocumentEvent;
 import com.intellij.openapi.editor.event.DocumentListener;
 import com.intellij.openapi.project.Project;
+import com.intellij.openapi.ui.ComboBox;
 import com.intellij.openapi.ui.ComponentValidator;
 import com.intellij.openapi.ui.DialogWrapper;
 import com.intellij.openapi.ui.ValidationInfo;
 import com.intellij.ui.EditorTextField;
 import com.intellij.ui.components.JBLabel;
 import com.intellij.ui.components.JBScrollPane;
-import com.intellij.ui.components.JBTextField;
 import com.intellij.util.ui.HtmlPanel;
 import com.intellij.util.ui.JBUI;
 import com.intellij.util.ui.UIUtil;
 import indi.bookmarkx.BookmarksManager;
 import indi.bookmarkx.common.I18N;
+import indi.bookmarkx.ui.tree.BookmarkTree;
+import indi.bookmarkx.ui.tree.BookmarkTreeNode;
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -34,7 +36,7 @@ public class BookmarkCreatorDialog extends DialogWrapper {
     private final EditorTextField tfName = new EditorTextField();
     private final EditorTextField tfDesc = new EditorTextField();
     private final EditorTextField tfLineNumber = new EditorTextField();
-    private final JBTextField tfGroup = new JBTextField();
+    private final ComboBox<GroupItem> cbGroup = new ComboBox<>();
     private final HtmlPanel previewPanel = new DescriptionPreviewPanel();
 
     private final CardLayout cardLayout = new CardLayout();
@@ -45,7 +47,7 @@ public class BookmarkCreatorDialog extends DialogWrapper {
 
     private boolean isEditMode = false;
     private boolean showGroup = false;
-    private boolean showCurrentGroup = false;
+    private BookmarkTreeNode defaultGroup;
     private int maxLineNumber = 0;
     private OnOKAction oKAction;
     private Project project;
@@ -55,15 +57,16 @@ public class BookmarkCreatorDialog extends DialogWrapper {
         initSelf(project, title);
     }
 
-    private BookmarkCreatorDialog(Project project, String title, boolean showCurrentGroup) {
+    private BookmarkCreatorDialog(Project project, String title, boolean showGroup) {
         super(true);
-        this.showCurrentGroup = showCurrentGroup;
+        this.showGroup = showGroup;
         initSelf(project, title);
     }
 
     public BookmarkCreatorDialog(Project project, String title, int lineNumber, int maxLineNumber) {
         super(true);
         this.isEditMode = true;
+        this.showGroup = true;
         this.tfLineNumber.setText(String.valueOf(lineNumber));
         this.maxLineNumber = maxLineNumber;
         initSelf(project, title);
@@ -100,28 +103,48 @@ public class BookmarkCreatorDialog extends DialogWrapper {
         return this;
     }
 
-    private void setGroup(String groupName) {
-        if (StringUtils.isBlank(groupName)) {
-            return;
+    public BookmarkCreatorDialog defaultGroup(@Nullable BookmarkTreeNode group) {
+        if (group == null || !group.isGroup()) {
+            return this;
         }
-        this.showGroup = true;
-        this.tfGroup.setText(groupName);
-        this.tfGroup.setEditable(false);
-        this.tfGroup.setFocusable(false);
+        this.defaultGroup = group;
+        selectGroup(group);
+        return this;
     }
 
-    private void resolveCurrentGroup() {
-        if (!showCurrentGroup) {
+    private void initializeGroupChoices() {
+        if (!showGroup) {
             return;
         }
-        String groupPath = BookmarksManager.getInstance(project).getToolWindowRootPanel().tree().getActivatedGroupPath();
-        setGroup(groupPath);
+        BookmarkTree tree = BookmarksManager.getInstance(project).getToolWindowRootPanel().tree();
+        BookmarkTreeNode selectedGroup = defaultGroup == null ? tree.getActivatedGroupNode() : defaultGroup;
+        cbGroup.removeAllItems();
+        for (BookmarkTreeNode group : tree.getGroupNodes()) {
+            cbGroup.addItem(new GroupItem(group, tree.getGroupPath(group)));
+        }
+        selectGroup(selectedGroup);
+    }
+
+    private void selectGroup(BookmarkTreeNode group) {
+        for (int i = 0; i < cbGroup.getItemCount(); i++) {
+            GroupItem item = cbGroup.getItemAt(i);
+            if (item.group == group) {
+                cbGroup.setSelectedIndex(i);
+                return;
+            }
+        }
+    }
+
+    @Nullable
+    private BookmarkTreeNode getSelectedGroup() {
+        GroupItem selectedItem = (GroupItem) cbGroup.getSelectedItem();
+        return selectedItem == null ? null : selectedItem.group;
     }
 
     @Override
     protected JComponent createCenterPanel() {
         setupValidators();
-        resolveCurrentGroup();
+        initializeGroupChoices();
 
         // 1. 编辑器与预览面板
         tfDesc.setOneLineMode(false);
@@ -199,7 +222,7 @@ public class BookmarkCreatorDialog extends DialogWrapper {
             panel.add(new JBLabel(I18N.get("bookmark.dialog.group")), gbc);
             gbc.gridx = 1;
             gbc.weightx = 1;
-            panel.add(tfGroup, gbc);
+            panel.add(cbGroup, gbc);
         }
 
         if (isEditMode) {
@@ -374,7 +397,7 @@ public class BookmarkCreatorDialog extends DialogWrapper {
             }
         }
 
-        return BookmarkDialogResult.ok(name, desc, line);
+        return BookmarkDialogResult.ok(name, desc, line, getSelectedGroup());
     }
 
     /**
@@ -401,6 +424,21 @@ public class BookmarkCreatorDialog extends DialogWrapper {
         void onConfirmed(@NotNull String name, @NotNull String desc, @Nullable Integer line);
     }
 
+    private static class GroupItem {
+        private final BookmarkTreeNode group;
+        private final String path;
+
+        private GroupItem(BookmarkTreeNode group, String path) {
+            this.group = group;
+            this.path = path;
+        }
+
+        @Override
+        public String toString() {
+            return path;
+        }
+    }
+
     /**
      * Represents the result of a bookmark creation/editing dialog.
      */
@@ -410,20 +448,23 @@ public class BookmarkCreatorDialog extends DialogWrapper {
         private final String name;
         private final String desc;
         private final Integer line;
+        private final BookmarkTreeNode group;
 
         private BookmarkDialogResult(boolean ok, @Nullable String name,
-                                     @Nullable String desc, @Nullable Integer line) {
+                                     @Nullable String desc, @Nullable Integer line,
+                                     @Nullable BookmarkTreeNode group) {
             this.ok = ok;
             this.name = name;
             this.desc = desc;
             this.line = line;
+            this.group = group;
         }
 
         /**
          * Creates a result indicating the dialog was cancelled.
          */
         public static BookmarkDialogResult cancel() {
-            return new BookmarkDialogResult(false, null, null, null);
+            return new BookmarkDialogResult(false, null, null, null, null);
         }
 
         /**
@@ -432,7 +473,14 @@ public class BookmarkCreatorDialog extends DialogWrapper {
         public static BookmarkDialogResult ok(@NotNull String name,
                                               @NotNull String desc,
                                               @Nullable Integer line) {
-            return new BookmarkDialogResult(true, name, desc, line);
+            return ok(name, desc, line, null);
+        }
+
+        public static BookmarkDialogResult ok(@NotNull String name,
+                                              @NotNull String desc,
+                                              @Nullable Integer line,
+                                              @Nullable BookmarkTreeNode group) {
+            return new BookmarkDialogResult(true, name, desc, line, group);
         }
 
         public boolean isOk() {
@@ -455,6 +503,11 @@ public class BookmarkCreatorDialog extends DialogWrapper {
 
         public Integer getLine() {
             return line;
+        }
+
+        @Nullable
+        public BookmarkTreeNode getGroup() {
+            return group;
         }
     }
 }

@@ -46,7 +46,7 @@ patchPluginXml {
 
     changeNotes = """
       <ul>
-        <li>新增、修改书签时支持编辑“所属分组”</li>
+        <li>新增、修改书签时支持编辑“所在分组”</li>
         <li>优化国际化显示</li>
       </ul>
     """
