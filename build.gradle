@@ -5,7 +5,7 @@ plugins {
 
 group 'indi.bookmarkx'
 
-version '3.1.0'
+version '3.1.1'
 
 sourceCompatibility = 17
 targetCompatibility = 17
@@ -46,8 +46,8 @@ patchPluginXml {
 
     changeNotes = """
       <ul>
-        <li>书签支持自动检测行偏移</li>
-        <li>支持为 git 分支创建独立快照</li>
+        <li>新增、修改书签时支持编辑“所属分组”</li>
+        <li>优化国际化显示</li>
       </ul>
     """
 }
