@@ -39,6 +39,8 @@ public class BmkTreeCellRenderer extends DefaultTreeCellRenderer {
         super.getTreeCellRendererComponent(tree, value, selected, expanded, isLeaf, row, hasFocus);
 
         BookmarkTreeNode node = (BookmarkTreeNode) value;
+        putClientProperty("html.disable", Boolean.TRUE);
+        if (node.isBookmark()) setText(((BookmarkNodeModel) node.getUserObject()).getDisplayName());
         Icon icon = null;
         if (0 == row) {
             // if is root node
