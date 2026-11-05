@@ -89,6 +89,13 @@ Bookmark-X 是一个 IntelliJ 插件，提供以下功能：
                 </a>
             </td>
             <td align="center">
+                <a href="https://github.com/FuYung">
+                    <img src="https://avatars.githubusercontent.com/u/3489769?v=4" width="100;" alt="FuYung"/>
+                    <br />
+                    <sub><b>FuYung</b></sub>
+                </a>
+            </td>
+            <td align="center">
                 <a href="https://github.com/codeleep">
                     <img src="https://avatars.githubusercontent.com/u/56161468?v=4" width="100;" alt="codeleep"/>
                     <br />
