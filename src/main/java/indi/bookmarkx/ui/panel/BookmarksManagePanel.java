@@ -2,6 +2,7 @@ package indi.bookmarkx.ui.panel;
 
 import com.intellij.codeInsight.daemon.DaemonCodeAnalyzer;
 import com.intellij.openapi.application.ApplicationManager;
+import com.intellij.openapi.application.ReadAction;
 import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vfs.VirtualFile;
@@ -304,13 +305,21 @@ public class BookmarksManagePanel extends JPanel {
         }
 
         private void refreshFile(BookmarkNodeModel model) {
-            VirtualFile virtualFile = model.getOpenFileDescriptor().getFile();
-            PsiFile psiFile = PsiManager.getInstance(project).findFile(virtualFile);
-            if (null == psiFile) {
+            if (model.getOpenFileDescriptor() == null) {
                 return;
             }
-            DaemonCodeAnalyzer daemonCodeAnalyzer = DaemonCodeAnalyzer.getInstance(project);
-            daemonCodeAnalyzer.restart(psiFile);
+            VirtualFile virtualFile = model.getOpenFileDescriptor().getFile();
+            // Swing menu callbacks may run on EDT without an implicit read lock.
+            ReadAction.run(() -> {
+                if (project.isDisposed() || !virtualFile.isValid()) {
+                    return;
+                }
+                PsiFile psiFile = PsiManager.getInstance(project).findFile(virtualFile);
+                if (psiFile == null || !psiFile.isValid()) {
+                    return;
+                }
+                DaemonCodeAnalyzer.getInstance(project).restart(psiFile);
+            });
         }
     }
 

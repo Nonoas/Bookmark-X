@@ -213,7 +213,7 @@ public class BookmarkTree extends Tree implements BookmarkListener {
 
             // 新的分组节点
             BookmarkTreeNode groupNode = new BookmarkTreeNode(groupNodeModel);
-            model.insertNodeInto(groupNode, parent, 0);
+            model.insertNodeInto(groupNode, parent, parent.getChildCount());
             BookmarkTree.this.model.nodeChanged(selectedNode);
 
         };
@@ -784,6 +784,9 @@ public class BookmarkTree extends Tree implements BookmarkListener {
 
         @Override
         public boolean canImport(TransferSupport support) {
+            if (!support.isDrop() || !support.isDataFlavorSupported(NodesTransferable.NODES_FLAVOR)) {
+                return false;
+            }
             JTree.DropLocation dl = (JTree.DropLocation) support.getDropLocation();
             TreePath destPath = dl.getPath();
             if (destPath == null) {
@@ -795,55 +798,29 @@ public class BookmarkTree extends Tree implements BookmarkListener {
 
         @Override
         public boolean importData(TransferSupport support) {
-            JTree.DropLocation dl = (JTree.DropLocation) support.getDropLocation();
+            if (!canImport(support)) return false;
+            JTree.DropLocation location = (JTree.DropLocation) support.getDropLocation();
             BookmarkTree tree = (BookmarkTree) support.getComponent();
-            TreePath destPath = dl.getPath();
-            BookmarkTreeNode targetNode = (BookmarkTreeNode) destPath.getLastPathComponent();
-
+            TreePath destination = location.getPath();
+            BookmarkTreeNode target = (BookmarkTreeNode) destination.getLastPathComponent();
             try {
-                Transferable transferable = support.getTransferable();
-                int[] rows = (int[]) transferable.getTransferData(NodesTransferable.NODES_FLAVOR);
-                DefaultTreeModel model = tree.getModel();
-
-                List<BookmarkTreeNode> nodes = Arrays.stream(rows)
-                        .mapToObj(tree::getNodeForRow)
-                        .collect(Collectors.toList());
-
-                int childIndex = dl.getChildIndex();
-
-                if (-1 == childIndex) {
-                    for (BookmarkTreeNode node : nodes) {
-                        // 目标节点不能是拖动节点的后代，拖动节点不能是目标节点的直接子代
-                        if (!targetNode.isNodeAncestor(node) && !targetNode.isNodeChild(node)) {
-                            model.removeNodeFromParent(node);
-                            model.insertNodeInto(node, targetNode, targetNode.getChildCount());
-                        }
-                    }
-                } else {
-                    Collections.reverse(nodes);
-                    for (BookmarkTreeNode node : nodes) {
-                        // 目标节点不能是拖动节点的后代，拖动节点不能是目标节点的直接子代
-                        if (!targetNode.isNodeAncestor(node)) {
-                            if (targetNode.isNodeChild(node)) {
-                                int index = targetNode.getIndex(node);
-                                if (childIndex > index) {
-                                    childIndex = childIndex - 1;
-                                }
-                            }
-                            model.removeNodeFromParent(node);
-                            model.insertNodeInto(node, targetNode, childIndex);
-                        }
-                    }
+                int[] rows = (int[]) support.getTransferable().getTransferData(NodesTransferable.NODES_FLAVOR);
+                List<BookmarkTreeNode> nodes = Arrays.stream(rows).sorted()
+                        .mapToObj(tree::getNodeForRow).collect(Collectors.toList());
+                if (!BookmarkTreeOrder.move(tree.getModel(), nodes, target, location.getChildIndex())) {
+                    return false;
                 }
-                tree.expandPath(destPath);
+                tree.expandPath(destination);
+                tree.setSelectionPaths(nodes.stream().map(node -> new TreePath(node.getPath())).toArray(TreePath[]::new));
+                tree.repaint();
+                BookmarksManager.getInstance(tree.project).persistentSave();
                 return true;
-
-            } catch (Exception e) {
-                log.error(e);
+            } catch (Exception exception) {
+                log.error(exception);
+                return false;
             }
-
-            return false;
         }
+
     }
 
     /**

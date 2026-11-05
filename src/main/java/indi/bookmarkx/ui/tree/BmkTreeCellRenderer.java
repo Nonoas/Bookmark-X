@@ -39,8 +39,16 @@ public class BmkTreeCellRenderer extends DefaultTreeCellRenderer {
         super.getTreeCellRendererComponent(tree, value, selected, expanded, isLeaf, row, hasFocus);
 
         BookmarkTreeNode node = (BookmarkTreeNode) value;
-        putClientProperty("html.disable", Boolean.TRUE);
-        if (node.isBookmark()) setText(((BookmarkNodeModel) node.getUserObject()).getDisplayName());
+        BookmarkTreeNode node = (BookmarkTreeNode) value;
+
+String number = BookmarkTreeOrder.number(node);
+String name = node.isBookmark()
+        ? ((BookmarkNodeModel) node.getUserObject()).getDisplayName()
+        : String.valueOf(node.getUserObject());
+
+// 防止以 HTML 标签开头的名称被 Swing 当成 HTML 渲染
+putClientProperty("html.disable", Boolean.TRUE);
+setText(number.isEmpty() ? name : number + ". " + name);
         Icon icon = null;
         if (0 == row) {
             // if is root node
