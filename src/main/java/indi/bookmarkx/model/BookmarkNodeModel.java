@@ -1,6 +1,9 @@
 package indi.bookmarkx.model;
 
 import com.intellij.openapi.editor.Document;
+import com.intellij.openapi.application.ReadAction;
+import com.intellij.openapi.module.Module;
+import com.intellij.openapi.module.ModuleUtilCore;
 import com.intellij.openapi.editor.ex.MarkupModelEx;
 import com.intellij.openapi.editor.ex.RangeHighlighterEx;
 import com.intellij.openapi.editor.impl.DocumentMarkupModel;
@@ -27,6 +30,8 @@ import java.util.Optional;
  * @date 2023/6/4
  */
 public class BookmarkNodeModel extends AbstractTreeNodeModel {
+
+    private String moduleName;
 
     private int index;
     private int line;
@@ -67,6 +72,23 @@ public class BookmarkNodeModel extends AbstractTreeNodeModel {
 
     public void setOpenFileDescriptor(OpenFileDescriptor openFileDescriptor) {
         this.openFileDescriptor = openFileDescriptor;
+        moduleName = openFileDescriptor == null ? null : ReadAction.compute(() -> {
+            if (openFileDescriptor.getProject().isDisposed() || !openFileDescriptor.getFile().isValid()) {
+                return null;
+            }
+            Module module = ModuleUtilCore.findModuleForFile(openFileDescriptor.getFile(), openFileDescriptor.getProject());
+            return module == null ? openFileDescriptor.getProject().getName() : module.getName();
+        });
+    }
+
+    public String getDisplayName() {
+        return withModuleName(getName(), moduleName);
+    }
+
+    static String withModuleName(String name, String moduleName) {
+        if (moduleName == null || moduleName.isBlank()) return name;
+        String suffix = " [" + moduleName + "]";
+        return name != null && name.endsWith(suffix) ? name : (name == null ? "" : name) + suffix;
     }
 
     public int getIndex() {

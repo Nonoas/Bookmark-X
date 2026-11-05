@@ -1,6 +1,5 @@
 package indi.bookmarkx.ui.tree;
 
-import com.intellij.ide.DataManager;
 import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.fileEditor.OpenFileDescriptor;
 import com.intellij.openapi.project.Project;
@@ -21,7 +20,6 @@ import indi.bookmarkx.model.GroupNodeModel;
 import indi.bookmarkx.persistence.MySettings;
 import indi.bookmarkx.ui.dialog.BookmarkCreatorDialog;
 import indi.bookmarkx.ui.dialog.LineAdjustDialog;
-import indi.bookmarkx.ui.panel.BookmarkTipPanel;
 import indi.bookmarkx.utils.FileLineCounter;
 import org.apache.commons.lang3.Validate;
 import org.jetbrains.annotations.NotNull;
@@ -36,7 +34,6 @@ import java.awt.datatransfer.UnsupportedFlavorException;
 import java.awt.event.ActionListener;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
-import java.awt.event.MouseMotionAdapter;
 import java.util.*;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -119,7 +116,15 @@ public class BookmarkTree extends Tree implements BookmarkListener {
             }
         });
 
-        addMouseMotionListener(new TreeMouseMotionAdapter(this, project));
+        TreeMouseMotionAdapter hover = new TreeMouseMotionAdapter(this, project);
+        addMouseMotionListener(hover);
+        addMouseListener(hover);
+        addMouseWheelListener(event -> hover.clear());
+        addHierarchyListener(event -> {
+            if (!isShowing()) {
+                hover.clear();
+            }
+        });
 
         // 鼠标点击事件
         addMouseListener(new DoubleClickAdapter(this));
@@ -821,99 +826,101 @@ public class BookmarkTree extends Tree implements BookmarkListener {
     /**
      * 鼠标选父监听
      */
-    static class TreeMouseMotionAdapter extends MouseMotionAdapter {
+    static class TreeMouseMotionAdapter extends MouseAdapter {
         private Timer timer;
-        private TreePath selectedPath;
+        private Timer dismissTimer;
+        private TreePath hoveredPath;
         private final JTree tree;
-        private JBPopup lastPopup;
-        private AbstractTreeNodeModel lastAbstractTreeNodeModel;
-        private Project project;
+        private final Project project;
+        private JBPopup popup;
 
-        public TreeMouseMotionAdapter(JTree tree, Project project) {
+        TreeMouseMotionAdapter(JTree tree, Project project) {
             this.tree = tree;
             this.project = project;
         }
 
         @Override
-        public void mouseMoved(MouseEvent e) {
-            MySettings instance = MySettings.getInstance();
-            int tipDelay = instance.getTipDelay();
-            if (tipDelay < 0) {
+        public void mouseMoved(MouseEvent event) {
+            int delay = MySettings.getInstance().getTipDelay();
+            TreePath path = tree.getPathForLocation(event.getX(), event.getY());
+            if (delay < 0 || path == null || event.getModifiersEx() != 0) {
+                clear();
                 return;
             }
-
-            // Get the selected node
-            TreePath path = tree.getPathForLocation(e.getX(), e.getY());
-            if (path != null) {
-                if (Objects.equals(path, selectedPath)) {
-                    return;
-                }
-                removeTimer();
-                selectedPath = path;
-
-                timer = new Timer(tipDelay, te -> showToolTip(getToolTipText(e), e));
-                timer.setRepeats(false);
-                timer.restart();
-            } else {
-                selectedPath = null;
-                lastAbstractTreeNodeModel = null;
-                removeTimer();
+            if (Objects.equals(path, hoveredPath)) {
+                return;
             }
+            clear();
+            hoveredPath = path;
+            Point location = event.getPoint();
+            // Avoid instant popups while moving through the bookmark list.
+            timer = new Timer(Math.max(600, delay), ignored -> showTooltip(path, location));
+            timer.setRepeats(false);
+            timer.start();
         }
 
-        private void removeTimer() {
+        @Override
+        public void mouseExited(MouseEvent event) {
+            clear();
+        }
+
+        @Override
+        public void mousePressed(MouseEvent event) {
+            clear();
+        }
+
+        @Override
+        public void mouseDragged(MouseEvent event) {
+            clear();
+        }
+
+        void clear() {
+            hoveredPath = null;
             if (timer != null) {
                 timer.stop();
                 timer = null;
             }
-
-            if (this.lastPopup != null) {
-                lastPopup.cancel();
+            if (dismissTimer != null) {
+                dismissTimer.stop();
+                dismissTimer = null;
+            }
+            if (popup != null) {
+                popup.cancel();
+                popup = null;
             }
         }
 
-
-        private AbstractTreeNodeModel getToolTipText(MouseEvent e) {
-            TreePath path = tree.getPathForLocation(e.getX(), e.getY());
-            if (path != null) {
-                BookmarkTreeNode selectedNode = (BookmarkTreeNode) path.getLastPathComponent();
-                if (selectedNode != null) {
-                    return (AbstractTreeNodeModel) selectedNode.getUserObject();
-                }
-            }
-            return null;
-        }
-
-        private void showToolTip(AbstractTreeNodeModel abstractTreeNodeModel, MouseEvent e) {
-            if (abstractTreeNodeModel == null) {
+        private void showTooltip(TreePath path, Point location) {
+            if (project.isDisposed() || !tree.isShowing() || !Objects.equals(path, hoveredPath)
+                    || MySettings.getInstance().getTipDelay() < 0
+                    || !Objects.equals(path, tree.getPathForLocation(location.x, location.y))) {
+                clear();
                 return;
             }
-            if (lastAbstractTreeNodeModel == abstractTreeNodeModel) {
-                return;
-            }
-            if (this.lastPopup != null) {
-                lastPopup.cancel();
-            }
-            lastAbstractTreeNodeModel = abstractTreeNodeModel;
-
-            JBPopupFactory popupFactory = JBPopupFactory.getInstance();
-            lastPopup = popupFactory.createComponentPopupBuilder(new BookmarkTipPanel(project, lastAbstractTreeNodeModel, null), null)
-                    .setFocusable(true)
-                    .setResizable(true)
-                    .setRequestFocus(true)
+            BookmarkTreeNode node = (BookmarkTreeNode) path.getLastPathComponent();
+            AbstractTreeNodeModel model = (AbstractTreeNodeModel) node.getUserObject();
+            JToolTip tooltip = tree.createToolTip();
+            String name = model instanceof BookmarkNodeModel ? ((BookmarkNodeModel) model).getDisplayName() : model.getName();
+            tooltip.setTipText(BookmarkTooltipText.format(name, model.getDesc()));
+            popup = JBPopupFactory.getInstance().createComponentPopupBuilder(tooltip, null)
+                    .setFocusable(false)
+                    .setRequestFocus(false)
+                    .setResizable(false)
+                    .setMovable(false)
+                    .setCancelOnClickOutside(true)
+                    .setCancelOnWindowDeactivation(true)
                     .createPopup();
-
-            // 3. 智能显示
-            if (e.getSource() instanceof Component) {
-                // 这种方式会自动处理屏幕边界，如果右边放不下就往左边弹
-                Point point = e.getPoint();
-                point.translate(0, 6);
-                lastPopup.show(new RelativePoint((Component) e.getSource(), point));
-            } else {
-                lastPopup.showInBestPositionFor(DataManager.getInstance().getDataContext(e.getComponent()));
-            }
+            popup.show(new RelativePoint(tree, new Point(location.x + 16, location.y + 20)));
+            dismissTimer = new Timer(5000, ignored -> {
+                // Keep the hovered path so a stationary pointer does not reopen it.
+                if (popup != null) {
+                    popup.cancel();
+                    popup = null;
+                }
+            });
+            dismissTimer.setRepeats(false);
+            dismissTimer.start();
         }
-
     }
 
     /**
