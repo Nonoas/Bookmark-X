@@ -72,28 +72,31 @@ Bookmark-X 是一个 IntelliJ 插件，提供以下功能：
 
 <!-- readme: collaborators,contributors -start -->
 <table>
-<tr>
-    <td align="center">
-        <a href="https://github.com/Nonoas">
-            <img src="https://avatars.githubusercontent.com/u/54799528?v=4" width="100;" alt="Nonoas"/>
-            <br />
-            <sub><b>Nonoas</b></sub>
-        </a>
-    </td>
-    <td align="center">
-        <a href="https://github.com/yejg">
-            <img src="https://avatars.githubusercontent.com/u/3025266?v=4" width="100;" alt="yejg"/>
-            <br />
-            <sub><b>Yejg</b></sub>
-        </a>
-    </td>
-    <td align="center">
-        <a href="https://github.com/codeleep">
-            <img src="https://avatars.githubusercontent.com/u/56161468?v=4" width="100;" alt="codeleep"/>
-            <br />
-            <sub><b>Codeleep</b></sub>
-        </a>
-    </td></tr>
+	<tbody>
+		<tr>
+            <td align="center">
+                <a href="https://github.com/Nonoas">
+                    <img src="https://avatars.githubusercontent.com/u/54799528?v=4" width="100;" alt="Nonoas"/>
+                    <br />
+                    <sub><b>Nonoas</b></sub>
+                </a>
+            </td>
+            <td align="center">
+                <a href="https://github.com/yejg">
+                    <img src="https://avatars.githubusercontent.com/u/3025266?v=4" width="100;" alt="yejg"/>
+                    <br />
+                    <sub><b>Yejg</b></sub>
+                </a>
+            </td>
+            <td align="center">
+                <a href="https://github.com/codeleep">
+                    <img src="https://avatars.githubusercontent.com/u/56161468?v=4" width="100;" alt="codeleep"/>
+                    <br />
+                    <sub><b>Codeleep</b></sub>
+                </a>
+            </td>
+		</tr>
+	<tbody>
 </table>
 <!-- readme: collaborators,contributors -end -->
 
