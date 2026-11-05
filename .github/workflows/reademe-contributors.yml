@@ -7,6 +7,10 @@ on:
 # action 名称
 name: Auto add contributor
 
+permissions:
+  contents: write
+  pull-requests: write
+
 jobs:
   # 任务
   contrib-readme-en-job:
@@ -14,7 +18,7 @@ jobs:
     name: A job to auto add contributor  in readme
     steps:
       - name: Contribute List
-        uses: akhilmhdh/contributors-readme-action@v2.3.4
+        uses: akhilmhdh/contributors-readme-action@v2.3.11
         env:
           GITHUB_TOKEN: ${{ secrets.CONTRIBUTORS_TOKEN }}
 
