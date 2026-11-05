@@ -39,7 +39,6 @@ public class BmkTreeCellRenderer extends DefaultTreeCellRenderer {
         super.getTreeCellRendererComponent(tree, value, selected, expanded, isLeaf, row, hasFocus);
 
         BookmarkTreeNode node = (BookmarkTreeNode) value;
-        BookmarkTreeNode node = (BookmarkTreeNode) value;
 
 String number = BookmarkTreeOrder.number(node);
 String name = node.isBookmark()
