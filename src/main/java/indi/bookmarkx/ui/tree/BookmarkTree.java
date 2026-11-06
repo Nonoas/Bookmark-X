@@ -9,7 +9,6 @@ import com.intellij.openapi.ui.Messages;
 import com.intellij.openapi.ui.popup.JBPopup;
 import com.intellij.openapi.ui.popup.JBPopupFactory;
 import com.intellij.ui.TreeSpeedSearch;
-import com.intellij.ui.awt.RelativePoint;
 import com.intellij.ui.treeStructure.Tree;
 import indi.bookmarkx.BookmarksManager;
 import indi.bookmarkx.common.I18N;
@@ -831,6 +830,7 @@ public class BookmarkTree extends Tree implements BookmarkListener {
         private static final int POINTER_POLL_INTERVAL_MS = 100;
         private static final int POINTER_EXIT_GRACE_MS = 350;
         private static final int POPUP_DISMISS_DELAY_MS = 5000;
+        private static final int POPUP_GAP = 8;
 
         private Timer timer;
         private Timer dismissTimer;
@@ -840,6 +840,7 @@ public class BookmarkTree extends Tree implements BookmarkListener {
         private final Project project;
         private JBPopup popup;
         private long pointerOutsideSince = -1L;
+        private Point latestMouseLocation;
 
         TreeMouseMotionAdapter(JTree tree, Project project) {
             this.tree = tree;
@@ -848,6 +849,7 @@ public class BookmarkTree extends Tree implements BookmarkListener {
 
         @Override
         public void mouseMoved(MouseEvent event) {
+            latestMouseLocation = event.getPoint();
             int delay = MySettings.getInstance().getTipDelay();
             TreePath path = tree.getPathForLocation(event.getX(), event.getY());
             if (delay < 0 || event.getModifiersEx() != 0) {
@@ -865,9 +867,9 @@ public class BookmarkTree extends Tree implements BookmarkListener {
             }
             clear();
             hoveredPath = path;
-            Point location = event.getPoint();
+            latestMouseLocation = event.getPoint();
             // Avoid instant popups while moving through the bookmark list.
-            timer = new Timer(Math.max(600, delay), ignored -> showTooltip(path, location));
+            timer = new Timer(Math.max(600, delay), ignored -> showTooltip(path));
             timer.setRepeats(false);
             timer.start();
         }
@@ -912,9 +914,11 @@ public class BookmarkTree extends Tree implements BookmarkListener {
             }
         }
 
-        private void showTooltip(TreePath path, Point location) {
+        private void showTooltip(TreePath path) {
+            Point location = latestMouseLocation == null ? null : new Point(latestMouseLocation);
             if (project.isDisposed() || !tree.isShowing() || !Objects.equals(path, hoveredPath)
                     || MySettings.getInstance().getTipDelay() < 0
+                    || location == null
                     || !Objects.equals(path, tree.getPathForLocation(location.x, location.y))) {
                 clear();
                 return;
@@ -925,18 +929,64 @@ public class BookmarkTree extends Tree implements BookmarkListener {
             tipPanel.fitPopupToContent();
             popup = JBPopupFactory.getInstance().createComponentPopupBuilder(
                             tipPanel, null)
-                    .setFocusable(false)
+                    .setTitle(I18N.get("bookmark.tip.title"))
+                    .setFocusable(true)
                     .setRequestFocus(false)
-                    .setResizable(false)
-                    .setMovable(false)
+                    .setResizable(true)
+                    .setMovable(true)
                     .setCancelOnClickOutside(true)
                     .setCancelOnWindowDeactivation(true)
                     .createPopup();
-            popup.show(new RelativePoint(tree, new Point(location.x + 16, location.y + 20)));
+            popup.showInScreenCoordinates(tree, popupLocation(location, tipPanel.getPreferredSize()));
             startPointerMonitor();
             dismissTimer = new Timer(POPUP_DISMISS_DELAY_MS, ignored -> dismissPopupUnlessHovered());
             dismissTimer.setRepeats(false);
             dismissTimer.start();
+        }
+
+        private Point popupLocation(Point mouseLocation, Dimension popupSize) {
+            Point screenLocation = new Point(mouseLocation);
+            SwingUtilities.convertPointToScreen(screenLocation, tree);
+            return choosePopupLocation(screenLocation, popupSize, usableScreenBounds(tree), POPUP_GAP);
+        }
+
+        static Point choosePopupLocation(Point mouseLocation, Dimension popupSize,
+                                         Rectangle screenBounds, int gap) {
+            int screenRight = screenBounds.x + screenBounds.width;
+            int screenBottom = screenBounds.y + screenBounds.height;
+            int rightX = mouseLocation.x + gap;
+            int leftX = mouseLocation.x - popupSize.width - gap;
+
+            int x;
+            if (rightX + popupSize.width <= screenRight) {
+                x = rightX;
+            } else if (leftX >= screenBounds.x) {
+                x = leftX;
+            } else {
+                int rightSpace = screenRight - mouseLocation.x;
+                int leftSpace = mouseLocation.x - screenBounds.x;
+                x = rightSpace >= leftSpace
+                        ? Math.max(screenBounds.x, screenRight - popupSize.width)
+                        : screenBounds.x;
+            }
+            int preferredY = mouseLocation.y - gap;
+            int maxY = Math.max(screenBounds.y, screenBottom - popupSize.height);
+            int y = Math.max(screenBounds.y, Math.min(preferredY, maxY));
+            return new Point(x, y);
+        }
+
+        private static Rectangle usableScreenBounds(Component component) {
+            GraphicsConfiguration configuration = component.getGraphicsConfiguration();
+            if (configuration == null) {
+                return GraphicsEnvironment.getLocalGraphicsEnvironment().getMaximumWindowBounds();
+            }
+            Rectangle bounds = new Rectangle(configuration.getBounds());
+            Insets insets = Toolkit.getDefaultToolkit().getScreenInsets(configuration);
+            bounds.x += insets.left;
+            bounds.y += insets.top;
+            bounds.width -= insets.left + insets.right;
+            bounds.height -= insets.top + insets.bottom;
+            return bounds;
         }
 
         private void startPointerMonitor() {
@@ -949,7 +999,7 @@ public class BookmarkTree extends Tree implements BookmarkListener {
                     }
                     return;
                 }
-                if (isPointerInside(tree) || isPointerInside(popup.getContent())) {
+                if (isPointerInside(hoverSurface()) || isPointerInside(popupSurface())) {
                     pointerOutsideSince = -1L;
                     return;
                 }
@@ -963,8 +1013,22 @@ public class BookmarkTree extends Tree implements BookmarkListener {
             pointerMonitorTimer.start();
         }
 
+        private Component hoverSurface() {
+            Container viewport = SwingUtilities.getAncestorOfClass(JViewport.class, tree);
+            return viewport == null ? tree : viewport;
+        }
+
+        private Component popupSurface() {
+            if (popup == null) {
+                return null;
+            }
+            Component content = popup.getContent();
+            Window window = SwingUtilities.getWindowAncestor(content);
+            return window == null ? content : window;
+        }
+
         private void dismissPopupUnlessHovered() {
-            if (popup != null && isPointerInside(popup.getContent())) {
+            if (popup != null && isPointerInside(popupSurface())) {
                 dismissTimer.restart();
                 return;
             }

@@ -28,6 +28,7 @@ import indi.bookmarkx.model.BookmarkLineMarkers;
 import indi.bookmarkx.model.BookmarkNodeModel;
 import indi.bookmarkx.model.po.BookmarkPO;
 import indi.bookmarkx.persistence.MyPersistent;
+import indi.bookmarkx.persistence.MySettings;
 import indi.bookmarkx.service.branch.BookmarkBranchSnapshotService;
 import indi.bookmarkx.service.relocation.BookmarkRelocationService;
 import indi.bookmarkx.ui.dialog.BookmarkCreatorDialog;
@@ -117,13 +118,17 @@ public final class BookmarksManager {
         bookmarkNodeModel.setIcon(file.getFileType().getIcon());
         bookmarkNodeModel.setIcon(file.getFileType().getIcon());
         bookmarkNodeModel.setOpenFileDescriptor(new OpenFileDescriptor(project, file, line, 0));
+        MySettings settings = MySettings.getInstance();
         BookmarkCreatorDialog.BookmarkDialogResult result = BookmarkCreatorDialog.createBookmarkDialog(project, I18N.get("bookmark.create.title"))
                 .defaultName(defaultName)
                 .defaultDesc(defaultDesc)
+                .defaultDescriptionFormat(settings.getLastDescriptionFormat())
                 .showAndGetResult();
         if (result.isOk()) {
+            settings.setLastDescriptionFormat(result.getDescriptionFormat());
             bookmarkNodeModel.setName(result.getName());
             bookmarkNodeModel.setDesc(result.getDesc());
+            bookmarkNodeModel.setDescriptionFormat(result.getDescriptionFormat());
             bookmarkEventPublisher.get().bookmarkAdded(bookmarkNodeModel);
             BookmarkTree tree = toolWindowRootPanel.tree();
             tree.moveBookmarkToGroup(bookmarkNodeModel, result.getGroup());
@@ -148,12 +153,15 @@ public final class BookmarksManager {
             result = new BookmarkCreatorDialog(project, I18N.get("bookmark.create.title"), lineNumber, maxLineNumber)
                     .defaultName(nodeModel.getName())
                     .defaultDesc(nodeModel.getDesc())
+                    .defaultDescriptionFormat(bookmarkModel.getDescriptionFormat())
                     .defaultGroup(tree.getGroupForBookmark(bookmarkModel))
                     .showAndGetResult();
 
             if (result.isOk()) {
+                MySettings.getInstance().setLastDescriptionFormat(result.getDescriptionFormat());
                 bookmarkModel.setName(result.getName());
                 bookmarkModel.setDesc(result.getDesc());
+                bookmarkModel.setDescriptionFormat(result.getDescriptionFormat());
                 // 行号发生变化时，调用 updateBookmarkLine 刷新行标签
                 int newLine = result.getLine();
                 if (bookmarkModel.getLine() != newLine) {

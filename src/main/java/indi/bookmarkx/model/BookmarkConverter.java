@@ -28,6 +28,7 @@ public class BookmarkConverter {
             po.setLine(nodeModel.getLine());
             po.setName(model.getName());
             po.setDesc(nodeModel.getDesc());
+            po.setDescriptionFormat(nodeModel.getDescriptionFormat());
             po.setBookmark(true);
             po.setAnchorLineText(nodeModel.getAnchorLineText());
             po.setAnchorLineHash(nodeModel.getAnchorLineHash());
@@ -70,6 +71,7 @@ public class BookmarkConverter {
             model.setLine(po.getLine());
             model.setName(po.getName());
             model.setDesc(po.getDesc());
+            model.setDescriptionFormat(po.getDescriptionFormat());
             model.setAnchorLineText(po.getAnchorLineText());
             model.setAnchorLineHash(po.getAnchorLineHash());
             model.setBeforeContextHash(po.getBeforeContextHash());

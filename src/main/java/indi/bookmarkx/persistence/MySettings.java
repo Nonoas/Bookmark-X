@@ -8,6 +8,7 @@ import com.intellij.openapi.components.Storage;
 import indi.bookmarkx.MySettingsConfigurable;
 import indi.bookmarkx.common.I18NEnum;
 import indi.bookmarkx.mcp.BookmarkMcpConfig;
+import indi.bookmarkx.model.BookmarkDescriptionFormat;
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 
@@ -89,6 +90,21 @@ public final class MySettings implements PersistentStateComponent<MySettings.Sta
         state.showModuleSuffix = showModuleSuffix;
     }
 
+    public BookmarkDescriptionFormat getLastDescriptionFormat() {
+        if (StringUtils.isBlank(state.lastDescriptionFormat)) {
+            return BookmarkDescriptionFormat.HTML;
+        }
+        try {
+            return BookmarkDescriptionFormat.valueOf(state.lastDescriptionFormat);
+        } catch (IllegalArgumentException ignored) {
+            return BookmarkDescriptionFormat.HTML;
+        }
+    }
+
+    public void setLastDescriptionFormat(BookmarkDescriptionFormat format) {
+        state.lastDescriptionFormat = BookmarkDescriptionFormat.orDefault(format).name();
+    }
+
     public boolean isMcpEnabled() {
         return state.mcpEnabled;
     }
@@ -121,6 +137,7 @@ public final class MySettings implements PersistentStateComponent<MySettings.Sta
         public int descShowType;
         public boolean showNodeNumbers;
         public boolean showModuleSuffix;
+        public String lastDescriptionFormat = BookmarkDescriptionFormat.HTML.name();
         public boolean mcpEnabled = false;
         public int mcpPort = BookmarkMcpConfig.DEFAULT_PORT;
         public String mcpPassword = "";

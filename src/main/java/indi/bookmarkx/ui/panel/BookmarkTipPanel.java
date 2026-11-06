@@ -18,6 +18,9 @@ import com.intellij.ui.components.JBPanel;
 import com.intellij.util.ui.JBUI;
 import com.intellij.util.ui.UIUtil;
 import indi.bookmarkx.model.AbstractTreeNodeModel;
+import indi.bookmarkx.model.BookmarkDescriptionFormat;
+import indi.bookmarkx.model.BookmarkNodeModel;
+import indi.bookmarkx.utils.BookmarkDescriptionFormatter;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -120,7 +123,7 @@ public class BookmarkTipPanel extends JBPanel<BookmarkTipPanel> {
 
         // === DEFINITION SECTION (定义区域，显示名称) ===
         html.append(DocumentationMarkup.DEFINITION_START);
-        String name = escapeHtml(model.getName());
+        String name = BookmarkDescriptionFormatter.escapeHtml(model.getName());
         html.append("<b>").append(name).append("</b>");
         html.append(DocumentationMarkup.DEFINITION_END);
 
@@ -128,7 +131,10 @@ public class BookmarkTipPanel extends JBPanel<BookmarkTipPanel> {
         String desc = model.getDesc();
         if (desc != null && !desc.trim().isEmpty()) {
             html.append(DocumentationMarkup.CONTENT_START);
-            html.append(formatDescription(desc));
+            BookmarkDescriptionFormat format = model instanceof BookmarkNodeModel
+                    ? ((BookmarkNodeModel) model).getDescriptionFormat()
+                    : BookmarkDescriptionFormat.PLAIN_TEXT;
+            html.append(BookmarkDescriptionFormatter.format(desc, format));
             html.append(DocumentationMarkup.CONTENT_END);
         } else {
             html.append(DocumentationMarkup.CONTENT_START);
@@ -152,23 +158,6 @@ public class BookmarkTipPanel extends JBPanel<BookmarkTipPanel> {
         html.append("</body></html>");
 
         return html.toString();
-    }
-
-    /**
-     * 格式化描述文本
-     */
-    private String formatDescription(String desc) {
-        if (desc == null) return "";
-
-        // HTML 转义
-        desc = escapeHtml(desc);
-
-        // 处理换行：双换行变段落，单换行变 br
-        desc = desc.replaceAll("(\r?\n){2,}", "</p><p>");
-        desc = desc.replace("\n", "<br/>");
-
-        // 包装为段落
-        return "<p>" + desc + "</p>";
     }
 
     /**
@@ -228,17 +217,6 @@ public class BookmarkTipPanel extends JBPanel<BookmarkTipPanel> {
     public void updateContent(@NotNull AbstractTreeNodeModel newModel) {
         String html = generateDocumentationHtml(newModel);
         documentationComponent.setData(null, html, null, null, null);
-    }
-
-    /**
-     * HTML 转义
-     */
-    private static String escapeHtml(String s) {
-        if (s == null) return "";
-        return s.replace("&", "&amp;")
-                .replace("<", "&lt;")
-                .replace(">", "&gt;")
-                .replace("\"", "&quot;");
     }
 
     /**

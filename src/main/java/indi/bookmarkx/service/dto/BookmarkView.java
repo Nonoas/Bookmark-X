@@ -1,5 +1,7 @@
 package indi.bookmarkx.service.dto;
 
+import indi.bookmarkx.model.BookmarkDescriptionFormat;
+
 import java.util.ArrayList;
 import java.util.List;
 
@@ -8,6 +10,7 @@ public class BookmarkView {
     private String uuid;
     private String name;
     private String desc;
+    private BookmarkDescriptionFormat descriptionFormat;
     private String filePath;
     /**
      * 1-based line number exposed to external callers.
@@ -41,6 +44,14 @@ public class BookmarkView {
 
     public void setDesc(String desc) {
         this.desc = desc;
+    }
+
+    public BookmarkDescriptionFormat getDescriptionFormat() {
+        return BookmarkDescriptionFormat.orDefault(descriptionFormat);
+    }
+
+    public void setDescriptionFormat(BookmarkDescriptionFormat descriptionFormat) {
+        this.descriptionFormat = BookmarkDescriptionFormat.orDefault(descriptionFormat);
     }
 
     public String getFilePath() {
