@@ -1,0 +1,3 @@
+interface:
+  display_name: "Bookmark-X 更新日志"
+  short_description: "根据版本差异生成中英双语 Release 更新日志"

@@ -35,6 +35,8 @@ public class MySettingsPanel extends JBPanel<MySettingsPanel> {
     private final JPanel tipSettingsWrapper = new JPanel(new BorderLayout());
     private final JPanel mcpSettingsWrapper = new JPanel(new BorderLayout());
 
+    private final JBCheckBox showNodeNumbersCheckBox = new JBCheckBox(I18N.get("setting.tree.showNodeNumbers"));
+    private final JBCheckBox showModuleSuffixCheckBox = new JBCheckBox(I18N.get("setting.tree.showModuleSuffix"));
     private final JBCheckBox showTipCheckBox = new JBCheckBox(I18N.get("setting.tipToggle"), true);
     private final JBTextField jtfDelay = new JBTextField();
     private final JBCheckBox enableMcpCheckBox = new JBCheckBox(I18N.get("setting.mcp.enable"), true);
@@ -53,6 +55,10 @@ public class MySettingsPanel extends JBPanel<MySettingsPanel> {
         JPanel contentPanel = FormBuilder.createFormBuilder()
                 .addComponent(new TitledSeparator(I18N.get("setting.group.general")))
                 .addLabeledComponent(new JBLabel(I18N.get("setting.language")), languageComboBox)
+                .addVerticalGap(10)
+                .addComponent(new TitledSeparator(I18N.get("setting.group.tree")))
+                .addComponent(showNodeNumbersCheckBox)
+                .addComponent(showModuleSuffixCheckBox)
                 .addVerticalGap(10)
                 .addComponent(new TitledSeparator(I18N.get("setting.group.desc")))
                 .addLabeledComponent(new JBLabel(I18N.get("setting.desc.showType")), showTypeComboBox)
@@ -143,6 +149,8 @@ public class MySettingsPanel extends JBPanel<MySettingsPanel> {
         }
 
         showTypeComboBox.setSelectedIndex(settings.getDescShowType().getValue());
+        showNodeNumbersCheckBox.setSelected(settings.isShowNodeNumbers());
+        showModuleSuffixCheckBox.setSelected(settings.isShowModuleSuffix());
         enableMcpCheckBox.setSelected(settings.isMcpEnabled());
         jtfMcpPort.setText(String.valueOf(settings.getMcpPort()));
         jpfMcpPassword.setText(settings.getMcpPassword());
@@ -175,6 +183,14 @@ public class MySettingsPanel extends JBPanel<MySettingsPanel> {
         int selectedIndex = showTypeComboBox.getSelectedIndex();
         MySettingsConfigurable.DescShowType descShowType = MySettingsConfigurable.DescShowType.fromCode(selectedIndex);
         return descShowType;
+    }
+
+    public boolean isShowNodeNumbers() {
+        return showNodeNumbersCheckBox.isSelected();
+    }
+
+    public boolean isShowModuleSuffix() {
+        return showModuleSuffixCheckBox.isSelected();
     }
 
     public boolean isMcpEnabled() {
@@ -218,6 +234,8 @@ public class MySettingsPanel extends JBPanel<MySettingsPanel> {
             showTipCheckBox.setSelected(false);
         }
         showTypeComboBox.setSelectedIndex(settings.getDescShowType().getValue());
+        showNodeNumbersCheckBox.setSelected(settings.isShowNodeNumbers());
+        showModuleSuffixCheckBox.setSelected(settings.isShowModuleSuffix());
         enableMcpCheckBox.setSelected(settings.isMcpEnabled());
         jtfMcpPort.setText(String.valueOf(settings.getMcpPort()));
         jpfMcpPassword.setText(settings.getMcpPassword());

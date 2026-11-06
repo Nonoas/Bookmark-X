@@ -16,8 +16,10 @@ import com.intellij.util.ui.JBUI;
 import com.intellij.util.ui.UIUtil;
 import indi.bookmarkx.BookmarksManager;
 import indi.bookmarkx.common.I18N;
+import indi.bookmarkx.model.BookmarkDescriptionFormat;
 import indi.bookmarkx.ui.tree.BookmarkTree;
 import indi.bookmarkx.ui.tree.BookmarkTreeNode;
+import indi.bookmarkx.utils.BookmarkDescriptionFormatter;
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -37,6 +39,10 @@ public class BookmarkCreatorDialog extends DialogWrapper {
     private final EditorTextField tfDesc = new EditorTextField();
     private final EditorTextField tfLineNumber = new EditorTextField();
     private final ComboBox<GroupItem> cbGroup = new ComboBox<>();
+    private final ComboBox<BookmarkDescriptionFormat> cbDescriptionFormat = new ComboBox<>(new BookmarkDescriptionFormat[]{
+            BookmarkDescriptionFormat.HTML,
+            BookmarkDescriptionFormat.PLAIN_TEXT
+    });
     private final HtmlPanel previewPanel = new DescriptionPreviewPanel();
 
     private final CardLayout cardLayout = new CardLayout();
@@ -47,6 +53,7 @@ public class BookmarkCreatorDialog extends DialogWrapper {
 
     private boolean isEditMode = false;
     private boolean showGroup = false;
+    private boolean showDescriptionFormat = false;
     private BookmarkTreeNode defaultGroup;
     private int maxLineNumber = 0;
     private OnOKAction oKAction;
@@ -60,6 +67,7 @@ public class BookmarkCreatorDialog extends DialogWrapper {
     private BookmarkCreatorDialog(Project project, String title, boolean showGroup) {
         super(true);
         this.showGroup = showGroup;
+        this.showDescriptionFormat = true;
         initSelf(project, title);
     }
 
@@ -67,6 +75,7 @@ public class BookmarkCreatorDialog extends DialogWrapper {
         super(true);
         this.isEditMode = true;
         this.showGroup = true;
+        this.showDescriptionFormat = true;
         this.tfLineNumber.setText(String.valueOf(lineNumber));
         this.maxLineNumber = maxLineNumber;
         initSelf(project, title);
@@ -79,7 +88,31 @@ public class BookmarkCreatorDialog extends DialogWrapper {
     private void initSelf(Project project, String title) {
         setTitle(title);
         this.project = project;
+        configureDescriptionFormatComboBox();
         init();
+    }
+
+    private void configureDescriptionFormatComboBox() {
+        cbDescriptionFormat.setSelectedItem(BookmarkDescriptionFormat.HTML);
+        cbDescriptionFormat.setRenderer(new DefaultListCellRenderer() {
+            @Override
+            public Component getListCellRendererComponent(JList<?> list, Object value, int index,
+                                                          boolean isSelected, boolean cellHasFocus) {
+                JLabel label = (JLabel) super.getListCellRendererComponent(
+                        list, value, index, isSelected, cellHasFocus
+                );
+                BookmarkDescriptionFormat format = value instanceof BookmarkDescriptionFormat
+                        ? (BookmarkDescriptionFormat) value
+                        : BookmarkDescriptionFormat.HTML;
+                boolean html = format == BookmarkDescriptionFormat.HTML;
+                label.setText(I18N.get(html
+                        ? "bookmark.dialog.descriptionFormat.html"
+                        : "bookmark.dialog.descriptionFormat.plainText"));
+                label.setIcon(html ? AllIcons.FileTypes.Html : AllIcons.FileTypes.Text);
+                label.setIconTextGap(JBUI.scale(6));
+                return label;
+            }
+        });
     }
 
     // --- Fluent API ---
@@ -90,6 +123,11 @@ public class BookmarkCreatorDialog extends DialogWrapper {
 
     public BookmarkCreatorDialog defaultDesc(String desc) {
         this.tfDesc.setText(desc);
+        return this;
+    }
+
+    public BookmarkCreatorDialog defaultDescriptionFormat(BookmarkDescriptionFormat format) {
+        cbDescriptionFormat.setSelectedItem(BookmarkDescriptionFormat.orDefault(format));
         return this;
     }
 
@@ -153,6 +191,11 @@ public class BookmarkCreatorDialog extends DialogWrapper {
 
         previewPanel.setBorder(JBUI.Borders.empty(10));
         JBScrollPane previewScroll = new JBScrollPane(previewPanel);
+        cbDescriptionFormat.addActionListener(event -> {
+            if (isPreviewMode) {
+                updatePreview();
+            }
+        });
 
         contentCard.add(editScroll, "EDIT");
         contentCard.add(previewScroll, "PREVIEW");
@@ -232,7 +275,15 @@ public class BookmarkCreatorDialog extends DialogWrapper {
             panel.add(new JBLabel(I18N.get("bookmark.dialog.lineNumber")), gbc);
             gbc.gridx = 1;
             gbc.weightx = 1;
-            panel.add(tfLineNumber, gbc);
+            panel.add(createLineAndFormatPanel(), gbc);
+        } else if (showDescriptionFormat) {
+            gbc.gridx = 0;
+            gbc.gridy = row++;
+            gbc.weightx = 0;
+            panel.add(new JBLabel(I18N.get("bookmark.dialog.descriptionFormat")), gbc);
+            gbc.gridx = 1;
+            gbc.weightx = 1;
+            panel.add(cbDescriptionFormat, gbc);
         }
 
         // Desc
@@ -250,6 +301,31 @@ public class BookmarkCreatorDialog extends DialogWrapper {
         return panel;
     }
 
+    private JPanel createLineAndFormatPanel() {
+        JPanel panel = new JPanel(new GridBagLayout());
+        panel.setOpaque(false);
+        GridBagConstraints gbc = new GridBagConstraints();
+        gbc.gridy = 0;
+        gbc.fill = GridBagConstraints.HORIZONTAL;
+
+        gbc.gridx = 0;
+        gbc.weightx = 0.35;
+        panel.add(tfLineNumber, gbc);
+
+        if (showDescriptionFormat) {
+            gbc.gridx = 1;
+            gbc.weightx = 0;
+            gbc.insets = JBUI.insetsLeft(12);
+            panel.add(new JBLabel(I18N.get("bookmark.dialog.descriptionFormat")), gbc);
+
+            gbc.gridx = 2;
+            gbc.weightx = 0.65;
+            gbc.insets = JBUI.insetsLeft(8);
+            panel.add(cbDescriptionFormat, gbc);
+        }
+        return panel;
+    }
+
     private void updatePreview() {
         String text = tfDesc.getText();
         Color fg = UIUtil.getLabelForeground();
@@ -257,9 +333,16 @@ public class BookmarkCreatorDialog extends DialogWrapper {
         String htmlContent = String.format(
                 "<html><body style='font-family: %s; font-size: 11pt; color: %s;'>" +
                         "%s</body></html>",
-                JBUI.Fonts.label().getFontName(), colorHex, text.replace("\n", "<br>")
+                JBUI.Fonts.label().getFontName(), colorHex,
+                BookmarkDescriptionFormatter.format(text, getDescriptionFormat())
         );
         previewPanel.setText(htmlContent);
+    }
+
+    private BookmarkDescriptionFormat getDescriptionFormat() {
+        return BookmarkDescriptionFormat.orDefault(
+                (BookmarkDescriptionFormat) cbDescriptionFormat.getSelectedItem()
+        );
     }
 
     private void setupValidators() {
@@ -397,7 +480,7 @@ public class BookmarkCreatorDialog extends DialogWrapper {
             }
         }
 
-        return BookmarkDialogResult.ok(name, desc, line, getSelectedGroup());
+        return BookmarkDialogResult.ok(name, desc, line, getSelectedGroup(), getDescriptionFormat());
     }
 
     /**
@@ -449,22 +532,27 @@ public class BookmarkCreatorDialog extends DialogWrapper {
         private final String desc;
         private final Integer line;
         private final BookmarkTreeNode group;
+        private final BookmarkDescriptionFormat descriptionFormat;
 
         private BookmarkDialogResult(boolean ok, @Nullable String name,
                                      @Nullable String desc, @Nullable Integer line,
-                                     @Nullable BookmarkTreeNode group) {
+                                     @Nullable BookmarkTreeNode group,
+                                     BookmarkDescriptionFormat descriptionFormat) {
             this.ok = ok;
             this.name = name;
             this.desc = desc;
             this.line = line;
             this.group = group;
+            this.descriptionFormat = BookmarkDescriptionFormat.orDefault(descriptionFormat);
         }
 
         /**
          * Creates a result indicating the dialog was cancelled.
          */
         public static BookmarkDialogResult cancel() {
-            return new BookmarkDialogResult(false, null, null, null, null);
+            return new BookmarkDialogResult(
+                    false, null, null, null, null, BookmarkDescriptionFormat.HTML
+            );
         }
 
         /**
@@ -480,7 +568,15 @@ public class BookmarkCreatorDialog extends DialogWrapper {
                                               @NotNull String desc,
                                               @Nullable Integer line,
                                               @Nullable BookmarkTreeNode group) {
-            return new BookmarkDialogResult(true, name, desc, line, group);
+            return ok(name, desc, line, group, BookmarkDescriptionFormat.HTML);
+        }
+
+        public static BookmarkDialogResult ok(@NotNull String name,
+                                              @NotNull String desc,
+                                              @Nullable Integer line,
+                                              @Nullable BookmarkTreeNode group,
+                                              BookmarkDescriptionFormat descriptionFormat) {
+            return new BookmarkDialogResult(true, name, desc, line, group, descriptionFormat);
         }
 
         public boolean isOk() {
@@ -508,6 +604,10 @@ public class BookmarkCreatorDialog extends DialogWrapper {
         @Nullable
         public BookmarkTreeNode getGroup() {
             return group;
+        }
+
+        public BookmarkDescriptionFormat getDescriptionFormat() {
+            return descriptionFormat;
         }
     }
 }

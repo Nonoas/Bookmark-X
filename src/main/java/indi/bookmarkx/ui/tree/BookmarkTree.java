@@ -9,7 +9,6 @@ import com.intellij.openapi.ui.Messages;
 import com.intellij.openapi.ui.popup.JBPopup;
 import com.intellij.openapi.ui.popup.JBPopupFactory;
 import com.intellij.ui.TreeSpeedSearch;
-import com.intellij.ui.awt.RelativePoint;
 import com.intellij.ui.treeStructure.Tree;
 import indi.bookmarkx.BookmarksManager;
 import indi.bookmarkx.common.I18N;
@@ -20,6 +19,7 @@ import indi.bookmarkx.model.GroupNodeModel;
 import indi.bookmarkx.persistence.MySettings;
 import indi.bookmarkx.ui.dialog.BookmarkCreatorDialog;
 import indi.bookmarkx.ui.dialog.LineAdjustDialog;
+import indi.bookmarkx.ui.panel.BookmarkTipPanel;
 import indi.bookmarkx.utils.FileLineCounter;
 import org.apache.commons.lang3.Validate;
 import org.jetbrains.annotations.NotNull;
@@ -827,12 +827,20 @@ public class BookmarkTree extends Tree implements BookmarkListener {
      * 鼠标选父监听
      */
     static class TreeMouseMotionAdapter extends MouseAdapter {
+        private static final int POINTER_POLL_INTERVAL_MS = 100;
+        private static final int POINTER_EXIT_GRACE_MS = 350;
+        private static final int POPUP_DISMISS_DELAY_MS = 5000;
+        private static final int POPUP_GAP = 8;
+
         private Timer timer;
         private Timer dismissTimer;
+        private Timer pointerMonitorTimer;
         private TreePath hoveredPath;
         private final JTree tree;
         private final Project project;
         private JBPopup popup;
+        private long pointerOutsideSince = -1L;
+        private Point latestMouseLocation;
 
         TreeMouseMotionAdapter(JTree tree, Project project) {
             this.tree = tree;
@@ -841,10 +849,17 @@ public class BookmarkTree extends Tree implements BookmarkListener {
 
         @Override
         public void mouseMoved(MouseEvent event) {
+            latestMouseLocation = event.getPoint();
             int delay = MySettings.getInstance().getTipDelay();
             TreePath path = tree.getPathForLocation(event.getX(), event.getY());
-            if (delay < 0 || path == null || event.getModifiersEx() != 0) {
+            if (delay < 0 || event.getModifiersEx() != 0) {
                 clear();
+                return;
+            }
+            if (path == null) {
+                if (popup == null) {
+                    clear();
+                }
                 return;
             }
             if (Objects.equals(path, hoveredPath)) {
@@ -852,16 +867,20 @@ public class BookmarkTree extends Tree implements BookmarkListener {
             }
             clear();
             hoveredPath = path;
-            Point location = event.getPoint();
+            latestMouseLocation = event.getPoint();
             // Avoid instant popups while moving through the bookmark list.
-            timer = new Timer(Math.max(600, delay), ignored -> showTooltip(path, location));
+            timer = new Timer(Math.max(600, delay), ignored -> showTooltip(path));
             timer.setRepeats(false);
             timer.start();
         }
 
         @Override
         public void mouseExited(MouseEvent event) {
-            clear();
+            if (popup == null) {
+                clear();
+            } else if (pointerOutsideSince < 0) {
+                pointerOutsideSince = System.currentTimeMillis();
+            }
         }
 
         @Override
@@ -884,42 +903,169 @@ public class BookmarkTree extends Tree implements BookmarkListener {
                 dismissTimer.stop();
                 dismissTimer = null;
             }
+            if (pointerMonitorTimer != null) {
+                pointerMonitorTimer.stop();
+                pointerMonitorTimer = null;
+            }
+            pointerOutsideSince = -1L;
             if (popup != null) {
                 popup.cancel();
                 popup = null;
             }
         }
 
-        private void showTooltip(TreePath path, Point location) {
+        private void showTooltip(TreePath path) {
+            Point location = latestMouseLocation == null ? null : new Point(latestMouseLocation);
             if (project.isDisposed() || !tree.isShowing() || !Objects.equals(path, hoveredPath)
                     || MySettings.getInstance().getTipDelay() < 0
+                    || location == null
                     || !Objects.equals(path, tree.getPathForLocation(location.x, location.y))) {
                 clear();
                 return;
             }
             BookmarkTreeNode node = (BookmarkTreeNode) path.getLastPathComponent();
             AbstractTreeNodeModel model = (AbstractTreeNodeModel) node.getUserObject();
-            JToolTip tooltip = tree.createToolTip();
-            String name = model instanceof BookmarkNodeModel ? ((BookmarkNodeModel) model).getDisplayName() : model.getName();
-            tooltip.setTipText(BookmarkTooltipText.format(name, model.getDesc()));
-            popup = JBPopupFactory.getInstance().createComponentPopupBuilder(tooltip, null)
-                    .setFocusable(false)
+            BookmarkTipPanel tipPanel = new BookmarkTipPanel(project, model);
+            tipPanel.fitPopupToContent();
+            popup = JBPopupFactory.getInstance().createComponentPopupBuilder(
+                            tipPanel, null)
+                    .setTitle(I18N.get("bookmark.tip.title"))
+                    .setFocusable(true)
                     .setRequestFocus(false)
-                    .setResizable(false)
-                    .setMovable(false)
+                    .setResizable(true)
+                    .setMovable(true)
                     .setCancelOnClickOutside(true)
                     .setCancelOnWindowDeactivation(true)
                     .createPopup();
-            popup.show(new RelativePoint(tree, new Point(location.x + 16, location.y + 20)));
-            dismissTimer = new Timer(5000, ignored -> {
-                // Keep the hovered path so a stationary pointer does not reopen it.
-                if (popup != null) {
-                    popup.cancel();
-                    popup = null;
-                }
-            });
+            popup.showInScreenCoordinates(tree, popupLocation(location, tipPanel.getPreferredSize()));
+            startPointerMonitor();
+            dismissTimer = new Timer(POPUP_DISMISS_DELAY_MS, ignored -> dismissPopupUnlessHovered());
             dismissTimer.setRepeats(false);
             dismissTimer.start();
+        }
+
+        private Point popupLocation(Point mouseLocation, Dimension popupSize) {
+            Point screenLocation = new Point(mouseLocation);
+            SwingUtilities.convertPointToScreen(screenLocation, tree);
+            return choosePopupLocation(screenLocation, popupSize, usableScreenBounds(tree), POPUP_GAP);
+        }
+
+        static Point choosePopupLocation(Point mouseLocation, Dimension popupSize,
+                                         Rectangle screenBounds, int gap) {
+            int screenRight = screenBounds.x + screenBounds.width;
+            int screenBottom = screenBounds.y + screenBounds.height;
+            int rightX = mouseLocation.x + gap;
+            int leftX = mouseLocation.x - popupSize.width - gap;
+
+            int x;
+            if (rightX + popupSize.width <= screenRight) {
+                x = rightX;
+            } else if (leftX >= screenBounds.x) {
+                x = leftX;
+            } else {
+                int rightSpace = screenRight - mouseLocation.x;
+                int leftSpace = mouseLocation.x - screenBounds.x;
+                x = rightSpace >= leftSpace
+                        ? Math.max(screenBounds.x, screenRight - popupSize.width)
+                        : screenBounds.x;
+            }
+            int preferredY = mouseLocation.y - gap;
+            int maxY = Math.max(screenBounds.y, screenBottom - popupSize.height);
+            int y = Math.max(screenBounds.y, Math.min(preferredY, maxY));
+            return new Point(x, y);
+        }
+
+        private static Rectangle usableScreenBounds(Component component) {
+            GraphicsConfiguration configuration = component.getGraphicsConfiguration();
+            if (configuration == null) {
+                return GraphicsEnvironment.getLocalGraphicsEnvironment().getMaximumWindowBounds();
+            }
+            Rectangle bounds = new Rectangle(configuration.getBounds());
+            Insets insets = Toolkit.getDefaultToolkit().getScreenInsets(configuration);
+            bounds.x += insets.left;
+            bounds.y += insets.top;
+            bounds.width -= insets.left + insets.right;
+            bounds.height -= insets.top + insets.bottom;
+            return bounds;
+        }
+
+        private void startPointerMonitor() {
+            pointerOutsideSince = -1L;
+            pointerMonitorTimer = new Timer(POINTER_POLL_INTERVAL_MS, ignored -> {
+                if (popup == null || !popup.isVisible()) {
+                    if (pointerMonitorTimer != null) {
+                        pointerMonitorTimer.stop();
+                        pointerMonitorTimer = null;
+                    }
+                    return;
+                }
+                if (isPointerInside(hoverSurface()) || isPointerInside(popupSurface())) {
+                    pointerOutsideSince = -1L;
+                    return;
+                }
+                long now = System.currentTimeMillis();
+                if (pointerOutsideSince < 0) {
+                    pointerOutsideSince = now;
+                } else if (now - pointerOutsideSince >= POINTER_EXIT_GRACE_MS) {
+                    clear();
+                }
+            });
+            pointerMonitorTimer.start();
+        }
+
+        private Component hoverSurface() {
+            Container viewport = SwingUtilities.getAncestorOfClass(JViewport.class, tree);
+            return viewport == null ? tree : viewport;
+        }
+
+        private Component popupSurface() {
+            if (popup == null) {
+                return null;
+            }
+            Component content = popup.getContent();
+            Window window = SwingUtilities.getWindowAncestor(content);
+            return window == null ? content : window;
+        }
+
+        private void dismissPopupUnlessHovered() {
+            if (popup != null && isPointerInside(popupSurface())) {
+                dismissTimer.restart();
+                return;
+            }
+            closePopupKeepingHoverPath();
+        }
+
+        private void closePopupKeepingHoverPath() {
+            if (dismissTimer != null) {
+                dismissTimer.stop();
+                dismissTimer = null;
+            }
+            if (pointerMonitorTimer != null) {
+                pointerMonitorTimer.stop();
+                pointerMonitorTimer = null;
+            }
+            pointerOutsideSince = -1L;
+            if (popup != null) {
+                popup.cancel();
+                popup = null;
+            }
+        }
+
+        private static boolean isPointerInside(Component component) {
+            if (component == null || !component.isShowing()) {
+                return false;
+            }
+            try {
+                PointerInfo pointerInfo = MouseInfo.getPointerInfo();
+                if (pointerInfo == null) {
+                    return false;
+                }
+                Point location = pointerInfo.getLocation();
+                SwingUtilities.convertPointFromScreen(location, component);
+                return component.contains(location);
+            } catch (HeadlessException | IllegalComponentStateException | SecurityException ignored) {
+                return false;
+            }
         }
     }
 

@@ -32,6 +32,7 @@ import java.util.Optional;
 public class BookmarkNodeModel extends AbstractTreeNodeModel {
 
     private String moduleName;
+    private BookmarkDescriptionFormat descriptionFormat = BookmarkDescriptionFormat.HTML;
 
     private int index;
     private int line;
@@ -83,6 +84,18 @@ public class BookmarkNodeModel extends AbstractTreeNodeModel {
 
     public String getDisplayName() {
         return withModuleName(getName(), moduleName);
+    }
+
+    public String getModuleName() {
+        return moduleName;
+    }
+
+    public BookmarkDescriptionFormat getDescriptionFormat() {
+        return BookmarkDescriptionFormat.orDefault(descriptionFormat);
+    }
+
+    public void setDescriptionFormat(BookmarkDescriptionFormat descriptionFormat) {
+        this.descriptionFormat = BookmarkDescriptionFormat.orDefault(descriptionFormat);
     }
 
     static String withModuleName(String name, String moduleName) {

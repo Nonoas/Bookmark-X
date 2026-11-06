@@ -13,6 +13,7 @@ import indi.bookmarkx.BookmarksManager;
 import indi.bookmarkx.common.data.BookmarkArrayListTable;
 import indi.bookmarkx.listener.BookmarkListener;
 import indi.bookmarkx.model.AbstractTreeNodeModel;
+import indi.bookmarkx.model.BookmarkDescriptionFormat;
 import indi.bookmarkx.model.BookmarkNodeModel;
 import indi.bookmarkx.model.GroupNodeModel;
 import indi.bookmarkx.service.relocation.BookmarkRelocationService;
@@ -179,6 +180,7 @@ public final class BookmarkDomainService {
         bookmarkNodeModel.setUuid(UUID.randomUUID().toString());
         bookmarkNodeModel.setName(resolved.name);
         bookmarkNodeModel.setDesc(resolved.desc);
+        bookmarkNodeModel.setDescriptionFormat(resolved.descriptionFormat);
         bookmarkNodeModel.setLine(resolved.internalLine);
         bookmarkNodeModel.setIcon(resolved.file.getFileType().getIcon());
         bookmarkNodeModel.setOpenFileDescriptor(new OpenFileDescriptor(project, resolved.file, resolved.internalLine, 0));
@@ -204,6 +206,9 @@ public final class BookmarkDomainService {
         }
         if (draft.getDesc() != null) {
             bookmark.setDesc(draft.getDesc());
+        }
+        if (draft.getDescriptionFormat() != null) {
+            bookmark.setDescriptionFormat(draft.getDescriptionFormat());
         }
         if (draft.getLine() != null) {
             int newInternalLine = normalizeLine(resolveFile(bookmark.getFilePath()
@@ -276,6 +281,9 @@ public final class BookmarkDomainService {
         view.setUuid(model.getUuid());
         view.setName(model.getName());
         view.setDesc(model.getDesc());
+        if (model instanceof BookmarkNodeModel) {
+            view.setDescriptionFormat(((BookmarkNodeModel) model).getDescriptionFormat());
+        }
         view.setType(node.isBookmark() ? "bookmark" : "group");
         if (node.isBookmark()) {
             BookmarkView bookmarkView = toBookmarkView(node);
@@ -302,6 +310,7 @@ public final class BookmarkDomainService {
         view.setUuid(model.getUuid());
         view.setName(model.getName());
         view.setDesc(model.getDesc());
+        view.setDescriptionFormat(model.getDescriptionFormat());
         view.setFilePath(model.getFilePath().orElse(null));
         view.setLine(model.getLine() + 1);
         view.setIndexInGroup(node.getParent() == null ? 0 : node.getParent().getIndex(node));
@@ -314,6 +323,7 @@ public final class BookmarkDomainService {
         preview.setUuid(resolved.existingNode == null ? null : ((BookmarkNodeModel) resolved.existingNode.getUserObject()).getUuid());
         preview.setName(resolved.name);
         preview.setDesc(resolved.desc);
+        preview.setDescriptionFormat(resolved.descriptionFormat);
         preview.setFilePath(resolved.file.getPath());
         preview.setLine(resolved.internalLine + 1);
         preview.setIndexInGroup(-1);
@@ -327,6 +337,7 @@ public final class BookmarkDomainService {
         draft.setUuid(existing.getUuid());
         draft.setName(resolved.name);
         draft.setDesc(resolved.desc);
+        draft.setDescriptionFormat(resolved.descriptionFormat);
         draft.setLine(resolved.internalLine + 1);
         draft.setGroupPath(resolved.groupPath);
         return draft;
@@ -513,7 +524,12 @@ public final class BookmarkDomainService {
         if (existingNode == null) {
             existingNode = findBookmarkNodeByLocation(context.tree, file.getPath(), internalLine);
         }
-        return new ResolvedDraft(file, internalLine, name, desc, groupPath, existingNode);
+        BookmarkDescriptionFormat descriptionFormat = draft.getDescriptionFormat();
+        if (descriptionFormat == null && existingNode != null) {
+            descriptionFormat = ((BookmarkNodeModel) existingNode.getUserObject()).getDescriptionFormat();
+        }
+        return new ResolvedDraft(file, internalLine, name, desc,
+                BookmarkDescriptionFormat.orDefault(descriptionFormat), groupPath, existingNode);
     }
 
     private int requireLine(BookmarkDraft draft) {
@@ -691,15 +707,18 @@ public final class BookmarkDomainService {
         private final int internalLine;
         private final String name;
         private final String desc;
+        private final BookmarkDescriptionFormat descriptionFormat;
         private final List<String> groupPath;
         private final BookmarkTreeNode existingNode;
 
         private ResolvedDraft(VirtualFile file, int internalLine, String name, String desc,
+                              BookmarkDescriptionFormat descriptionFormat,
                               List<String> groupPath, BookmarkTreeNode existingNode) {
             this.file = file;
             this.internalLine = internalLine;
             this.name = name;
             this.desc = desc;
+            this.descriptionFormat = descriptionFormat;
             this.groupPath = groupPath;
             this.existingNode = existingNode;
         }

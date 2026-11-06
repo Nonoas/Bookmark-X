@@ -77,6 +77,7 @@ final class BookmarkMcpTools {
                                     "line": { "type": "integer" },
                                     "name": { "type": "string" },
                                     "desc": { "type": "string" },
+                                    "descriptionFormat": { "type": "string", "enum": ["PLAIN_TEXT", "HTML"] },
                                     "groupPath": {
                                       "type": "array",
                                       "items": { "type": "string" }
@@ -107,6 +108,7 @@ final class BookmarkMcpTools {
                                           "line": { "type": "integer" },
                                           "name": { "type": "string" },
                                           "desc": { "type": "string" },
+                                          "descriptionFormat": { "type": "string", "enum": ["PLAIN_TEXT", "HTML"] },
                                           "groupPath": {
                                             "type": "array",
                                             "items": { "type": "string" }
@@ -131,6 +133,7 @@ final class BookmarkMcpTools {
                                     "line": { "type": "integer" },
                                     "name": { "type": "string" },
                                     "desc": { "type": "string" },
+                                    "descriptionFormat": { "type": "string", "enum": ["PLAIN_TEXT", "HTML"] },
                                     "groupPath": {
                                       "type": "array",
                                       "items": { "type": "string" }
@@ -229,6 +232,7 @@ final class BookmarkMcpTools {
                                           "line": { "type": "integer" },
                                           "name": { "type": "string" },
                                           "desc": { "type": "string" },
+                                          "descriptionFormat": { "type": "string", "enum": ["PLAIN_TEXT", "HTML"] },
                                           "groupPath": {
                                             "type": "array",
                                             "items": { "type": "string" }

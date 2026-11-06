@@ -1,5 +1,7 @@
 package indi.bookmarkx.model.po;
 
+import indi.bookmarkx.model.BookmarkDescriptionFormat;
+
 import javax.xml.bind.annotation.XmlRootElement;
 import java.util.ArrayList;
 import java.util.List;
@@ -25,6 +27,8 @@ public class BookmarkPO {
     private String desc;
 
     private String name;
+
+    private BookmarkDescriptionFormat descriptionFormat = BookmarkDescriptionFormat.HTML;
 
     private String iconPath;
 
@@ -117,6 +121,14 @@ public class BookmarkPO {
 
     public void setDesc(String desc) {
         this.desc = desc;
+    }
+
+    public BookmarkDescriptionFormat getDescriptionFormat() {
+        return BookmarkDescriptionFormat.orDefault(descriptionFormat);
+    }
+
+    public void setDescriptionFormat(BookmarkDescriptionFormat descriptionFormat) {
+        this.descriptionFormat = BookmarkDescriptionFormat.orDefault(descriptionFormat);
     }
 
     public String getIconPath() {
