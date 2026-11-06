@@ -45,6 +45,8 @@ public class MySettingsConfigurable implements Configurable {
         return isLanguageChanged()
                 || settingsComponent.getTipDelay() != settings.getTipDelay()
                 || settingsComponent.getDescShowType() != settings.getDescShowType()
+                || settingsComponent.isShowNodeNumbers() != settings.isShowNodeNumbers()
+                || settingsComponent.isShowModuleSuffix() != settings.isShowModuleSuffix()
                 || settingsComponent.isMcpEnabled() != settings.isMcpEnabled()
                 || !settingsComponent.getMcpPortText().equals(String.valueOf(settings.getMcpPort()))
                 || !settingsComponent.getMcpPassword().equals(settings.getMcpPassword());
@@ -65,6 +67,8 @@ public class MySettingsConfigurable implements Configurable {
         settings.setLanguage(settingsComponent.getLanguage());
         settings.setTipDelay(settingsComponent.getTipDelay());
         settings.setDescShowType(settingsComponent.getDescShowType());
+        settings.setShowNodeNumbers(settingsComponent.isShowNodeNumbers());
+        settings.setShowModuleSuffix(settingsComponent.isShowModuleSuffix());
         settings.setMcpEnabled(settingsComponent.isMcpEnabled());
         settings.setMcpPort(mcpPort);
         settings.setMcpPassword(settingsComponent.getMcpPassword());

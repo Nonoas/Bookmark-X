@@ -85,6 +85,10 @@ public class BookmarkNodeModel extends AbstractTreeNodeModel {
         return withModuleName(getName(), moduleName);
     }
 
+    public String getModuleName() {
+        return moduleName;
+    }
+
     static String withModuleName(String name, String moduleName) {
         if (moduleName == null || moduleName.isBlank()) return name;
         String suffix = " [" + moduleName + "]";

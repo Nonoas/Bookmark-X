@@ -5,7 +5,7 @@ plugins {
 
 group 'indi.bookmarkx'
 
-version '3.1.1'
+version '3.1.2'
 
 sourceCompatibility = 17
 targetCompatibility = 17
@@ -46,8 +46,7 @@ patchPluginXml {
 
     changeNotes = """
       <ul>
-        <li>新增、修改书签时支持编辑“所在分组”</li>
-        <li>优化国际化显示</li>
+     
       </ul>
     """
 }

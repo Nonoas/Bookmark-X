@@ -25,12 +25,16 @@ import javax.swing.JComponent;
 import javax.swing.JPanel;
 import java.awt.BorderLayout;
 import java.awt.Component;
+import java.awt.Dimension;
 
 /**
  * 使用 IDEA 完全原生的 DocumentationComponent 实现的书签提示面板
  * 这是最接近 IDEA 原生 JavaDoc 显示的方式
  */
 public class BookmarkTipPanel extends JBPanel<BookmarkTipPanel> {
+
+    private static final int POPUP_MAX_WIDTH = 520;
+    private static final int POPUP_MAX_HEIGHT = 360;
 
     private final Project project;
     private final AbstractTreeNodeModel model;
@@ -84,6 +88,26 @@ public class BookmarkTipPanel extends JBPanel<BookmarkTipPanel> {
         }
 
         setOpaque(false);
+    }
+
+    /**
+     * Shrinks hover popups to their content while keeping long descriptions scrollable.
+     */
+    public void fitPopupToContent() {
+        Dimension maximum = JBUI.size(POPUP_MAX_WIDTH, POPUP_MAX_HEIGHT);
+        int preferredWidth = Math.min(documentationComponent.getPreferredWidth(), maximum.width);
+        int preferredHeight = documentationComponent.getPreferredHeight(preferredWidth);
+        Dimension size = boundedSize(new Dimension(preferredWidth, preferredHeight), maximum);
+        setPreferredSize(size);
+        setMaximumSize(maximum);
+        revalidate();
+    }
+
+    static Dimension boundedSize(Dimension preferred, Dimension maximum) {
+        return new Dimension(
+                Math.min(preferred.width, maximum.width),
+                Math.min(preferred.height, maximum.height)
+        );
     }
 
     /**
@@ -210,12 +234,11 @@ public class BookmarkTipPanel extends JBPanel<BookmarkTipPanel> {
      * HTML 转义
      */
     private static String escapeHtml(String s) {
-        //if (s == null) return "";
-        //return s.replace("&", "&amp;")
-        //        .replace("<", "&lt;")
-        //        .replace(">", "&gt;")
-        //        .replace("\"", "&quot;");
-        return s;
+        if (s == null) return "";
+        return s.replace("&", "&amp;")
+                .replace("<", "&lt;")
+                .replace(">", "&gt;")
+                .replace("\"", "&quot;");
     }
 
     /**

@@ -73,6 +73,22 @@ public final class MySettings implements PersistentStateComponent<MySettings.Sta
         state.descShowType = descShowType.getValue();
     }
 
+    public boolean isShowNodeNumbers() {
+        return state.showNodeNumbers;
+    }
+
+    public void setShowNodeNumbers(boolean showNodeNumbers) {
+        state.showNodeNumbers = showNodeNumbers;
+    }
+
+    public boolean isShowModuleSuffix() {
+        return state.showModuleSuffix;
+    }
+
+    public void setShowModuleSuffix(boolean showModuleSuffix) {
+        state.showModuleSuffix = showModuleSuffix;
+    }
+
     public boolean isMcpEnabled() {
         return state.mcpEnabled;
     }
@@ -103,7 +119,9 @@ public final class MySettings implements PersistentStateComponent<MySettings.Sta
         public String language;
         public int tipDelay = 500;
         public int descShowType;
-        public boolean mcpEnabled = true;
+        public boolean showNodeNumbers;
+        public boolean showModuleSuffix;
+        public boolean mcpEnabled = false;
         public int mcpPort = BookmarkMcpConfig.DEFAULT_PORT;
         public String mcpPassword = "";
     }

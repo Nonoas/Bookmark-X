@@ -20,6 +20,7 @@ import indi.bookmarkx.model.GroupNodeModel;
 import indi.bookmarkx.persistence.MySettings;
 import indi.bookmarkx.ui.dialog.BookmarkCreatorDialog;
 import indi.bookmarkx.ui.dialog.LineAdjustDialog;
+import indi.bookmarkx.ui.panel.BookmarkTipPanel;
 import indi.bookmarkx.utils.FileLineCounter;
 import org.apache.commons.lang3.Validate;
 import org.jetbrains.annotations.NotNull;
@@ -827,12 +828,18 @@ public class BookmarkTree extends Tree implements BookmarkListener {
      * 鼠标选父监听
      */
     static class TreeMouseMotionAdapter extends MouseAdapter {
+        private static final int POINTER_POLL_INTERVAL_MS = 100;
+        private static final int POINTER_EXIT_GRACE_MS = 350;
+        private static final int POPUP_DISMISS_DELAY_MS = 5000;
+
         private Timer timer;
         private Timer dismissTimer;
+        private Timer pointerMonitorTimer;
         private TreePath hoveredPath;
         private final JTree tree;
         private final Project project;
         private JBPopup popup;
+        private long pointerOutsideSince = -1L;
 
         TreeMouseMotionAdapter(JTree tree, Project project) {
             this.tree = tree;
@@ -843,8 +850,14 @@ public class BookmarkTree extends Tree implements BookmarkListener {
         public void mouseMoved(MouseEvent event) {
             int delay = MySettings.getInstance().getTipDelay();
             TreePath path = tree.getPathForLocation(event.getX(), event.getY());
-            if (delay < 0 || path == null || event.getModifiersEx() != 0) {
+            if (delay < 0 || event.getModifiersEx() != 0) {
                 clear();
+                return;
+            }
+            if (path == null) {
+                if (popup == null) {
+                    clear();
+                }
                 return;
             }
             if (Objects.equals(path, hoveredPath)) {
@@ -861,7 +874,11 @@ public class BookmarkTree extends Tree implements BookmarkListener {
 
         @Override
         public void mouseExited(MouseEvent event) {
-            clear();
+            if (popup == null) {
+                clear();
+            } else if (pointerOutsideSince < 0) {
+                pointerOutsideSince = System.currentTimeMillis();
+            }
         }
 
         @Override
@@ -884,6 +901,11 @@ public class BookmarkTree extends Tree implements BookmarkListener {
                 dismissTimer.stop();
                 dismissTimer = null;
             }
+            if (pointerMonitorTimer != null) {
+                pointerMonitorTimer.stop();
+                pointerMonitorTimer = null;
+            }
+            pointerOutsideSince = -1L;
             if (popup != null) {
                 popup.cancel();
                 popup = null;
@@ -899,10 +921,10 @@ public class BookmarkTree extends Tree implements BookmarkListener {
             }
             BookmarkTreeNode node = (BookmarkTreeNode) path.getLastPathComponent();
             AbstractTreeNodeModel model = (AbstractTreeNodeModel) node.getUserObject();
-            JToolTip tooltip = tree.createToolTip();
-            String name = model instanceof BookmarkNodeModel ? ((BookmarkNodeModel) model).getDisplayName() : model.getName();
-            tooltip.setTipText(BookmarkTooltipText.format(name, model.getDesc()));
-            popup = JBPopupFactory.getInstance().createComponentPopupBuilder(tooltip, null)
+            BookmarkTipPanel tipPanel = new BookmarkTipPanel(project, model);
+            tipPanel.fitPopupToContent();
+            popup = JBPopupFactory.getInstance().createComponentPopupBuilder(
+                            tipPanel, null)
                     .setFocusable(false)
                     .setRequestFocus(false)
                     .setResizable(false)
@@ -911,15 +933,75 @@ public class BookmarkTree extends Tree implements BookmarkListener {
                     .setCancelOnWindowDeactivation(true)
                     .createPopup();
             popup.show(new RelativePoint(tree, new Point(location.x + 16, location.y + 20)));
-            dismissTimer = new Timer(5000, ignored -> {
-                // Keep the hovered path so a stationary pointer does not reopen it.
-                if (popup != null) {
-                    popup.cancel();
-                    popup = null;
-                }
-            });
+            startPointerMonitor();
+            dismissTimer = new Timer(POPUP_DISMISS_DELAY_MS, ignored -> dismissPopupUnlessHovered());
             dismissTimer.setRepeats(false);
             dismissTimer.start();
+        }
+
+        private void startPointerMonitor() {
+            pointerOutsideSince = -1L;
+            pointerMonitorTimer = new Timer(POINTER_POLL_INTERVAL_MS, ignored -> {
+                if (popup == null || !popup.isVisible()) {
+                    if (pointerMonitorTimer != null) {
+                        pointerMonitorTimer.stop();
+                        pointerMonitorTimer = null;
+                    }
+                    return;
+                }
+                if (isPointerInside(tree) || isPointerInside(popup.getContent())) {
+                    pointerOutsideSince = -1L;
+                    return;
+                }
+                long now = System.currentTimeMillis();
+                if (pointerOutsideSince < 0) {
+                    pointerOutsideSince = now;
+                } else if (now - pointerOutsideSince >= POINTER_EXIT_GRACE_MS) {
+                    clear();
+                }
+            });
+            pointerMonitorTimer.start();
+        }
+
+        private void dismissPopupUnlessHovered() {
+            if (popup != null && isPointerInside(popup.getContent())) {
+                dismissTimer.restart();
+                return;
+            }
+            closePopupKeepingHoverPath();
+        }
+
+        private void closePopupKeepingHoverPath() {
+            if (dismissTimer != null) {
+                dismissTimer.stop();
+                dismissTimer = null;
+            }
+            if (pointerMonitorTimer != null) {
+                pointerMonitorTimer.stop();
+                pointerMonitorTimer = null;
+            }
+            pointerOutsideSince = -1L;
+            if (popup != null) {
+                popup.cancel();
+                popup = null;
+            }
+        }
+
+        private static boolean isPointerInside(Component component) {
+            if (component == null || !component.isShowing()) {
+                return false;
+            }
+            try {
+                PointerInfo pointerInfo = MouseInfo.getPointerInfo();
+                if (pointerInfo == null) {
+                    return false;
+                }
+                Point location = pointerInfo.getLocation();
+                SwingUtilities.convertPointFromScreen(location, component);
+                return component.contains(location);
+            } catch (HeadlessException | IllegalComponentStateException | SecurityException ignored) {
+                return false;
+            }
         }
     }
 
