@@ -19,6 +19,8 @@ import java.util.Arrays;
 
 public class RootWindowFactory implements ToolWindowFactory, DumbAware {
 
+    public static final String TOOL_WINDOW_ID = "Bookmark-X";
+
     private static final Logger LOG = Logger.getInstance(RootWindowFactory.class);
 
     @Override

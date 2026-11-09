@@ -18,6 +18,7 @@ import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.ui.JBColor;
 import indi.bookmarkx.action.BookmarkEditAction;
+import indi.bookmarkx.action.BookmarkLocateInTreeAction;
 import indi.bookmarkx.action.BookmarkRemoveAction;
 import indi.bookmarkx.common.MyIcons;
 import indi.bookmarkx.model.BookmarkNodeModel;
@@ -39,10 +40,11 @@ public class MyGutterIconRenderer extends GutterIconRenderer {
 
     @Override
     public @NotNull ActionGroup getPopupMenuActions() {
-        DefaultActionGroup actionGroup = new DefaultActionGroup();
-        actionGroup.add(new BookmarkEditAction(model));
-        actionGroup.add(new BookmarkRemoveAction(model));
-        return actionGroup;
+        return new DefaultActionGroup(
+                new BookmarkLocateInTreeAction(model),
+                new BookmarkEditAction(model),
+                new BookmarkRemoveAction(model)
+        );
     }
 
     @Override

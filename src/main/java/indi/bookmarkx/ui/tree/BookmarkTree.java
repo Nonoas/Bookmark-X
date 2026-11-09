@@ -355,6 +355,28 @@ public class BookmarkTree extends Tree implements BookmarkListener {
         return nodeCache.get(uuid);
     }
 
+    /**
+     * 在标签树中展开、选中并滚动到指定书签。
+     *
+     * @param bookmark 要定位的书签
+     * @return 找到对应树节点时返回 {@code true}
+     */
+    public boolean selectBookmark(BookmarkNodeModel bookmark) {
+        BookmarkTreeNode node = getNodeByModel(bookmark);
+        if (node == null) {
+            return false;
+        }
+        TreePath path = new TreePath(node.getPath());
+        TreePath parentPath = path.getParentPath();
+        if (parentPath != null) {
+            expandPath(parentPath);
+        }
+        setSelectionPath(path);
+        scrollPathToVisible(path);
+        requestFocusInWindow();
+        return true;
+    }
+
     private void addToCache(BookmarkTreeNode node) {
         AbstractTreeNodeModel userObject = (AbstractTreeNodeModel) node.getUserObject();
         if (userObject.getUuid() != null) {
