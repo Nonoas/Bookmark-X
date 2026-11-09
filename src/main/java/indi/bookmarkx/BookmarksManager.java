@@ -17,6 +17,8 @@ import com.intellij.openapi.progress.ProgressManager;
 import com.intellij.openapi.progress.Task;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vfs.VirtualFile;
+import com.intellij.openapi.wm.ToolWindow;
+import com.intellij.openapi.wm.ToolWindowManager;
 import com.intellij.util.messages.MessageBusConnection;
 import indi.bookmarkx.common.I18N;
 import indi.bookmarkx.common.data.BookmarkArrayListTable;
@@ -193,6 +195,20 @@ public final class BookmarksManager {
      */
     public void removeBookRemark(AbstractTreeNodeModel model) {
         bookmarkEventPublisher.get().bookmarkRemoved(model);
+    }
+
+    /**
+     * 打开 Bookmark-X 工具窗口，并在标签树中选中指定书签。
+     *
+     * @param model 要定位的书签
+     */
+    public void locateBookRemark(BookmarkNodeModel model) {
+        ToolWindow toolWindow = ToolWindowManager.getInstance(project).getToolWindow(RootWindowFactory.TOOL_WINDOW_ID);
+        if (toolWindow == null) {
+            LOG.warn("Can't find Bookmark-X tool window");
+            return;
+        }
+        toolWindow.activate(() -> toolWindowRootPanel.tree().selectBookmark(model), true);
     }
 
     /**
