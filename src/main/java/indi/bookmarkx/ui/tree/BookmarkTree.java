@@ -26,6 +26,7 @@ import org.jetbrains.annotations.NotNull;
 
 import javax.swing.*;
 import javax.swing.Timer;
+import javax.swing.event.ChangeListener;
 import javax.swing.tree.*;
 import java.awt.*;
 import java.awt.datatransfer.DataFlavor;
@@ -34,6 +35,7 @@ import java.awt.datatransfer.UnsupportedFlavorException;
 import java.awt.event.ActionListener;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
+import java.awt.event.MouseWheelListener;
 import java.util.*;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -58,6 +60,16 @@ public class BookmarkTree extends Tree implements BookmarkListener {
     private DefaultTreeModel model;
 
     private Project project;
+
+    private TreeMouseMotionAdapter hover;
+
+    private JScrollPane scrollPane;
+
+    private JViewport scrollViewport;
+
+    private final MouseWheelListener scrollPaneWheelListener = event -> clearHoverPreview();
+
+    private final ChangeListener viewportChangeListener = event -> clearHoverPreview();
 
     public BookmarkTree(Project project) {
         super();
@@ -116,10 +128,9 @@ public class BookmarkTree extends Tree implements BookmarkListener {
             }
         });
 
-        TreeMouseMotionAdapter hover = new TreeMouseMotionAdapter(this, project);
+        hover = new TreeMouseMotionAdapter(this, project);
         addMouseMotionListener(hover);
         addMouseListener(hover);
-        addMouseWheelListener(event -> hover.clear());
         addHierarchyListener(event -> {
             if (!isShowing()) {
                 hover.clear();
@@ -129,6 +140,53 @@ public class BookmarkTree extends Tree implements BookmarkListener {
         // 鼠标点击事件
         addMouseListener(new DoubleClickAdapter(this));
 
+    }
+
+    @Override
+    public void addNotify() {
+        super.addNotify();
+        bindScrollListeners();
+    }
+
+    @Override
+    public void removeNotify() {
+        unbindScrollListeners();
+        clearHoverPreview();
+        super.removeNotify();
+    }
+
+    private void bindScrollListeners() {
+        JScrollPane pane = (JScrollPane) SwingUtilities.getAncestorOfClass(JScrollPane.class, this);
+        JViewport viewport = (JViewport) SwingUtilities.getAncestorOfClass(JViewport.class, this);
+        if (pane == scrollPane && viewport == scrollViewport) {
+            return;
+        }
+        unbindScrollListeners();
+        scrollPane = pane;
+        scrollViewport = viewport;
+        if (scrollPane != null) {
+            scrollPane.addMouseWheelListener(scrollPaneWheelListener);
+        }
+        if (scrollViewport != null) {
+            scrollViewport.addChangeListener(viewportChangeListener);
+        }
+    }
+
+    private void unbindScrollListeners() {
+        if (scrollPane != null) {
+            scrollPane.removeMouseWheelListener(scrollPaneWheelListener);
+            scrollPane = null;
+        }
+        if (scrollViewport != null) {
+            scrollViewport.removeChangeListener(viewportChangeListener);
+            scrollViewport = null;
+        }
+    }
+
+    private void clearHoverPreview() {
+        if (hover != null) {
+            hover.clear();
+        }
     }
 
     /**

@@ -34,8 +34,6 @@ dependencies {
 // See https://github.com/JetBrains/gradle-intellij-plugin/
 intellij {
     version = '2022.3.3'
-//    version = '2023.3.6'
-//    version = '2024.3.7'
     instrumentCode = false
 }
 
@@ -45,10 +43,32 @@ patchPluginXml {
     untilBuild = "263.*"
 
     changeNotes = """
+      <b>更新内容 / Changelog</b>
+      <p><b>中文</b></p>
       <ul>
-     
+        <li>新增可选的书签树节点序号和模块后缀，并优化拖拽排序及顺序持久化</li>
+        <li>书签描述支持纯文本和 HTML 两种格式，创建、编辑、预览及 MCP 接口均会保留格式选择</li>
+        <li>优化悬浮书签详情弹窗，可根据内容调整尺寸，并支持移动、缩放和屏幕边界适配</li>
+        <li>行标签右键菜单新增“在标签树中定位”，可打开工具窗口并选中对应书签</li>
+        <li>修复拖拽书签节点后鼠标滚轮无法滚动标签树的问题，并提升行标签刷新的稳定性</li>
+        <li>MCP 服务默认调整为关闭，可在插件设置中手动启用</li>
+      </ul>
+      <p><b>English</b></p>
+      <ul>
+        <li>Added optional bookmark tree node numbers and module suffixes, with improved drag-and-drop ordering and persistence</li>
+        <li>Added Plain Text and HTML bookmark descriptions, preserving the selected format across creation, editing, preview, and MCP operations</li>
+        <li>Improved hover detail popups with content-aware sizing, moving, resizing, and screen-boundary handling</li>
+        <li>Added Locate in Bookmark Tree to the gutter bookmark menu to open the tool window and select the corresponding bookmark</li>
+        <li>Fixed mouse-wheel scrolling after dragging bookmark nodes and improved gutter marker refresh stability</li>
+        <li>Changed the MCP service to be disabled by default; it can be enabled manually in the plugin settings</li>
       </ul>
     """
+}
+
+publishPlugin {
+    token = System.getenv('JETBRAINS_PUBLISH_TOKEN')
+    channels = ['default']
+    hidden = true
 }
 
 tasks.named('initializeIntelliJPlugin') {
