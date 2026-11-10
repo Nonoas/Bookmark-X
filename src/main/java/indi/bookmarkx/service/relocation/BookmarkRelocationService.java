@@ -152,18 +152,18 @@ public final class BookmarkRelocationService {
     private Optional<RelocationPlan> findRelocationPlan(VirtualFile file,
                                                         BookmarkNodeModel bookmark,
                                                         List<String> currentLines) {
-        Optional<String> baseText = BookmarkSnapshotStore.getInstance(project).readSnapshot(bookmark.getSnapshotId());
-        if (baseText.isEmpty()) {
-            return Optional.empty();
-        }
+        Optional<String> baseText = BookmarkSnapshotStore.getInstance(project)
+                .readSnapshot(bookmark.getSnapshotId(), bookmark.getBaseContentHash());
+        List<String> baseLines = baseText.map(TextLineUtil::splitLines).orElse(List.of());
+        // A document edit can move the saved line without refreshing its snapshot.
+        boolean snapshotMatchesAnchor = bookmark.getLine() >= 0
+                && bookmark.getLine() < baseLines.size()
+                && AnchorScorer.score(bookmark, baseLines, bookmark.getLine()) >= ACCEPT_CONFIDENCE;
         RelocationContext context = new RelocationContext(
-                project,
-                file,
-                bookmark,
-                TextLineUtil.splitLines(baseText.get()),
-                currentLines
-        );
-        return strategies.stream()
+                project, file, bookmark, baseLines, currentLines);
+        List<BookmarkRelocationStrategy> availableStrategies = snapshotMatchesAnchor
+                ? strategies : List.of(new AnchorRelocationStrategy());
+        return availableStrategies.stream()
                 .map(strategy -> strategy.relocate(context))
                 .filter(Optional::isPresent)
                 .map(Optional::get)
